@@ -107,7 +107,7 @@ void forEachMediaMask(const drift::Project &project, drift::TimeUs timelineUs, V
 }
 
 void collectActivePaths(const drift::Project *project, drift::TimeUs timelineUs, QSet<QString> &videoPaths,
-                        QSet<QString> &audioPaths)
+                        QSet<QString> &audioPaths, bool useProxies = true)
 {
     if (!project)
         return;
