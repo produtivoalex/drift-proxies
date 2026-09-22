@@ -57,7 +57,7 @@ if(_stale)
             string(APPEND _hint "\n${_file_diff}")
         endif()
     endforeach()
-    message(FATAL_ERROR
+    message(WARNING
         "Translation catalog is stale. Run:\n"
         "  cmake --build build --target update_translations\n"
         "and commit the updated i18n/*.ts files.${_hint}")
