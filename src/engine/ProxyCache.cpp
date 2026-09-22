@@ -105,7 +105,7 @@ QString ProxyCache::lookup(const QString &sourcePath) const
     const QString key = info.absoluteFilePath();
 
     QMutexLocker lock(&m_mutex);
-    const auto it = m_entries.find(key);
+    auto it = m_entries.find(key);
     if (it == m_entries.end())
         return {};
 

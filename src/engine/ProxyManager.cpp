@@ -6,7 +6,6 @@
 
 #include <QFileInfo>
 #include <QThreadPool>
-#include <QtConcurrent>
 
 namespace drift {
 
