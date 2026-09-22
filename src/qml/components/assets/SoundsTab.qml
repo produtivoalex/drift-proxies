@@ -85,7 +85,6 @@ Item {
                     text: qsTr("Efeitos Sonoros (SFX)")
                     variant: root.currentTab === "sfx" ? "primary" : "ghost"
                     glyph: Theme.icons.audioLines
-                    buttonSize: 32
                     onClicked: {
                         if (sfxPlayer.playbackState === MediaPlayer.PlayingState)
                             sfxPlayer.stop()
@@ -97,7 +96,6 @@ Item {
                     text: qsTr("Filtros de Áudio (FX)")
                     variant: root.currentTab === "fx" ? "primary" : "ghost"
                     glyph: Theme.icons.sliders
-                    buttonSize: 32
                     onClicked: {
                         if (sfxPlayer.playbackState === MediaPlayer.PlayingState)
                             sfxPlayer.stop()
@@ -165,7 +163,6 @@ Item {
                                     required property var modelData
                                     text: modelData.label
                                     variant: root.activeCategory === modelData.id ? "secondary" : "ghost"
-                                    buttonSize: 28
                                     onClicked: root.activeCategory = modelData.id
                                 }
                             }
@@ -267,7 +264,6 @@ Item {
                                         text: qsTr("+ Adicionar")
                                         variant: "ghost"
                                         glyph: Theme.icons.plus
-                                        buttonSize: 30
                                         tooltip: qsTr("Adicionar efeito na agulha da timeline")
                                         onClicked: {
                                             EditorState.addSfxClip(modelData.id)

@@ -148,19 +148,16 @@ Item {
                         ThemedButton {
                             text: qsTr("9:16 Vertical")
                             variant: Math.abs(autoReframeCard.targetAspect - (9.0 / 16.0)) < 0.01 ? "primary" : "ghost"
-                            buttonSize: 28
                             onClicked: autoReframeCard.targetAspect = 9.0 / 16.0
                         }
                         ThemedButton {
                             text: qsTr("1:1 Quadrado")
                             variant: Math.abs(autoReframeCard.targetAspect - 1.0) < 0.01 ? "primary" : "ghost"
-                            buttonSize: 28
                             onClicked: autoReframeCard.targetAspect = 1.0
                         }
                         ThemedButton {
                             text: qsTr("4:5 Feed")
                             variant: Math.abs(autoReframeCard.targetAspect - 0.8) < 0.01 ? "primary" : "ghost"
-                            buttonSize: 28
                             onClicked: autoReframeCard.targetAspect = 0.8
                         }
                     }
@@ -178,19 +175,16 @@ Item {
                         ThemedButton {
                             text: qsTr("Suave")
                             variant: autoReframeCard.motionMode === "smooth" ? "secondary" : "ghost"
-                            buttonSize: 28
                             onClicked: autoReframeCard.motionMode = "smooth"
                         }
                         ThemedButton {
                             text: qsTr("Ação / Rápido")
                             variant: autoReframeCard.motionMode === "fast" ? "secondary" : "ghost"
-                            buttonSize: 28
                             onClicked: autoReframeCard.motionMode = "fast"
                         }
                         ThemedButton {
                             text: qsTr("Estático")
                             variant: autoReframeCard.motionMode === "center" ? "secondary" : "ghost"
-                            buttonSize: 28
                             onClicked: autoReframeCard.motionMode = "center"
                         }
                     }
@@ -214,7 +208,6 @@ Item {
                             text: qsTr("Reenquadrar Clipe")
                             variant: "primary"
                             glyph: Theme.icons.smartphone
-                            buttonSize: 32
                             onClicked: {
                                 const res = EditorState.autoReframeSelectedClip(
                                     autoReframeCard.targetAspect,
@@ -233,7 +226,6 @@ Item {
                             text: qsTr("Timeline Toda")
                             variant: "secondary"
                             glyph: Theme.icons.layers
-                            buttonSize: 32
                             onClicked: {
                                 const res = EditorState.autoReframeTimeline(
                                     autoReframeCard.targetAspect,
