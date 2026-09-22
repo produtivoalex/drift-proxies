@@ -145,6 +145,7 @@ constexpr quint64 kDenoiseScanStreamId = 0xA5'11'5C'A4'00'00'00'02ull;
 constexpr quint64 kSegmentEncodeStreamId = 0xA5'11'5C'A4'00'00'00'03ull;
 constexpr quint64 kCutoutRenderStreamId = 0xA5'11'5C'A4'00'00'00'04ull;
 constexpr quint64 kFaceDetectStreamId = 0xA5'11'5C'A4'00'00'00'05ull;
+constexpr quint64 kReframeDetectStreamId = 0xA5'11'5C'A4'00'00'00'08ull;
 
 QString stabilizationCacheDir()
 {
@@ -24696,7 +24697,7 @@ QJsonObject AppController::mcpAutoReframe(int trackIndex, int clipIndex, double 
             for (int i = 0; i < sampleCount; ++i) {
                 const drift::TimeUs sourceUs = clip.srcIn + i * step;
                 const QImage frame = ClipReaderPool::instance().readVideoFrame(
-                    clip.path, QStringLiteral("reframe_detect"), sourceUs, 640, 360, QString(), 15, false,
+                    clip.path, kReframeDetectStreamId, sourceUs, 640, 360, QString(), 15, false,
                     clip.rotationCorrection);
                 if (frame.isNull()) continue;
                 QList<drift::FaceAnchors> faces = drift::FaceLandmarker::instance().detect(frame, previous.isEmpty() ? nullptr : &previous);

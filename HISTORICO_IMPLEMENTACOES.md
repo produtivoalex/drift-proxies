@@ -21,7 +21,7 @@ Este documento registra tecnicamente todas as modernizações, motores de alta p
 | **Módulo 8** | `9339abc` | **Transições & Movimentos de Câmera Virais** (Zoom Punch, Shake, Flash, Glitch) | `transitions/*`, `src/engine/TransitionCatalog.cpp` |
 | **Módulo 9** | `4486260` | **Auto-Reframe 9:16 Inteligente** com rastreamento facial e modos dinâmicos | `src/models/AppController.*`, `TransformInspector.qml` |
 | **Módulo 10** | `36da762` | **Narração de Texto em Voz (Text-to-Speech)** e sincronização de legendas | `src/engine/TtsSynthesizer.*`, `TextAssetsTab.qml` |
-| **Build Fixes** | `9e7e60d` / `6b23ec8` | **Resolução de Compilação MSVC** no GitHub Actions (C3892, CMake e templates) | `CMakeLists.txt`, `ProxyCache.*`, `ProxyManager.*` |
+| **Build Fixes** | `9e7e60d` / `38ac9f9` | **Resolução Definitiva MSVC** (FrameCompositor `useProxies`, ProxyCache, CMake) | `CMakeLists.txt`, `FrameCompositor.cpp`, `ProxyCache.*` |
 
 ---
 
