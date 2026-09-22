@@ -1,0 +1,37 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-win-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  meta:
+    name: Compute metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Compute version
+        id: meta
+        shell: bash
+        run: echo "version=0.0.0-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: Package Windows
+    needs: meta
+    uses: ./.github/workflows/package.yml
+    with:
+      version: ${{ needs.meta.outputs.version }}
+      platforms: windows
+    secrets: inherit
