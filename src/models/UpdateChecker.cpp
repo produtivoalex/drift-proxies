@@ -66,6 +66,8 @@ bool UpdateChecker::supported() const
 
 bool UpdateChecker::enabled() const
 {
+    if (QSettings().value(QStringLiteral("privacy/strictOfflineMode"), true).toBool())
+        return false;
     return QSettings().value(settingsKey("enabled"), true).toBool();
 }
 
@@ -157,6 +159,13 @@ void UpdateChecker::check(bool manual)
 {
     if (m_checking || !supported())
         return;
+
+    if (QSettings().value(QStringLiteral("privacy/strictOfflineMode"), true).toBool()) {
+        if (manual) {
+            setStatus(tr("Modo Isolamento Ativo: Conexões externas bloqueadas."));
+        }
+        return;
+    }
 
     setChecking(true);
     setStatus(QString());

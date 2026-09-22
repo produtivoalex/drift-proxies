@@ -277,6 +277,41 @@ Item {
             font.pixelSize: Theme.fontSizeXs
         }
 
+        Rectangle {
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            implicitHeight: privAudioRow.implicitHeight + Theme.spacingSm * 2
+            radius: Theme.radiusMd
+            color: Theme.darkMode ? "#14251a" : "#ebfbee"
+            border.width: Theme.borderWidth
+            border.color: Theme.darkMode ? "#245330" : "#bbf7d0"
+
+            Row {
+                id: privAudioRow
+                x: Theme.spacingMd
+                y: Theme.spacingSm
+                width: parent.width - Theme.spacingMd * 2
+                spacing: Theme.spacingSm
+
+                Text {
+                    text: "🛡️"
+                    font.pixelSize: Theme.fontSizeSm
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+
+                Text {
+                    width: parent.width - 24
+                    wrapMode: Text.WordWrap
+                    text: qsTr("Zero Cloud: Processado 100% no seu hardware local.")
+                    color: Theme.darkMode ? "#86efac" : "#166534"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeXs
+                    font.weight: Font.Medium
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+            }
+        }
+
         // The transcriber is an addon, and so is the runtime it needs; without
         // both there are no languages to list and nothing to run, so offer the
         // download in place of the controls.

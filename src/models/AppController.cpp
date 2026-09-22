@@ -992,6 +992,8 @@ AppController::AppController(AssetLibrary *assetLibrary, QObject *parent)
     // keyframe, and an animation appears where the user only meant to reposition something.
     m_autoKeyEnabled = settings.value(QStringLiteral("editor/autoKeyEnabled"), false).toBool();
     m_reopenLastProject = settings.value(QStringLiteral("editor/reopenLastProject"), false).toBool();
+    m_strictOfflineMode = settings.value(QStringLiteral("privacy/strictOfflineMode"), true).toBool();
+    m_customAiModelPath = settings.value(QStringLiteral("privacy/customAiModelPath")).toString();
     m_timelineOverviewVisible =
         settings.value(QStringLiteral("ui/timelineOverviewVisible"), true).toBool();
     // Checked means "allowed", not "forced": with the key unset the engine is in Auto and
@@ -5407,6 +5409,27 @@ void AppController::setReopenLastProject(bool enabled)
     QSettings settings;
     settings.setValue(QStringLiteral("editor/reopenLastProject"), m_reopenLastProject);
     emit reopenLastProjectChanged();
+}
+
+void AppController::setStrictOfflineMode(bool enabled)
+{
+    if (m_strictOfflineMode == enabled)
+        return;
+    m_strictOfflineMode = enabled;
+    QSettings settings;
+    settings.setValue(QStringLiteral("privacy/strictOfflineMode"), m_strictOfflineMode);
+    emit strictOfflineModeChanged();
+}
+
+void AppController::setCustomAiModelPath(const QString &path)
+{
+    const QString trimmed = path.trimmed();
+    if (m_customAiModelPath == trimmed)
+        return;
+    m_customAiModelPath = trimmed;
+    QSettings settings;
+    settings.setValue(QStringLiteral("privacy/customAiModelPath"), m_customAiModelPath);
+    emit customAiModelPathChanged();
 }
 
 void AppController::setVaapiZeroCopy(bool enabled)

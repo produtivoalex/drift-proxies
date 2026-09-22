@@ -70,6 +70,41 @@ Item {
                 color: Theme.panelBorder
             }
 
+            // Privacy assurance badge: Zero Cloud AI
+            Rectangle {
+                width: subtitleColumn.contentWidth
+                implicitHeight: privacyRow.implicitHeight + Theme.spacingSm * 2
+                radius: Theme.radiusMd
+                color: Theme.darkMode ? "#14251a" : "#ebfbee"
+                border.width: Theme.borderWidth
+                border.color: Theme.darkMode ? "#245330" : "#bbf7d0"
+
+                Row {
+                    id: privacyRow
+                    x: Theme.spacingMd
+                    y: Theme.spacingSm
+                    width: parent.width - Theme.spacingMd * 2
+                    spacing: Theme.spacingSm
+
+                    Text {
+                        text: "🛡️"
+                        font.pixelSize: Theme.fontSizeSm
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        width: parent.width - 24
+                        wrapMode: Text.WordWrap
+                        text: qsTr("IA 100% Local (Zero Cloud): Whisper executado no seu processador/placa de vídeo. Seus arquivos de áudio e vídeo jamais saem deste computador.")
+                        color: Theme.darkMode ? "#86efac" : "#166534"
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                        font.weight: Font.Medium
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+            }
+
             // Same transcriber as the clip inspector's Audio tab, surfaced here so
             // auto captions sit next to the manual subtitle route. It transcribes the
             // selected clip, so it stays disabled until a video or audio clip is picked.

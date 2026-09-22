@@ -9,6 +9,7 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QSet>
+#include <QSettings>
 #include <QStandardPaths>
 
 namespace GpuPackageParse {
@@ -337,6 +338,17 @@ QStringList defaultSearchPaths(const QString &envVar, const QString &subdir,
                                const QString &addonKind)
 {
     QStringList roots;
+
+    // Check user-configured offline local AI models folder first
+    QSettings settings;
+    const QString customModelPath = settings.value(QStringLiteral("privacy/customAiModelPath")).toString().trimmed();
+    if (!customModelPath.isEmpty()) {
+        roots.append(customModelPath);
+        if (!subdir.isEmpty())
+            roots.append(QDir(customModelPath).filePath(subdir));
+        if (!addonKind.isEmpty())
+            roots.append(QDir(customModelPath).filePath(addonKind));
+    }
 
     const QByteArray env = qgetenv(envVar.toUtf8().constData());
     if (!env.isEmpty()) {

@@ -324,6 +324,61 @@ Item {
             }
 
             SettingsSection {
+                title: qsTr("Privacidade & IA Local (Zero Cloud)")
+
+                ThemedSwitch {
+                    checked: EditorState.strictOfflineMode
+                    text: qsTr("Modo Isolamento Total (Sem Nuvem)")
+                    tooltip: qsTr("Garante que nenhuma requisição de rede ou telemetria ocorra. Todas as IAs (legendas, corte inteligente, remoção de fundo e áudio) operam 100% no seu dispositivo.")
+                    onToggled: EditorState.strictOfflineMode = checked
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: Theme.borderWidth
+                    color: Theme.panelBorder
+                }
+
+                ThemedLabel {
+                    text: qsTr("Pasta de Modelos de IA Locais (Offline)")
+                }
+
+                ThemedLabel {
+                    width: parent.width
+                    wrapMode: Text.Wrap
+                    font.pixelSize: Theme.fontSizeSm
+                    color: Theme.panelMuted
+                    text: EditorState.customAiModelPath.length > 0 
+                          ? EditorState.customAiModelPath 
+                          : qsTr("Padrão do sistema (detectado automaticamente)")
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: Theme.spacingMd
+
+                    ThemedButton {
+                        variant: "secondary"
+                        text: qsTr("Selecionar Pasta…")
+                        tooltip: qsTr("Escolha uma pasta no disco ou pendrive com modelos ONNX locais")
+                        onClicked: {
+                            var dir = FileDialogs.openDirectory(qsTr("Selecionar Pasta com Modelos de IA"))
+                            if (dir && dir.length > 0) {
+                                EditorState.customAiModelPath = dir
+                            }
+                        }
+                    }
+
+                    ThemedButton {
+                        variant: "ghost"
+                        text: qsTr("Restaurar Padrão")
+                        visible: EditorState.customAiModelPath.length > 0
+                        onClicked: EditorState.customAiModelPath = ""
+                    }
+                }
+            }
+
+            SettingsSection {
                 title: qsTr("App")
 
                 ThemedSwitch {

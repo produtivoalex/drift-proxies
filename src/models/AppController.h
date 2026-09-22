@@ -131,6 +131,10 @@ class AppController : public QObject
                    WRITE setTimelineOverviewVisible NOTIFY timelineOverviewVisibleChanged)
     // Opt-in: on launch, restore the last open project (saved .drift or unsaved recovery snapshot).
     Q_PROPERTY(bool reopenLastProject READ reopenLastProject WRITE setReopenLastProject NOTIFY reopenLastProjectChanged)
+    // 100% Local AI Isolation (Air-gapped / Zero Cloud): ensures zero network leakage and purely local processing.
+    Q_PROPERTY(bool strictOfflineMode READ strictOfflineMode WRITE setStrictOfflineMode NOTIFY strictOfflineModeChanged)
+    // Custom folder on disk / USB containing offline ONNX models (Whisper, Denoise, RVM, SAM2).
+    Q_PROPERTY(QString customAiModelPath READ customAiModelPath WRITE setCustomAiModelPath NOTIFY customAiModelPathChanged)
     // Preview zero-copy import: VAAPI dma-buf on Linux, D3D11 interop on Windows. Takes effect
     // after restart; hidden when this machine has no decode backend for either.
     Q_PROPERTY(bool vaapiZeroCopy READ vaapiZeroCopy WRITE setVaapiZeroCopy NOTIFY vaapiZeroCopyChanged)
@@ -436,6 +440,10 @@ public:
     // parent's row on the timeline and get no band of their own here.
     Q_INVOKABLE int timelineOverviewLaneCount() const;
     bool reopenLastProject() const { return m_reopenLastProject; }
+    bool strictOfflineMode() const { return m_strictOfflineMode; }
+    void setStrictOfflineMode(bool enabled);
+    QString customAiModelPath() const { return m_customAiModelPath; }
+    void setCustomAiModelPath(const QString &path);
     bool vaapiZeroCopy() const { return m_vaapiZeroCopy; }
     bool vaapiZeroCopySupported() const;
     bool mediaCodecZeroCopy() const { return m_mediaCodecZeroCopy; }
@@ -1701,6 +1709,8 @@ signals:
     void autoKeyEnabledChanged();
     void timelineOverviewVisibleChanged();
     void reopenLastProjectChanged();
+    void strictOfflineModeChanged();
+    void customAiModelPathChanged();
     void vaapiZeroCopyChanged();
     void mediaCodecZeroCopyChanged();
     void preferredGpuChanged();
@@ -2219,6 +2229,8 @@ protected:
     bool m_autoKeyEnabled = false;
     bool m_timelineOverviewVisible = true;
     bool m_reopenLastProject = false;
+    bool m_strictOfflineMode = true;
+    QString m_customAiModelPath;
     bool m_vaapiZeroCopy = false;
     bool m_mediaCodecZeroCopy = false;
     QString m_preferredGpu = QStringLiteral("auto");

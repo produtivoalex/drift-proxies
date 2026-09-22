@@ -15,6 +15,7 @@
 #include <QJsonObject>
 #include <QLocale>
 #include <QRegularExpression>
+#include <QSettings>
 #include <QThread>
 #include <QVariantMap>
 
@@ -137,6 +138,17 @@ QString languageDisplayName(const QString &code)
 
 QString resolveWhisperModelDir()
 {
+    // Check if the user specified a custom offline AI models directory in Settings
+    QSettings settings;
+    const QString customDir = settings.value(QStringLiteral("privacy/customAiModelPath")).toString().trimmed();
+    if (!customDir.isEmpty()) {
+        if (QFile::exists(QDir(customDir).filePath(QStringLiteral("encoder_model_fp16.onnx"))))
+            return customDir;
+        const QString sub = QDir(customDir).filePath(QStringLiteral("whisper-model"));
+        if (QFile::exists(QDir(sub).filePath(QStringLiteral("encoder_model_fp16.onnx"))))
+            return sub;
+    }
+
     const QStringList roots =
         GpuPackageParse::defaultSearchPaths(QStringLiteral("DRIFT_WHISPER_MODEL_DIR"),
                                             QStringLiteral("models/whisper-small"),
