@@ -47,7 +47,11 @@ Item {
                 || event.key === Qt.Key_Backspace)
                 && clipItem.selected) {
 
-            EditorState.deleteSelectedClip()
+            if (event.modifiers & Qt.ShiftModifier) {
+                EditorState.rippleDeleteSelectedClip()
+            } else {
+                EditorState.deleteSelectedClip()
+            }
             event.accepted = true
         }
     }
@@ -1238,6 +1242,11 @@ Item {
                     text: qsTr("Delete")
                     icon.name: Theme.icons.trash
                     onTriggered: EditorState.deleteSelectedClip()
+                }
+                ThemedMenuItem {
+                    text: qsTr("Ripple Delete")
+                    icon.name: Theme.icons.chevronsRightLeft
+                    onTriggered: EditorState.rippleDeleteSelectedClip()
                 }
             }
         }

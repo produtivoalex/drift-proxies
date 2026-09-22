@@ -1732,6 +1732,16 @@ PanelFrame {
                                                     onTriggered: EditorState.closeGap(trackRow.trackIndex,
                                                                                       gapItem.modelData.start)
                                                 }
+                                                ThemedMenuItem {
+                                                    text: qsTr("Close All Gaps on Track")
+                                                    icon.name: Theme.icons.foldHorizontal
+                                                    onTriggered: EditorState.closeAllGaps(trackRow.trackIndex)
+                                                }
+                                                ThemedMenuItem {
+                                                    text: qsTr("Close All Gaps on Timeline")
+                                                    icon.name: Theme.icons.layers
+                                                    onTriggered: EditorState.closeAllGaps(-1)
+                                                }
                                             }
                                         }
                                     }

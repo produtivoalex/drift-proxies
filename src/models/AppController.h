@@ -1078,6 +1078,7 @@ public:
     Q_INVOKABLE double sourceTimeAtPlayhead() const;
     Q_INVOKABLE double sourceTimeForClip(const QVariantMap &clip) const;
     Q_INVOKABLE void deleteSelectedClip();
+    Q_INVOKABLE void rippleDeleteSelectedClip();
     Q_INVOKABLE void duplicateSelectedClip();
     Q_INVOKABLE void moveClip(int trackIndex, int clipIndex, double newStart);
     Q_INVOKABLE void moveClipToTrack(int trackIndex, int clipIndex, int newTrackIndex, double newStart);
@@ -1085,6 +1086,8 @@ public:
     // width of the gap immediately following that position, closing it. Linked partner
     // clips on other tracks (e.g. a companion audio clip) follow along to stay in sync.
     Q_INVOKABLE void closeGap(int trackIndex, double gapStartSeconds);
+    // Closes all gaps on a specific track (or all tracks if trackIndex < 0), shifting clips left.
+    Q_INVOKABLE void closeAllGaps(int trackIndex = -1);
     Q_INVOKABLE void alignSelectedClipLeft();
     Q_INVOKABLE void alignSelectedClipRight();
     // Mirrors drift::Haptics::TrimState (Haptics.h), which has documented since it was written

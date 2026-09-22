@@ -94,6 +94,7 @@
 #include <QEventLoop>
 #include <QFile>
 #include <QFileInfo>
+#include <QMap>
 #include <QMimeDatabase>
 #include <QMutex>
 #include <QGuiApplication>
@@ -6408,6 +6409,11 @@ void AppController::deleteSelectedClip()
     if (m_selection.isEmpty())
         return;
 
+    if (m_rippleEnabled) {
+        rippleDeleteSelectedClip();
+        return;
+    }
+
     const drift::Project before = m_project;
     QList<QPair<int, int>> pairs = m_selection;
     expandSelectionWithLinkedPartners(m_project, pairs);
@@ -6433,6 +6439,76 @@ void AppController::deleteSelectedClip()
     pushProjectEdit(before, tr("Clip deleted"));
     clearSelection();
     finishEdit(tr("Clip deleted"));
+}
+
+void AppController::rippleDeleteSelectedClip()
+{
+    if (m_selection.isEmpty() && m_selectedTrack >= 0 && m_selectedClip >= 0)
+        m_selection = {qMakePair(m_selectedTrack, m_selectedClip)};
+    if (m_selection.isEmpty())
+        return;
+
+    const drift::Project before = m_project;
+    QList<QPair<int, int>> pairs = m_selection;
+    expandSelectionWithLinkedPartners(m_project, pairs);
+
+    // Group selected clip indices by track
+    QMap<int, QList<int>> trackToClips;
+    for (const QPair<int, int> &pair : pairs) {
+        if (isValidClipIndex(pair.first, pair.second))
+            trackToClips[pair.first].append(pair.second);
+    }
+
+    QSet<QString> removedClipIds;
+    QSet<QString> movedIds;
+
+    for (auto it = trackToClips.begin(); it != trackToClips.end(); ++it) {
+        const int trackIndex = it.key();
+        QList<int> clipIndices = it.value();
+        // Sort descending so removal does not invalidate earlier indices
+        std::sort(clipIndices.begin(), clipIndices.end(), [](int a, int b) { return a > b; });
+
+        drift::Track &track = m_project.tracks()[trackIndex];
+        for (int clipIdx : clipIndices) {
+            if (clipIdx < 0 || clipIdx >= track.clips.size())
+                continue;
+            const drift::Clip &clip = track.clips.at(clipIdx);
+            removedClipIds.insert(clip.id);
+            const drift::TimeUs startUs = clip.timelineStart;
+            const drift::TimeUs durUs = clip.timelineDuration;
+
+            track.clips.removeAt(clipIdx);
+
+            // Shift all subsequent clips on this track left by durUs
+            for (drift::Clip &subsequent : track.clips) {
+                if (subsequent.timelineStart >= startUs) {
+                    subsequent.timelineStart = qMax<drift::TimeUs>(0, subsequent.timelineStart - durUs);
+                    movedIds.insert(subsequent.id);
+                }
+            }
+        }
+    }
+
+    // Sync linked partner clips for any clips that were shifted
+    for (const drift::Track &track : m_project.tracks()) {
+        for (const drift::Clip &clip : track.clips) {
+            if (movedIds.contains(clip.id))
+                syncLinkedPartnersFrom(m_project, clip, movedIds);
+        }
+    }
+
+    // Remove orphaned transitions
+    for (drift::Track &track : m_project.tracks()) {
+        for (int i = track.transitions.size() - 1; i >= 0; --i) {
+            const drift::Transition &transition = track.transitions.at(i);
+            if (removedClipIds.contains(transition.fromClipId) || removedClipIds.contains(transition.toClipId))
+                track.transitions.removeAt(i);
+        }
+    }
+
+    pushProjectEdit(before, tr("Ripple delete"));
+    clearSelection();
+    finishEdit(tr("Ripple delete"));
 }
 
 void AppController::moveClip(int trackIndex, int clipIndex, double newStart)
@@ -6553,6 +6629,52 @@ void AppController::closeGap(int trackIndex, double gapStartSeconds)
 
     pushProjectEdit(before, tr("Close gap"));
     finishEdit(tr("Close gap"));
+}
+
+void AppController::closeAllGaps(int trackIndex)
+{
+    const drift::Project before = m_project;
+    bool anyMoved = false;
+
+    auto processTrack = [&](int tIdx) {
+        if (tIdx < 0 || tIdx >= m_project.tracks().size())
+            return;
+        drift::Track &track = m_project.tracks()[tIdx];
+        if (track.clips.size() <= 1)
+            return;
+
+        std::sort(track.clips.begin(), track.clips.end(), [](const drift::Clip &a, const drift::Clip &b) {
+            return a.timelineStart < b.timelineStart;
+        });
+
+        drift::TimeUs currentPos = track.clips[0].timelineStart;
+        QSet<QString> movedIds;
+        for (int i = 0; i < track.clips.size(); ++i) {
+            if (track.clips[i].timelineStart > currentPos) {
+                track.clips[i].timelineStart = currentPos;
+                movedIds.insert(track.clips[i].id);
+                anyMoved = true;
+            }
+            currentPos = track.clips[i].timelineStart + track.clips[i].timelineDuration;
+        }
+
+        for (const drift::Clip &clip : track.clips) {
+            if (movedIds.contains(clip.id))
+                syncLinkedPartnersFrom(m_project, clip, movedIds);
+        }
+    };
+
+    if (trackIndex >= 0) {
+        processTrack(trackIndex);
+    } else {
+        for (int i = 0; i < m_project.tracks().size(); ++i)
+            processTrack(i);
+    }
+
+    if (anyMoved) {
+        pushProjectEdit(before, tr("Close all gaps"));
+        finishEdit(tr("Close all gaps"));
+    }
 }
 
 void AppController::splitAtPlayhead()

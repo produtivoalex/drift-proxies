@@ -144,6 +144,12 @@ Item {
             onClicked: EditorState.deleteSelectedClip()
         }
         IconButton {
+            glyph: Theme.icons.chevronsRightLeft
+            variant: "text"
+            tooltip: qsTr("Ripple delete (Shift+Delete)")
+            onClicked: EditorState.rippleDeleteSelectedClip()
+        }
+        IconButton {
             glyph: Theme.icons.copy
             variant: "text"
             tooltip: toolbar.withShortcut(qsTr("Copy selection"), "copy")
