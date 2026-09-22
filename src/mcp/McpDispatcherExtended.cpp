@@ -1632,7 +1632,9 @@ QJsonObject McpDispatcher::applyOneExtended(const QString &tool, const QJsonObje
         const QString language = args.value(QStringLiteral("language")).toString();
         const int maxWords =
             static_cast<int>(jsonNumber(args.value(QStringLiteral("max_words_per_cue")), 0.0));
-        m_controller->generateSubtitlesForClip(ref.track, ref.clip, language, maxWords);
+        const QString stylePreset = args.value(QStringLiteral("style")).toString();
+        const bool allCaps = args.contains(QStringLiteral("all_caps")) ? jsonBool(args.value(QStringLiteral("all_caps"))) : true;
+        m_controller->generateSubtitlesForClip(ref.track, ref.clip, language, maxWords, stylePreset, allCaps);
         return ok(clipFeedback(ref, {{QStringLiteral("started"), true}}));
     }
 

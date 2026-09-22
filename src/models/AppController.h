@@ -571,9 +571,12 @@ public:
     QString mcpCursorSnippet() const;
     QString mcpClaudeCommand() const;
     QString mcpStdioSnippet() const;
+    QString mcpAntigravitySnippet() const;
     Q_INVOKABLE void copyMcpCursorSnippet();
     Q_INVOKABLE void copyMcpClaudeCommand();
     Q_INVOKABLE void copyMcpStdioSnippet();
+    Q_INVOKABLE void copyMcpAntigravitySnippet();
+    Q_INVOKABLE bool installMcpConfigToGemini();
     Q_INVOKABLE void copyMcpAgentGuide();
     Q_INVOKABLE void rotateMcpToken();
     bool mcpStartOnLaunch() const { return m_mcpStartOnLaunch; }

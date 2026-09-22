@@ -116,6 +116,33 @@ Column {
 
         ThemedButton {
             width: parent.width
+            variant: "primary"
+            glyph: Theme.icons.check
+            text: qsTr("Ativar no Antigravity IDE (1-Clique)")
+            tooltip: qsTr("Instala automaticamente a configuração MCP do Drift no Antigravity IDE (.gemini/config/mcp_config.json)")
+            onClicked: {
+                if (EditorState.installMcpConfigToGemini()) {
+                    Toasts.success(qsTr("MCP do Drift configurado com sucesso no Antigravity!"))
+                } else {
+                    Toasts.error(qsTr("Falha ao salvar configuração MCP"))
+                }
+            }
+        }
+
+        ThemedButton {
+            width: parent.width
+            variant: "secondary"
+            glyph: Theme.icons.copy
+            text: qsTr("Copiar JSON para Antigravity / Cursor / VS Code")
+            tooltip: qsTr("Copiar bloco de configuração mcpServers para a área de transferência")
+            onClicked: {
+                EditorState.copyMcpAntigravitySnippet()
+                Toasts.success(qsTr("JSON de configuração MCP copiado!"))
+            }
+        }
+
+        ThemedButton {
+            width: parent.width
             variant: "secondary"
             glyph: Theme.icons.copy
             text: qsTr("Copy for Cursor")

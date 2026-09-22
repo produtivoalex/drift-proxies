@@ -755,7 +755,7 @@ AppController::AppController(AssetLibrary *assetLibrary, QObject *parent)
     // for a stdio-only headless run. applyMcpStartOnLaunch() is the GUI-only opt-in,
     // called once from Main.qml's own startup sequence.
     m_mcpStartOnLaunch =
-        QSettings().value(QStringLiteral("mcp/startOnLaunch"), false).toBool();
+        QSettings().value(QStringLiteral("mcp/startOnLaunch"), true).toBool();
     connect(&m_undoStack, &QUndoStack::indexChanged, this, &AppController::undoStackChanged);
     connect(&m_undoStack, &QUndoStack::indexChanged, this, [this] {
         m_timelineModel.refresh();
@@ -21323,6 +21323,11 @@ QString AppController::mcpStdioSnippet() const
     return QString::fromUtf8(QJsonDocument(root).toJson(QJsonDocument::Indented));
 }
 
+QString AppController::mcpAntigravitySnippet() const
+{
+    return mcpCursorSnippet();
+}
+
 void AppController::setMcpEnabled(bool enabled)
 {
     if (!m_mcp)
@@ -21388,6 +21393,51 @@ void AppController::copyMcpClaudeCommand()
 void AppController::copyMcpStdioSnippet()
 {
     copyToClipboard(mcpStdioSnippet());
+}
+
+void AppController::copyMcpAntigravitySnippet()
+{
+    copyToClipboard(mcpAntigravitySnippet());
+}
+
+bool AppController::installMcpConfigToGemini()
+{
+    const QString homeDir = QDir::homePath();
+    const QString configDir = QDir(homeDir).filePath(QStringLiteral(".gemini/config"));
+    QDir().mkpath(configDir);
+    const QString filePath = QDir(configDir).filePath(QStringLiteral("mcp_config.json"));
+
+    QJsonObject rootObj;
+    QFile existingFile(filePath);
+    if (existingFile.exists() && existingFile.open(QIODevice::ReadOnly)) {
+        QJsonDocument doc = QJsonDocument::fromJson(existingFile.readAll());
+        if (doc.isObject())
+            rootObj = doc.object();
+        existingFile.close();
+    }
+
+    QJsonObject serversObj = rootObj.value(QStringLiteral("mcpServers")).toObject();
+
+    QJsonObject driftServer;
+    if (m_mcp && m_mcp->running()) {
+        driftServer.insert(QStringLiteral("url"), mcpUrl());
+        QJsonObject headers;
+        headers.insert(QStringLiteral("Authorization"), QStringLiteral("Bearer %1").arg(mcpToken()));
+        driftServer.insert(QStringLiteral("headers"), headers);
+    } else {
+        driftServer.insert(QStringLiteral("command"), QCoreApplication::applicationFilePath());
+        driftServer.insert(QStringLiteral("args"), QJsonArray{QStringLiteral("--mcp-stdio")});
+    }
+
+    serversObj.insert(QStringLiteral("drift"), driftServer);
+    rootObj.insert(QStringLiteral("mcpServers"), serversObj);
+
+    if (existingFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        existingFile.write(QJsonDocument(rootObj).toJson(QJsonDocument::Indented));
+        existingFile.close();
+        return true;
+    }
+    return false;
 }
 
 QString AppController::mcpAgentGuide() const

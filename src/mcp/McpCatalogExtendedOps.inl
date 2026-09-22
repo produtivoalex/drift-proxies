@@ -662,10 +662,13 @@
           "Transcribe a clip's audio with Whisper into a new subtitle clip. Async: returns "
           "{started:true} immediately — poll "
           "inspect({detail:true}).jobs.subtitleGen.{active,progress,status} until active is false. Cancel "
-          "with cancel_subtitle_generation. For word-by-word captions pass max_words_per_cue:1. Run "
+          "with cancel_subtitle_generation. For word-by-word captions pass max_words_per_cue:1. Pass "
+          "style:\"tiktok-viral-yellow\", \"tiktok-neon-green\", \"tiktok-cyan-glow\", \"hormozi-beast\", \"reels-pill-box\", or \"shorts-single-word\" for animated viral captions. Pass all_caps:true (default) for uppercase. Run "
           "this AFTER remove_silence — silence removal shifts the timeline and would invalidate cue "
           "times.",
           objectSchema(mergeProps({{QStringLiteral("language"), stringProp(QStringLiteral("Language id from list_whisper_languages; omitted auto-detects"))},
+                                   {QStringLiteral("style"), stringProp(QStringLiteral("Preset style for viral TikTok/Reels captions (e.g. tiktok-viral-yellow, hormozi-beast, tiktok-neon-green, reels-pill-box)"))},
+                                   {QStringLiteral("all_caps"), boolProp(QStringLiteral("Convert caption text to ALL CAPS (default: true)"))},
                                    {QStringLiteral("max_words_per_cue"), numberProp(QStringLiteral("Cap words per caption; omit or 0 for the recommended length. Short caps drift slightly out of sync."))}},
                                   clipRefProps())) },
         { "cancel_subtitle_generation", "subtitles", "Abort a running generate_subtitles",
