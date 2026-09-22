@@ -27,7 +27,7 @@ public:
 
     // Returns the path of a valid proxy for sourcePath, or empty if none exists or if
     // the source file has changed since the proxy was generated.
-    QString lookup(const QString &sourcePath) const;
+    QString lookup(const QString &sourcePath);
 
     // Registers a newly generated proxy for sourcePath.
     void insert(const QString &sourcePath, const QString &proxyPath, int proxyWidth, int proxyHeight);
@@ -62,7 +62,7 @@ private:
     void saveLocked() const;
 
     mutable QMutex m_mutex;
-    QHash<QString, Entry> m_entries; // absolute source path -> proxy entry
+    mutable QHash<QString, Entry> m_entries; // absolute source path -> proxy entry
 };
 
 } // namespace drift

@@ -133,7 +133,7 @@ void ProxyManager::processNextJob()
     emit proxyStarted(job.sourcePath);
 
     // Run transcoding on Qt background threadpool with lowest priority
-    (void)QtConcurrent::run(QThreadPool::globalInstance(), [this, job]() {
+    QThreadPool::globalInstance()->start([this, job]() {
         const QSize targetSize = ProxyCache::targetProxySize(job.width, job.height);
         const QString outPath = ProxyCache::newProxyPath(job.sourcePath);
         QString error;

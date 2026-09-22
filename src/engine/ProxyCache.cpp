@@ -96,7 +96,7 @@ QSize ProxyCache::targetProxySize(int srcWidth, int srcHeight)
     return {targetW, targetH};
 }
 
-QString ProxyCache::lookup(const QString &sourcePath) const
+QString ProxyCache::lookup(const QString &sourcePath)
 {
     if (sourcePath.isEmpty())
         return {};
