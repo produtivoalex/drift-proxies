@@ -1092,6 +1092,11 @@ public:
     Q_INVOKABLE int removeSilenceFromClip(int trackIndex, int clipIndex, double threshold = 0.02, double minDuration = 0.35, double padding = 0.08);
     Q_INVOKABLE int removeSilenceFromSelectedClip(double threshold = 0.02, double minDuration = 0.35, double padding = 0.08);
     Q_INVOKABLE int removeSilenceFromTrack(int trackIndex, double threshold = 0.02, double minDuration = 0.35, double padding = 0.08);
+    // Built-in Viral Sound Effects (SFX) library
+    Q_INVOKABLE QVariantList builtinSfxCategories() const;
+    Q_INVOKABLE QVariantList builtinSfxList(const QString &category = QString()) const;
+    Q_INVOKABLE QString builtinSfxPath(const QString &sfxId) const;
+    Q_INVOKABLE void addSfxClip(const QString &sfxId, double atSeconds = -1.0);
     Q_INVOKABLE void alignSelectedClipLeft();
     Q_INVOKABLE void alignSelectedClipRight();
     // Mirrors drift::Haptics::TrimState (Haptics.h), which has documented since it was written

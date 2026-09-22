@@ -46,6 +46,7 @@
 #include "engine/GpuPreference.h"
 #include "engine/MediaThumbnail.h"
 #include "engine/AudioFileWriter.h"
+#include "engine/SfxCatalog.h"
 #include "engine/DeepFilterDenoiser.h"
 #include "engine/ObjectDetector.h"
 #include "engine/OrtRuntime.h"
@@ -24340,6 +24341,71 @@ int AppController::removeSilenceFromTrack(int trackIndex, double threshold, doub
 {
     const QJsonObject res = mcpRemoveSilence(trackIndex, -1, threshold, minDuration, padding);
     return res.value(QStringLiteral("removed")).toArray().size();
+}
+
+QVariantList AppController::builtinSfxCategories() const
+{
+    QVariantList list;
+    for (const auto &cat : sfxCategories()) {
+        QVariantMap map;
+        map.insert(QStringLiteral("id"), cat.id);
+        map.insert(QStringLiteral("label"), cat.label);
+        list.append(map);
+    }
+    return list;
+}
+
+QVariantList AppController::builtinSfxList(const QString &category) const
+{
+    QVariantList list;
+    for (const auto &item : sfxCatalog()) {
+        if (!category.isEmpty() && item.category != category)
+            continue;
+        QVariantMap map;
+        map.insert(QStringLiteral("id"), item.id);
+        map.insert(QStringLiteral("label"), item.label);
+        map.insert(QStringLiteral("category"), item.category);
+        map.insert(QStringLiteral("duration"), item.durationSeconds);
+        map.insert(QStringLiteral("durationFormatted"), QString::asprintf("%.2fs", item.durationSeconds));
+        map.insert(QStringLiteral("icon"), item.icon);
+        list.append(map);
+    }
+    return list;
+}
+
+QString AppController::builtinSfxPath(const QString &sfxId) const
+{
+    const QString path = sfxFilePath(sfxId);
+    if (path.isEmpty())
+        return {};
+    return QUrl::fromLocalFile(path).toString();
+}
+
+void AppController::addSfxClip(const QString &sfxId, double atSeconds)
+{
+    const QString path = sfxFilePath(sfxId);
+    if (path.isEmpty() || !m_assetLibrary)
+        return;
+
+    const QStringList ids = m_assetLibrary->importLocalPaths({path});
+    if (ids.isEmpty())
+        return;
+
+    const int assetIdx = m_assetLibrary->indexOfId(ids.first());
+    if (assetIdx < 0)
+        return;
+
+    if (atSeconds < 0.0) {
+        addClipFromAsset(assetIdx);
+    } else {
+        int trackIndex = drift::defaultTrackForClipType(m_project, drift::ClipType::Audio);
+        if (trackIndex < 0)
+            trackIndex = drift::ensureTrackForClipType(m_project, drift::ClipType::Audio, false);
+        if (trackIndex >= 0)
+            addClipFromAssetAt(assetIdx, trackIndex, atSeconds);
+        else
+            addClipFromAsset(assetIdx);
+    }
 }
 
 QJsonObject AppController::mcpAnalyzeLoudness(int trackIndex, int clipIndex, double startSeconds,

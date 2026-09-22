@@ -598,6 +598,8 @@ add_library(driftengine STATIC
     src/engine/EmojiCatalog.cpp
     src/engine/EmojiTable.h
     src/engine/EmojiTable.cpp
+    src/engine/SfxCatalog.h
+    src/engine/SfxCatalog.cpp
     src/engine/TextLayout.h
     src/engine/TextLayout.cpp
     src/engine/VectorClipRenderer.h
