@@ -26,6 +26,16 @@ Item {
         return options
     }
 
+    readonly property var captionStyleOptions: [
+        { label: qsTr("TikTok Amarelo Viral (Recomendado)"), id: "tiktok-viral-yellow" },
+        { label: qsTr("TikTok Verde Neon"), id: "tiktok-neon-green" },
+        { label: qsTr("TikTok Ciano Glow"), id: "tiktok-cyan-glow" },
+        { label: qsTr("Hormozi / Beast Style"), id: "hormozi-beast" },
+        { label: qsTr("Reels Pill Highlight"), id: "reels-pill-box" },
+        { label: qsTr("Shorts 1 Palavra"), id: "shorts-single-word" },
+        { label: qsTr("Padrão Clássico"), id: "subtitle" }
+    ]
+
     height: audioTabColumn.height
     implicitHeight: audioTabColumn.height
 
@@ -320,6 +330,27 @@ Item {
             font.pixelSize: Theme.fontSizeXs
         }
 
+        ThemedComboBox {
+            id: subtitleStyleBox
+            visible: parent.whisperReady
+                     && (root.clipKind === "audio" || root.clipKind === "video")
+            width: parent.width
+            enabled: !EditorState.subtitleGenerating
+            textRole: "label"
+            valueRole: "id"
+            model: root.captionStyleOptions
+            Component.onCompleted: currentIndex = 0
+        }
+
+        ThemedCheckBox {
+            id: subtitleAllCapsCheck
+            visible: parent.whisperReady
+                     && (root.clipKind === "audio" || root.clipKind === "video")
+            text: qsTr("Texto em MAIÚSCULAS (Estilo Reels/TikTok)")
+            checked: true
+            enabled: !EditorState.subtitleGenerating
+        }
+
         ThemedButton {
             visible: parent.whisperReady
                      && (root.clipKind === "audio" || root.clipKind === "video")
@@ -332,9 +363,12 @@ Item {
                 const lang = subtitleLanguageBox.currentValue !== undefined
                              ? subtitleLanguageBox.currentValue
                              : ""
+                const style = subtitleStyleBox.currentValue !== undefined
+                              ? subtitleStyleBox.currentValue
+                              : "tiktok-viral-yellow"
                 EditorState.generateSubtitlesForClip(
                     EditorState.selectedTrack, EditorState.selectedClip, lang,
-                    subtitleWordsBox.currentValue)
+                    subtitleWordsBox.currentValue, style, subtitleAllCapsCheck.checked)
             }
         }
 

@@ -819,7 +819,9 @@ public:
     // maxWordsPerCue caps words per caption; 0 keeps the recommended (character-width) packing.
     Q_INVOKABLE void generateSubtitlesForClip(int trackIndex, int clipIndex,
                                               const QString &language = QString(),
-                                              int maxWordsPerCue = 0);
+                                              int maxWordsPerCue = 0,
+                                              const QString &stylePreset = QStringLiteral("tiktok-viral-yellow"),
+                                              bool allCaps = true);
     Q_INVOKABLE void cancelSubtitleGeneration();
     Q_INVOKABLE QVariantList whisperLanguages();
     // points: [{x, y, include}] with x/y normalized to the source frame.
@@ -1972,7 +1974,9 @@ protected:
                               const QString &matteFgrPath,
                               drift::TimeUs matteSrcOffsetUs, const QString &outputMode);
     void finalizeGeneratedSubtitles(drift::TimeUs timelineStart, drift::TimeUs timelineDuration,
-                                    const QList<drift::SubtitleCue> &cues);
+                                    const QList<drift::SubtitleCue> &cues,
+                                    const QString &stylePreset = QStringLiteral("tiktok-viral-yellow"),
+                                    bool allCaps = true);
     void finalizeDenoise(const QString &clipId, const QString &audioPath);
     void watchStabilizeProgress(QProcess *process, const QString &clipId, qint64 durationUs,
                                 double rangeFrom, double rangeTo);

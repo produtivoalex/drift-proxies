@@ -7474,7 +7474,8 @@ QVariantList AppController::whisperLanguages()
 }
 
 void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, const QString &language,
-                                             int maxWordsPerCue)
+                                             int maxWordsPerCue, const QString &stylePreset,
+                                             bool allCaps)
 {
     if (m_subtitleGenerating) {
         setLastMessage(tr("Subtitle generation already in progress"), QStringLiteral("warning"));
@@ -7518,7 +7519,7 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
     const int wordsPerCue = std::max(0, maxWordsPerCue);
 
     (void)QtConcurrent::run([this, path, srcIn, srcOut, timelineStart, timelineDuration, speed,
-                             reverse, languageCode, wordsPerCue]() {
+                             reverse, languageCode, wordsPerCue, stylePreset, allCaps]() {
         auto setProgress = [this](double fraction, const QString &status) {
             QMetaObject::invokeMethod(
                 this,
@@ -7533,11 +7534,11 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
                 Qt::QueuedConnection);
         };
 
-        auto finish = [this, timelineStart, timelineDuration](bool ok, const QString &message,
+        auto finish = [this, timelineStart, timelineDuration, stylePreset, allCaps](bool ok, const QString &message,
                                                               const QList<drift::SubtitleCue> &cues) {
             QMetaObject::invokeMethod(
                 this,
-                [this, ok, message, cues, timelineStart, timelineDuration]() {
+                [this, ok, message, cues, timelineStart, timelineDuration, stylePreset, allCaps]() {
                     m_subtitleGenerating = false;
                     emit subtitleGeneratingChanged();
                     m_subtitleGenProgress = ok ? 1.0 : 0.0;
@@ -7549,7 +7550,7 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
                         emit subtitleGenerationFinished(false, message);
                         return;
                     }
-                    finalizeGeneratedSubtitles(timelineStart, timelineDuration, cues);
+                    finalizeGeneratedSubtitles(timelineStart, timelineDuration, cues, stylePreset, allCaps);
                 },
                 Qt::QueuedConnection);
         };
@@ -11099,12 +11100,14 @@ void AppController::finalizeDenoise(const QString &clipId, const QString &audioP
 
 void AppController::finalizeGeneratedSubtitles(drift::TimeUs timelineStart,
                                                drift::TimeUs timelineDuration,
-                                               const QList<drift::SubtitleCue> &cues)
+                                               const QList<drift::SubtitleCue> &cues,
+                                               const QString &stylePreset,
+                                               bool allCaps)
 {
     const drift::Project before = m_project;
     const int trackIndex = drift::ensureTrackForClipType(m_project, drift::ClipType::Subtitle, true);
     qWarning() << "[subtitles] finalize: trackIndex" << trackIndex << "cues" << cues.size()
-               << "start" << timelineStart << "dur" << timelineDuration;
+               << "start" << timelineStart << "dur" << timelineDuration << "preset" << stylePreset << "allCaps" << allCaps;
     if (trackIndex < 0)
         return;
 
@@ -11116,11 +11119,34 @@ void AppController::finalizeGeneratedSubtitles(drift::TimeUs timelineStart,
     clip.timelineDuration = timelineDuration;
     clip.srcIn = 0;
     clip.srcOut = timelineDuration;
-    if (const std::optional<drift::TextStyle> preset = drift::textStyleForPresetId(QStringLiteral("subtitle")))
+
+    const QString presetToUse = stylePreset.trimmed().isEmpty() ? QStringLiteral("tiktok-viral-yellow") : stylePreset;
+    if (const std::optional<drift::TextStyle> preset = drift::textStyleForPresetId(presetToUse)) {
         clip.textStyle = *preset;
+    } else if (const std::optional<drift::TextStyle> fallback = drift::textStyleForPresetId(QStringLiteral("subtitle"))) {
+        clip.textStyle = *fallback;
+    }
+
     applyDefaultVisualLayout(clip, m_project.width(), m_project.height());
-    clip.subtitleCues = cues;
-    clip.name = drift::subtitleClipName(cues);
+
+    // For vertical / portrait formats (TikTok / Reels 9:16), position subtitle comfortably above bottom overlay
+    if (m_project.height() > m_project.width()) {
+        const double w = m_project.width() * 0.90;
+        const double h = m_project.height() * 0.22;
+        const double x = (m_project.width() - w) / 2.0;
+        const double y = m_project.height() * 0.68;
+        setClipLayoutPixels(clip, x, y, w, h);
+    }
+
+    QList<drift::SubtitleCue> processedCues = cues;
+    if (allCaps) {
+        for (drift::SubtitleCue &cue : processedCues) {
+            cue.text = cue.text.toUpper();
+        }
+    }
+
+    clip.subtitleCues = processedCues;
+    clip.name = drift::subtitleClipName(processedCues);
 
     track.clips.append(clip);
     const int newClipIndex = track.clips.size() - 1;

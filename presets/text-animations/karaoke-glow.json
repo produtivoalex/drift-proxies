@@ -1,0 +1,36 @@
+{
+  "format": 1,
+  "id": "karaoke-glow",
+  "label": "Karaoke glow",
+  "category": "word",
+  "sampleText": "Glow along",
+  "slots": [
+    "loop"
+  ],
+  "order": 510,
+  "params": [
+    {
+      "id": "scale",
+      "type": "scalar",
+      "label": "Scale",
+      "unit": "%",
+      "min": 100,
+      "max": 200,
+      "step": 1,
+      "default": 115
+    }
+  ],
+  "animators": [
+    {
+      "selectors": [
+        {
+          "driver": "karaoke",
+          "domain": "word"
+        }
+      ],
+      "props": {
+        "scale": "{scale}"
+      }
+    }
+  ]
+}

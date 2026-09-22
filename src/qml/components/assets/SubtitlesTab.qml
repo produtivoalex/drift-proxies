@@ -127,6 +127,25 @@ Item {
                 font.pixelSize: Theme.fontSizeXs
             }
 
+            ThemedComboBox {
+                id: captionStyleBox
+                visible: root.whisperReady
+                width: subtitleColumn.contentWidth
+                enabled: root.captionTargetReady && !EditorState.subtitleGenerating
+                textRole: "label"
+                valueRole: "id"
+                model: root.captionStyleOptions
+                Component.onCompleted: currentIndex = 0
+            }
+
+            ThemedCheckBox {
+                id: captionAllCapsCheck
+                visible: root.whisperReady
+                text: qsTr("Texto em MAIÚSCULAS (Estilo Reels/TikTok)")
+                checked: true
+                enabled: root.captionTargetReady && !EditorState.subtitleGenerating
+            }
+
             ThemedButton {
                 visible: root.whisperReady && !EditorState.subtitleGenerating
                 width: subtitleColumn.contentWidth
@@ -141,9 +160,12 @@ Item {
                     const lang = captionLanguageBox.currentValue !== undefined
                                  ? captionLanguageBox.currentValue
                                  : ""
+                    const style = captionStyleBox.currentValue !== undefined
+                                  ? captionStyleBox.currentValue
+                                  : "tiktok-viral-yellow"
                     EditorState.generateSubtitlesForClip(
                         EditorState.selectedTrack, EditorState.selectedClip, lang,
-                        captionWordsBox.currentValue)
+                        captionWordsBox.currentValue, style, captionAllCapsCheck.checked)
                 }
             }
 
@@ -214,6 +236,16 @@ Item {
             options.push({ label: qsTr("%1 words per caption").arg(n), words: n })
         return options
     }
+
+    readonly property var captionStyleOptions: [
+        { label: qsTr("TikTok Amarelo Viral (Recomendado)"), id: "tiktok-viral-yellow" },
+        { label: qsTr("TikTok Verde Neon"), id: "tiktok-neon-green" },
+        { label: qsTr("TikTok Ciano Glow"), id: "tiktok-cyan-glow" },
+        { label: qsTr("Hormozi / Beast Style"), id: "hormozi-beast" },
+        { label: qsTr("Reels Pill Highlight"), id: "reels-pill-box" },
+        { label: qsTr("Shorts 1 Palavra"), id: "shorts-single-word" },
+        { label: qsTr("Padrão Clássico"), id: "subtitle" }
+    ]
 
     property bool whisperReady: Addons.hasKind("whisper-model")
                                 && Addons.runtimeAvailable()
