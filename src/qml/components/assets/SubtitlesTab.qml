@@ -64,6 +64,16 @@ Item {
                 }
             }
 
+            ThemedButton {
+                text: qsTr("Narração de Texto em Voz (TTS)")
+                variant: "secondary"
+                glyph: Theme.icons.audioLines
+                tooltip: qsTr("Crie narração falada e gere legendas animadas na aba de Texto")
+                onClicked: {
+                    Toasts.info(qsTr("Acesse a aba “Texto” acima para digitar a narração e sincronizar as legendas!"))
+                }
+            }
+
             Rectangle {
                 width: subtitleColumn.contentWidth
                 height: Theme.borderWidth

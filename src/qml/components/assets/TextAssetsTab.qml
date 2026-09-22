@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls.Basic
+import QtMultimedia
 import Drift
 import ".."
 
@@ -21,6 +22,34 @@ Item {
     readonly property var userPresets: {
         void root.userPresetsTick
         return EditorState.userTextPresets()
+    }
+
+    readonly property var ttsVoices: EditorState.ttsAvailableVoices()
+    property bool isTtsAudioPlaying: false
+
+    MediaPlayer {
+        id: ttsPreviewPlayer
+        audioOutput: AudioOutput { id: ttsAudioOut }
+        onPlaybackStateChanged: {
+            if (playbackState === MediaPlayer.StoppedState)
+                root.isTtsAudioPlaying = false
+        }
+    }
+
+    function toggleTtsPreview(text, voiceId, rate) {
+        if (root.isTtsAudioPlaying) {
+            ttsPreviewPlayer.stop()
+            root.isTtsAudioPlaying = false
+            return
+        }
+        if (text.trim().length === 0) return
+        const path = EditorState.ttsPreviewAudio(text.trim(), voiceId, rate, 1.0)
+        if (path.length > 0) {
+            root.isTtsAudioPlaying = true
+            ttsPreviewPlayer.stop()
+            ttsPreviewPlayer.source = path
+            ttsPreviewPlayer.play()
+        }
     }
 
     Connections {
@@ -56,6 +85,179 @@ Item {
             width: parent.width - Theme.pagePadding * 2
             spacing: Theme.spacingMd
             topPadding: Theme.pagePadding
+
+            // --- CapCut-Style Text-to-Speech (TTS) Card ---
+            Rectangle {
+                id: ttsCard
+                width: parent.width
+                implicitHeight: ttsCardCol.implicitHeight + Theme.spacingLg * 2
+                radius: Theme.radiusMd
+                color: Theme.darkMode ? "#131c2e" : "#eff6ff"
+                border.width: Theme.borderWidth
+                border.color: Theme.darkMode ? "#1e3a8a" : "#bfdbfe"
+
+                Column {
+                    id: ttsCardCol
+                    x: Theme.spacingLg
+                    y: Theme.spacingLg
+                    width: parent.width - Theme.spacingLg * 2
+                    spacing: Theme.spacingSm
+
+                    Row {
+                        width: parent.width
+                        spacing: Theme.spacingSm
+
+                        IconGlyph {
+                            glyph: Theme.icons.audioLines
+                            iconSize: 16
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Text {
+                            text: qsTr("Narração de Texto em Voz (Text-to-Speech)")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.weight: Font.DemiBold
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Item {
+                            width: 1
+                            height: 1
+                        }
+
+                        Rectangle {
+                            height: 20
+                            width: ttsBadgeText.implicitWidth + 12
+                            radius: 10
+                            color: Theme.darkMode ? "#1e293b" : "#e2e8f0"
+                            anchors.verticalCenter: parent.verticalCenter
+
+                            Text {
+                                id: ttsBadgeText
+                                text: qsTr("100% Offline")
+                                color: Theme.mutedForeground
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 10
+                                anchors.centerIn: parent
+                            }
+                        }
+                    }
+
+                    Text {
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                        text: qsTr("Gere vozes realistas nativas ou neurais sem nuvem. O Drift sintetiza o áudio e sincroniza as legendas animadas na agulha com 1 clique.")
+                        color: Theme.mutedForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                    }
+
+                    ThemedTextArea {
+                        id: ttsInputArea
+                        width: parent.width
+                        implicitHeight: 70
+                        placeholderText: qsTr("Digite ou cole o texto para ser narrado pelo assistente...")
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: Theme.spacingMd
+
+                        Column {
+                            width: (parent.width - Theme.spacingMd) * 0.58
+                            spacing: 4
+
+                            Text {
+                                text: qsTr("Voz:")
+                                color: Theme.mutedForeground
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 11
+                            }
+
+                            ThemedComboBox {
+                                id: ttsVoiceCombo
+                                width: parent.width
+                                model: root.ttsVoices
+                                textRole: "name"
+                            }
+                        }
+
+                        Column {
+                            width: (parent.width - Theme.spacingMd) * 0.42
+                            spacing: 4
+
+                            Text {
+                                text: qsTr("Velocidade: %1x").arg(ttsRateSlider.value.toFixed(1))
+                                color: Theme.mutedForeground
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 11
+                            }
+
+                            ThemedSlider {
+                                id: ttsRateSlider
+                                width: parent.width
+                                from: 0.5
+                                to: 2.0
+                                stepSize: 0.1
+                                value: 1.0
+                            }
+                        }
+                    }
+
+                    ThemedCheckBox {
+                        id: ttsSyncSubtitles
+                        text: qsTr("Sincronizar e gerar legendas animadas na timeline")
+                        checked: true
+                    }
+
+                    Row {
+                        spacing: Theme.spacingSm
+                        topPadding: 4
+
+                        ThemedButton {
+                            text: root.isTtsAudioPlaying ? qsTr("Parar Prévia") : qsTr("Ouvir Prévia")
+                            variant: "secondary"
+                            glyph: root.isTtsAudioPlaying ? Theme.icons.pause : Theme.icons.play
+                            enabled: ttsInputArea.text.trim().length > 0
+                            onClicked: {
+                                const voiceObj = (root.ttsVoices && root.ttsVoices[ttsVoiceCombo.currentIndex]) || {}
+                                const voiceId = voiceObj.id || ""
+                                root.toggleTtsPreview(ttsInputArea.text, voiceId, ttsRateSlider.value)
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Inserir Narração na Timeline")
+                            variant: "primary"
+                            glyph: Theme.icons.plus
+                            enabled: ttsInputArea.text.trim().length > 0
+                            onClicked: {
+                                const voiceObj = (root.ttsVoices && root.ttsVoices[ttsVoiceCombo.currentIndex]) || {}
+                                const voiceId = voiceObj.id || ""
+                                const ok = EditorState.ttsCreateClip(
+                                    ttsInputArea.text.trim(),
+                                    voiceId,
+                                    ttsRateSlider.value,
+                                    1.0,
+                                    ttsSyncSubtitles.checked
+                                )
+                                if (ok) {
+                                    root.added()
+                                    Toasts.success(qsTr("Narração em áudio e legendas inseridas na timeline!"))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Rectangle {
+                width: parent.width
+                height: Theme.borderWidth
+                color: Theme.panelBorder
+            }
 
             Text {
                 width: parent.width

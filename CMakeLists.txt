@@ -697,6 +697,8 @@ add_library(driftengine STATIC
     src/engine/GpuPreference.cpp
     src/engine/GpuDevice.h
     src/engine/GpuDevice.cpp
+    src/engine/TtsSynthesizer.h
+    src/engine/TtsSynthesizer.cpp
 )
 target_include_directories(driftengine PUBLIC src)
 # cgltf is PRIVATE: ModelAsset.h exposes no cgltf type, so nothing outside ModelAsset.cpp includes it.

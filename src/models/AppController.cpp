@@ -47,6 +47,7 @@
 #include "engine/MediaThumbnail.h"
 #include "engine/AudioFileWriter.h"
 #include "engine/SfxCatalog.h"
+#include "engine/TtsSynthesizer.h"
 #include "engine/DeepFilterDenoiser.h"
 #include "engine/ObjectDetector.h"
 #include "engine/OrtRuntime.h"
@@ -24406,6 +24407,66 @@ void AppController::addSfxClip(const QString &sfxId, double atSeconds)
         else
             addClipFromAsset(assetIdx);
     }
+}
+
+QVariantList AppController::ttsAvailableVoices() const
+{
+    QVariantList list;
+    const auto voices = drift::TtsSynthesizer::instance().availableVoices();
+    for (const auto &v : voices) {
+        list.append(v.toVariantMap());
+    }
+    return list;
+}
+
+QString AppController::ttsPreviewAudio(const QString &text, const QString &voiceId, double rate, double pitch)
+{
+    const auto res = drift::TtsSynthesizer::instance().synthesize(text, voiceId, rate, pitch);
+    if (!res.ok || res.filePath.isEmpty()) {
+        qWarning() << "[TTS] Preview failed:" << res.error;
+        return QString();
+    }
+    return QUrl::fromLocalFile(res.filePath).toString();
+}
+
+bool AppController::ttsCreateClip(const QString &text, const QString &voiceId, double rate, double pitch,
+                                  bool generateSubtitles, const QString &subtitleStyle,
+                                  bool allCaps, double atSeconds)
+{
+    const auto res = drift::TtsSynthesizer::instance().synthesize(text, voiceId, rate, pitch);
+    if (!res.ok || res.filePath.isEmpty() || !m_assetLibrary) {
+        qWarning() << "[TTS] Synthesis failed:" << res.error;
+        setLastMessage(res.error.isEmpty() ? tr("Failed to synthesize speech") : res.error, QStringLiteral("error"));
+        return false;
+    }
+
+    const QStringList ids = m_assetLibrary->importLocalPaths({res.filePath});
+    if (ids.isEmpty())
+        return false;
+
+    const int assetIdx = m_assetLibrary->indexOfId(ids.first());
+    if (assetIdx < 0)
+        return false;
+
+    const drift::TimeUs startUs = atSeconds < 0.0 ? m_playheadUs : drift::secondsToUs(atSeconds);
+    const drift::TimeUs durUs = drift::secondsToUs(res.durationSeconds);
+
+    int trackIndex = drift::defaultTrackForClipType(m_project, drift::ClipType::Audio);
+    if (trackIndex < 0)
+        trackIndex = drift::ensureTrackForClipType(m_project, drift::ClipType::Audio, false);
+
+    if (trackIndex >= 0) {
+        addClipFromAssetAt(assetIdx, trackIndex, drift::usToSeconds(startUs));
+    } else {
+        addClipFromAsset(assetIdx);
+    }
+
+    if (generateSubtitles && !res.cues.isEmpty()) {
+        finalizeGeneratedSubtitles(startUs, durUs, res.cues, subtitleStyle, allCaps);
+    }
+
+    setLastMessage(tr("Narração em voz e legendas geradas com sucesso!"), QStringLiteral("info"));
+    return true;
 }
 
 QJsonObject AppController::mcpAnalyzeLoudness(int trackIndex, int clipIndex, double startSeconds,

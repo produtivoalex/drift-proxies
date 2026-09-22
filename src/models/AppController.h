@@ -1097,6 +1097,12 @@ public:
     Q_INVOKABLE QVariantList builtinSfxList(const QString &category = QString()) const;
     Q_INVOKABLE QString builtinSfxPath(const QString &sfxId) const;
     Q_INVOKABLE void addSfxClip(const QString &sfxId, double atSeconds = -1.0);
+    // Built-in Text-to-Speech (TTS) offline narration & subtitle sync
+    Q_INVOKABLE QVariantList ttsAvailableVoices() const;
+    Q_INVOKABLE QString ttsPreviewAudio(const QString &text, const QString &voiceId, double rate = 1.0, double pitch = 1.0);
+    Q_INVOKABLE bool ttsCreateClip(const QString &text, const QString &voiceId, double rate = 1.0, double pitch = 1.0,
+                                   bool generateSubtitles = true, const QString &subtitleStyle = QStringLiteral("tiktok-viral-yellow"),
+                                   bool allCaps = true, double atSeconds = -1.0);
     // Smart Auto-Reframe (9:16 vertical, 1:1, etc. with intelligent subject tracking)
     Q_INVOKABLE QJsonObject autoReframeClip(int trackIndex, int clipIndex,
                                             double targetAspect = 9.0 / 16.0,
