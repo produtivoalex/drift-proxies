@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QStandardPaths>
 
+#include <algorithm>
 #include <cmath>
 #include <random>
 

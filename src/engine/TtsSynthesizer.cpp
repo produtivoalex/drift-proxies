@@ -11,6 +11,7 @@
 #include <QUuid>
 #include <QDebug>
 
+#include <algorithm>
 #include <cmath>
 
 namespace drift {
@@ -238,7 +239,7 @@ QList<SubtitleCue> TtsSynthesizer::generateCuesForText(const QString &text, doub
     QList<int> wordCounts;
     int totalWords = 0;
     for (const QString &chunk : chunks) {
-        const int words = std::max(1, chunk.split(QRegularExpression(QStringLiteral(R"(\s+)")), Qt::SkipEmptyParts).size());
+        const int words = std::max<int>(1, static_cast<int>(chunk.split(QRegularExpression(QStringLiteral(R"(\s+)")), Qt::SkipEmptyParts).size()));
         wordCounts.append(words);
         totalWords += words;
     }
@@ -253,7 +254,7 @@ QList<SubtitleCue> TtsSynthesizer::generateCuesForText(const QString &text, doub
 
         // Ensure duration doesn't overshoot
         if (i == chunks.size() - 1) {
-            chunkDuration = std::max(0.2, totalDurationSec - currentTime);
+            chunkDuration = std::max<double>(0.2, totalDurationSec - currentTime);
         }
 
         SubtitleCue cue;
@@ -371,7 +372,7 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
     const double dur = measureWavDuration(outFilePath);
     if (dur <= 0.05) {
         // Fallback estimate if WAV header parsing missed
-        const double estimatedSec = std::max(1.0, cleanText.length() * 0.06 / rate);
+        const double estimatedSec = std::max<double>(1.0, cleanText.length() * 0.06 / rate);
         res.durationSeconds = estimatedSec;
     } else {
         res.durationSeconds = dur;

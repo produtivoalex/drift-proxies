@@ -697,6 +697,8 @@ add_library(driftengine STATIC
     src/engine/GpuPreference.cpp
     src/engine/GpuDevice.h
     src/engine/GpuDevice.cpp
+    src/engine/SfxCatalog.h
+    src/engine/SfxCatalog.cpp
     src/engine/TtsSynthesizer.h
     src/engine/TtsSynthesizer.cpp
 )
