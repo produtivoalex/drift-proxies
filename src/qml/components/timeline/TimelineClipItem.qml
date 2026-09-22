@@ -1239,6 +1239,18 @@ Item {
                 }
                 ThemedMenuSeparator { }
                 ThemedMenuItem {
+                    text: qsTr("Corte de Silêncio (Smart Cut)")
+                    icon.name: Theme.icons.scissors
+                    visible: clipItem.clipData.kind === "video" || clipItem.clipData.kind === "audio"
+                    onTriggered: {
+                        const count = EditorState.removeSilenceFromClip(clipItem.trackIndex, clipItem.clipIndex)
+                        if (count > 0)
+                            Toasts.success(qsTr("%1 pausas/silêncios removidos!").arg(count))
+                        else
+                            Toasts.info(qsTr("Nenhum silêncio relevante detectado no clipe."))
+                    }
+                }
+                ThemedMenuItem {
                     text: qsTr("Delete")
                     icon.name: Theme.icons.trash
                     onTriggered: EditorState.deleteSelectedClip()

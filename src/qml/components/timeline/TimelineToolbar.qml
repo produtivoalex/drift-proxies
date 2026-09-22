@@ -150,6 +150,19 @@ Item {
             onClicked: EditorState.rippleDeleteSelectedClip()
         }
         IconButton {
+            glyph: Theme.icons.wand
+            variant: "text"
+            tooltip: qsTr("Corte Inteligente de Silêncio (Smart Cut)")
+            visible: EditorState.selectedClip >= 0
+            onClicked: {
+                const count = EditorState.removeSilenceFromSelectedClip()
+                if (count > 0)
+                    Toasts.success(qsTr("%1 pausas/silêncios removidos!").arg(count))
+                else
+                    Toasts.info(qsTr("Nenhum silêncio relevante detectado no clipe."))
+            }
+        }
+        IconButton {
             glyph: Theme.icons.copy
             variant: "text"
             tooltip: toolbar.withShortcut(qsTr("Copy selection"), "copy")

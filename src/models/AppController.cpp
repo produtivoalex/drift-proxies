@@ -24322,6 +24322,26 @@ QJsonObject AppController::mcpRemoveSilence(int trackIndex, int clipIndex, doubl
                {QStringLiteral("n"), removed.size()}});
 }
 
+int AppController::removeSilenceFromClip(int trackIndex, int clipIndex, double threshold,
+                                        double minDuration, double padding)
+{
+    const QJsonObject res = mcpRemoveSilence(trackIndex, clipIndex, threshold, minDuration, padding);
+    return res.value(QStringLiteral("removed")).toArray().size();
+}
+
+int AppController::removeSilenceFromSelectedClip(double threshold, double minDuration, double padding)
+{
+    if (m_selectedTrack < 0 || m_selectedClip < 0)
+        return 0;
+    return removeSilenceFromClip(m_selectedTrack, m_selectedClip, threshold, minDuration, padding);
+}
+
+int AppController::removeSilenceFromTrack(int trackIndex, double threshold, double minDuration, double padding)
+{
+    const QJsonObject res = mcpRemoveSilence(trackIndex, -1, threshold, minDuration, padding);
+    return res.value(QStringLiteral("removed")).toArray().size();
+}
+
 QJsonObject AppController::mcpAnalyzeLoudness(int trackIndex, int clipIndex, double startSeconds,
                                               double durSeconds) const
 {

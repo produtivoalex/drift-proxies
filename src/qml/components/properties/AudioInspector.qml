@@ -269,6 +269,92 @@ Item {
             opacity: 0.5
         }
 
+        Column {
+            id: smartCutSection
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            spacing: Theme.spacingSm
+
+            property bool settingsOpen: false
+            property real silenceThreshold: 0.02
+            property real minSilenceDuration: 0.35
+            property real speechPadding: 0.08
+
+            Text {
+                width: parent.width
+                text: qsTr("Corte de Silêncio (Smart Cut)")
+                color: Theme.mutedForeground
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSizeXs
+            }
+
+            ThemedButton {
+                width: parent.width
+                variant: "primary"
+                glyph: Theme.icons.scissors
+                text: qsTr("Remover Silêncios Automaticamente")
+                tooltip: qsTr("Corta pausas e hesitações do clipe e junta os trechos de fala com trilha magnética")
+                onClicked: {
+                    const count = EditorState.removeSilenceFromSelectedClip(
+                        smartCutSection.silenceThreshold,
+                        smartCutSection.minSilenceDuration,
+                        smartCutSection.speechPadding
+                    )
+                    if (count > 0)
+                        Toasts.success(qsTr("%1 pausas/silêncios removidos!").arg(count))
+                    else
+                        Toasts.info(qsTr("Nenhum silêncio relevante detectado no clipe."))
+                }
+            }
+
+            ThemedButton {
+                width: parent.width
+                variant: "ghost"
+                glyph: smartCutSection.settingsOpen ? Theme.icons.chevronDown : Theme.icons.chevronRight
+                text: qsTr("Ajustes de Sensibilidade")
+                onClicked: smartCutSection.settingsOpen = !smartCutSection.settingsOpen
+            }
+
+            Column {
+                width: parent.width
+                spacing: Theme.spacingSm
+                visible: smartCutSection.settingsOpen
+
+                Row {
+                    width: parent.width
+                    spacing: Theme.spacingSm
+
+                    ThemedButton {
+                        text: qsTr("Rápido (Reels/TikTok)")
+                        variant: smartCutSection.minSilenceDuration === 0.25 ? "secondary" : "ghost"
+                        onClicked: {
+                            smartCutSection.minSilenceDuration = 0.25
+                            smartCutSection.silenceThreshold = 0.03
+                            smartCutSection.speechPadding = 0.05
+                        }
+                    }
+
+                    ThemedButton {
+                        text: qsTr("Natural (Podcast)")
+                        variant: smartCutSection.minSilenceDuration === 0.35 ? "secondary" : "ghost"
+                        onClicked: {
+                            smartCutSection.minSilenceDuration = 0.35
+                            smartCutSection.silenceThreshold = 0.02
+                            smartCutSection.speechPadding = 0.08
+                        }
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            height: 1
+            color: Theme.panelBorder
+            opacity: 0.5
+        }
+
         Text {
             visible: root.clipKind === "audio" || root.clipKind === "video"
             text: qsTr("Auto subtitles")

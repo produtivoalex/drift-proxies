@@ -1088,6 +1088,10 @@ public:
     Q_INVOKABLE void closeGap(int trackIndex, double gapStartSeconds);
     // Closes all gaps on a specific track (or all tracks if trackIndex < 0), shifting clips left.
     Q_INVOKABLE void closeAllGaps(int trackIndex = -1);
+    // Smart Cut: automatically cuts silences and dead air, closing gaps seamlessly with ripple.
+    Q_INVOKABLE int removeSilenceFromClip(int trackIndex, int clipIndex, double threshold = 0.02, double minDuration = 0.35, double padding = 0.08);
+    Q_INVOKABLE int removeSilenceFromSelectedClip(double threshold = 0.02, double minDuration = 0.35, double padding = 0.08);
+    Q_INVOKABLE int removeSilenceFromTrack(int trackIndex, double threshold = 0.02, double minDuration = 0.35, double padding = 0.08);
     Q_INVOKABLE void alignSelectedClipLeft();
     Q_INVOKABLE void alignSelectedClipRight();
     // Mirrors drift::Haptics::TrimState (Haptics.h), which has documented since it was written
