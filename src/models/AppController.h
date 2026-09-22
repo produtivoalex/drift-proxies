@@ -1097,6 +1097,17 @@ public:
     Q_INVOKABLE QVariantList builtinSfxList(const QString &category = QString()) const;
     Q_INVOKABLE QString builtinSfxPath(const QString &sfxId) const;
     Q_INVOKABLE void addSfxClip(const QString &sfxId, double atSeconds = -1.0);
+    // Smart Auto-Reframe (9:16 vertical, 1:1, etc. with intelligent subject tracking)
+    Q_INVOKABLE QJsonObject autoReframeClip(int trackIndex, int clipIndex,
+                                            double targetAspect = 9.0 / 16.0,
+                                            const QString &mode = QStringLiteral("smooth"),
+                                            bool resizeProjectCanvas = true);
+    Q_INVOKABLE QJsonObject autoReframeSelectedClip(double targetAspect = 9.0 / 16.0,
+                                                    const QString &mode = QStringLiteral("smooth"),
+                                                    bool resizeProjectCanvas = true);
+    Q_INVOKABLE QJsonObject autoReframeTimeline(double targetAspect = 9.0 / 16.0,
+                                                const QString &mode = QStringLiteral("smooth"),
+                                                bool resizeProjectCanvas = true);
     Q_INVOKABLE void alignSelectedClipLeft();
     Q_INVOKABLE void alignSelectedClipRight();
     // Mirrors drift::Haptics::TrimState (Haptics.h), which has documented since it was written

@@ -1167,6 +1167,19 @@ Item {
                     onTriggered: EditorState.separateAllAudioTracks(clipItem.trackIndex, clipItem.clipIndex)
                 }
                 ThemedMenuItem {
+                    text: qsTr("Auto-Reframe 9:16 (Reels/TikTok)")
+                    icon.name: Theme.icons.smartphone
+                    visible: clipItem.trackType === "video" || clipItem.clipData.kind === "video" || clipItem.clipData.kind === "image"
+                    onTriggered: {
+                        const res = EditorState.autoReframeClip(clipItem.trackIndex, clipItem.clipIndex, 9.0 / 16.0, "smooth", true)
+                        if (res.ok) {
+                            Toasts.success(qsTr("Clipe reenquadrado em 9:16 com sucesso!"))
+                        } else {
+                            Toasts.error(qsTr("Falha ao reenquadrar: %1").arg(res.error || ""))
+                        }
+                    }
+                }
+                ThemedMenuItem {
                     text: qsTr("Unlink")
                     icon.name: Theme.icons.unlink
                     visible: !!clipItem.clipData.linked && EditorState.unlinkAvailable

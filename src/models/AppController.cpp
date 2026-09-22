@@ -24576,6 +24576,23 @@ QJsonObject AppController::mcpAutoReframe(int trackIndex, int clipIndex, double 
     double targetAspect = aspect > 0.01 ? aspect : (9.0 / 16.0);
     const QString m = mode.toLower();
 
+    // Source media dimensions
+    double srcW = canvasW;
+    double srcH = canvasH;
+    if (m_assetLibrary) {
+        int assetIdx = m_assetLibrary->indexOfId(clip.assetId);
+        if (assetIdx >= 0) {
+            QVariantMap asset = m_assetLibrary->assetAt(assetIdx);
+            double aw = asset.value(QStringLiteral("width")).toDouble();
+            double ah = asset.value(QStringLiteral("height")).toDouble();
+            if (aw > 0.0 && ah > 0.0) {
+                srcW = aw;
+                srcH = ah;
+            }
+        }
+    }
+    double sourceAspect = srcW / srcH;
+
     struct Sample {
         double t = 0.0;
         double cx = 0.5;
@@ -24607,6 +24624,38 @@ QJsonObject AppController::mcpAutoReframe(int trackIndex, int clipIndex, double 
             }
         }
     }
+
+    // Quick frame sample if no face track exists yet
+    if (m != QLatin1String("center") && clip.faceTrackPath.isEmpty() && drift::FaceLandmarker::instance().available()) {
+        const drift::TimeUs dur = clip.srcOut - clip.srcIn;
+        if (dur > 0 && !clip.path.isEmpty()) {
+            const int sampleCount = qBound(6, int(drift::usToSeconds(dur) * 2.0), 24);
+            const drift::TimeUs step = dur / sampleCount;
+            QList<drift::FaceAnchors> previous;
+            for (int i = 0; i < sampleCount; ++i) {
+                const drift::TimeUs sourceUs = clip.srcIn + i * step;
+                const QImage frame = ClipReaderPool::instance().readVideoFrame(
+                    clip.path, QStringLiteral("reframe_detect"), sourceUs, 640, 360, QString(), 15, false,
+                    clip.rotationCorrection);
+                if (frame.isNull()) continue;
+                QList<drift::FaceAnchors> faces = drift::FaceLandmarker::instance().detect(frame, previous.isEmpty() ? nullptr : &previous);
+                previous = faces;
+                for (const auto &face : faces) {
+                    if (face.valid) {
+                        Sample s;
+                        s.t = drift::usToSeconds(i * step);
+                        s.cx = face.faceCenter.x();
+                        s.cy = face.faceCenter.y();
+                        s.rx = qMax(0.05, face.faceRx);
+                        s.ry = qMax(0.05, face.faceRy);
+                        samples.append(s);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     if (samples.isEmpty()) {
         Sample s;
         s.t = 0.0;
@@ -24616,7 +24665,7 @@ QJsonObject AppController::mcpAutoReframe(int trackIndex, int clipIndex, double 
         samples.append(e);
     }
 
-    const int radius = (m == QLatin1String("motion")) ? 4 : 2;
+    const int radius = (m == QLatin1String("motion") || m == QLatin1String("fast")) ? 1 : 4;
     QList<Sample> smoothed = samples;
     for (int i = 0; i < samples.size(); ++i) {
         double cx = 0, cy = 0, n = 0;
@@ -24629,16 +24678,34 @@ QJsonObject AppController::mcpAutoReframe(int trackIndex, int clipIndex, double 
         smoothed[i].cy = cy / n;
     }
 
+    if (m == QLatin1String("center") || m == QLatin1String("static")) {
+        double avgCx = 0.0;
+        double avgCy = 0.0;
+        for (const Sample &s : samples) {
+            avgCx += s.cx;
+            avgCy += s.cy;
+        }
+        avgCx /= samples.size();
+        avgCy /= samples.size();
+        for (Sample &s : smoothed) {
+            s.cx = avgCx;
+            s.cy = avgCy;
+        }
+    }
+
+    // Physical crop aspect = (cropW * srcW) / (cropH * srcH) = (cropW / cropH) * sourceAspect = targetAspect
+    // So: cropW / cropH = targetAspect / sourceAspect
+    double relAspect = targetAspect / sourceAspect;
+    double cropH = 1.0;
+    double cropW = cropH * relAspect;
+    if (cropW > 1.0) {
+        cropW = 1.0;
+        cropH = cropW / relAspect;
+    }
+
     mcpBeginBatch();
     int keys = 0;
     for (const Sample &s : smoothed) {
-        // Crop window of targetAspect centred on the face, in normalised source coords.
-        double cropH = qMin(1.0, qMax(s.ry * 2.4, 0.35));
-        double cropW = cropH * targetAspect;
-        if (cropW > 1.0) {
-            cropW = 1.0;
-            cropH = cropW / targetAspect;
-        }
         double cropX = qBound(0.0, s.cx - cropW * 0.5, 1.0 - cropW);
         double cropY = qBound(0.0, s.cy - cropH * 0.5, 1.0 - cropH);
         const double w = canvasW / cropW;
@@ -24656,6 +24723,79 @@ QJsonObject AppController::mcpAutoReframe(int trackIndex, int clipIndex, double 
     return ok({{QStringLiteral("keys"), keys},
                {QStringLiteral("aspect"), targetAspect},
                {QStringLiteral("mode"), m.isEmpty() ? QStringLiteral("face") : m}});
+}
+
+QJsonObject AppController::autoReframeClip(int trackIndex, int clipIndex, double targetAspect,
+                                           const QString &mode, bool resizeProjectCanvas)
+{
+    if (resizeProjectCanvas) {
+        int targetW = 1080;
+        int targetH = 1920;
+        if (qAbs(targetAspect - (9.0 / 16.0)) < 0.05) {
+            targetW = 1080; targetH = 1920;
+        } else if (qAbs(targetAspect - 1.0) < 0.05) {
+            targetW = 1080; targetH = 1080;
+        } else if (qAbs(targetAspect - (4.0 / 5.0)) < 0.05) {
+            targetW = 1080; targetH = 1350;
+        } else if (qAbs(targetAspect - (16.0 / 9.0)) < 0.05) {
+            targetW = 1920; targetH = 1080;
+        } else {
+            targetH = 1920; targetW = qRound(1920.0 * targetAspect);
+        }
+        if (m_project.width() != targetW || m_project.height() != targetH) {
+            setProjectResolution(targetW, targetH);
+        }
+    }
+    return mcpAutoReframe(trackIndex, clipIndex, targetAspect, mode);
+}
+
+QJsonObject AppController::autoReframeSelectedClip(double targetAspect, const QString &mode,
+                                                   bool resizeProjectCanvas)
+{
+    using namespace drift::mcp;
+    if (m_selectedTrack < 0 || m_selectedClip < 0)
+        return err("no_selection", QStringLiteral("Nenhum clipe selecionado"));
+    return autoReframeClip(m_selectedTrack, m_selectedClip, targetAspect, mode, resizeProjectCanvas);
+}
+
+QJsonObject AppController::autoReframeTimeline(double targetAspect, const QString &mode,
+                                               bool resizeProjectCanvas)
+{
+    using namespace drift::mcp;
+    if (resizeProjectCanvas) {
+        int targetW = 1080;
+        int targetH = 1920;
+        if (qAbs(targetAspect - (9.0 / 16.0)) < 0.05) {
+            targetW = 1080; targetH = 1920;
+        } else if (qAbs(targetAspect - 1.0) < 0.05) {
+            targetW = 1080; targetH = 1080;
+        } else if (qAbs(targetAspect - (4.0 / 5.0)) < 0.05) {
+            targetW = 1080; targetH = 1350;
+        } else if (qAbs(targetAspect - (16.0 / 9.0)) < 0.05) {
+            targetW = 1920; targetH = 1080;
+        } else {
+            targetH = 1920; targetW = qRound(1920.0 * targetAspect);
+        }
+        if (m_project.width() != targetW || m_project.height() != targetH) {
+            setProjectResolution(targetW, targetH);
+        }
+    }
+    int totalClips = 0;
+    int totalKeys = 0;
+    for (int t = 0; t < m_project.tracks().size(); ++t) {
+        const drift::Track &track = m_project.tracks().at(t);
+        if (track.type != drift::TrackType::Video) continue;
+        for (int c = 0; c < track.clips.size(); ++c) {
+            const drift::Clip &cl = track.clips.at(c);
+            if (cl.type == drift::ClipType::Audio) continue;
+            QJsonObject res = mcpAutoReframe(t, c, targetAspect, mode);
+            if (res.value(QStringLiteral("ok")).toBool()) {
+                totalClips++;
+                totalKeys += res.value(QStringLiteral("keys")).toInt();
+            }
+        }
+    }
+    return ok({{QStringLiteral("clips"), totalClips}, {QStringLiteral("keys"), totalKeys}});
 }
 
 QJsonObject AppController::mcpListAddons() const

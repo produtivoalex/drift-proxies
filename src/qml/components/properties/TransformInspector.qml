@@ -72,6 +72,185 @@ Item {
                 font.pixelSize: Theme.fontSizeXs
             }
 
+            // Auto-Reframe Inteligente (9:16 / 1:1) Section
+            Rectangle {
+                id: autoReframeCard
+                width: parent.width
+                radius: Theme.radiusMd
+                color: Theme.panelBackground
+                border.width: 1
+                border.color: Theme.panelBorder
+                height: reframeCol.height + 24
+
+                property double targetAspect: 9.0 / 16.0
+                property string motionMode: "smooth"
+                property bool resizeProject: true
+
+                Column {
+                    id: reframeCol
+                    x: 12
+                    y: 12
+                    width: parent.width - 24
+                    spacing: 10
+
+                    Row {
+                        width: parent.width
+                        spacing: 8
+                        IconGlyph {
+                            glyph: Theme.icons.smartphone
+                            iconSize: 18
+                            iconColor: Theme.primary
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: qsTr("Auto-Reframe Inteligente")
+                            color: Theme.foreground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.bold: true
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Rectangle {
+                            width: 26
+                            height: 16
+                            radius: 4
+                            color: Theme.primary
+                            anchors.verticalCenter: parent.verticalCenter
+                            Text {
+                                anchors.centerIn: parent
+                                text: qsTr("IA")
+                                color: Theme.primaryForeground
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+                        }
+                    }
+
+                    Text {
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                        text: qsTr("Rastreia o orador com IA e enquadra vídeos horizontais (16:9) em verticais (9:16) para TikTok, Reels e Shorts sem cortar a pessoa.")
+                        color: Theme.mutedForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                    }
+
+                    // Aspect buttons
+                    Text {
+                        text: qsTr("Proporção Alvo:")
+                        color: Theme.mutedForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                    }
+
+                    Row {
+                        spacing: 6
+                        ThemedButton {
+                            text: qsTr("9:16 Vertical")
+                            variant: Math.abs(autoReframeCard.targetAspect - (9.0 / 16.0)) < 0.01 ? "primary" : "ghost"
+                            buttonSize: 28
+                            onClicked: autoReframeCard.targetAspect = 9.0 / 16.0
+                        }
+                        ThemedButton {
+                            text: qsTr("1:1 Quadrado")
+                            variant: Math.abs(autoReframeCard.targetAspect - 1.0) < 0.01 ? "primary" : "ghost"
+                            buttonSize: 28
+                            onClicked: autoReframeCard.targetAspect = 1.0
+                        }
+                        ThemedButton {
+                            text: qsTr("4:5 Feed")
+                            variant: Math.abs(autoReframeCard.targetAspect - 0.8) < 0.01 ? "primary" : "ghost"
+                            buttonSize: 28
+                            onClicked: autoReframeCard.targetAspect = 0.8
+                        }
+                    }
+
+                    // Motion Mode buttons
+                    Text {
+                        text: qsTr("Dinâmica de Câmera:")
+                        color: Theme.mutedForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                    }
+
+                    Row {
+                        spacing: 6
+                        ThemedButton {
+                            text: qsTr("Suave")
+                            variant: autoReframeCard.motionMode === "smooth" ? "secondary" : "ghost"
+                            buttonSize: 28
+                            onClicked: autoReframeCard.motionMode = "smooth"
+                        }
+                        ThemedButton {
+                            text: qsTr("Ação / Rápido")
+                            variant: autoReframeCard.motionMode === "fast" ? "secondary" : "ghost"
+                            buttonSize: 28
+                            onClicked: autoReframeCard.motionMode = "fast"
+                        }
+                        ThemedButton {
+                            text: qsTr("Estático")
+                            variant: autoReframeCard.motionMode === "center" ? "secondary" : "ghost"
+                            buttonSize: 28
+                            onClicked: autoReframeCard.motionMode = "center"
+                        }
+                    }
+
+                    // Resize project checkbox
+                    Row {
+                        spacing: 8
+                        ThemedChip {
+                            text: qsTr("Redimensionar tela do projeto para 1080×1920")
+                            selected: autoReframeCard.resizeProject
+                            onClicked: autoReframeCard.resizeProject = !autoReframeCard.resizeProject
+                        }
+                    }
+
+                    // Action buttons
+                    Row {
+                        width: parent.width
+                        spacing: 8
+
+                        ThemedButton {
+                            text: qsTr("Reenquadrar Clipe")
+                            variant: "primary"
+                            glyph: Theme.icons.smartphone
+                            buttonSize: 32
+                            onClicked: {
+                                const res = EditorState.autoReframeSelectedClip(
+                                    autoReframeCard.targetAspect,
+                                    autoReframeCard.motionMode,
+                                    autoReframeCard.resizeProject
+                                )
+                                if (res.ok) {
+                                    Toasts.success(qsTr("Clipe reenquadrado com %1 keyframes de rastreamento!").arg(res.keys || 0))
+                                } else {
+                                    Toasts.error(qsTr("Erro ao reenquadrar: %1").arg(res.error || ""))
+                                }
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Timeline Toda")
+                            variant: "secondary"
+                            glyph: Theme.icons.layers
+                            buttonSize: 32
+                            onClicked: {
+                                const res = EditorState.autoReframeTimeline(
+                                    autoReframeCard.targetAspect,
+                                    autoReframeCard.motionMode,
+                                    autoReframeCard.resizeProject
+                                )
+                                if (res.ok) {
+                                    Toasts.success(qsTr("%1 clipes reenquadrados na timeline!").arg(res.clips || 0))
+                                } else {
+                                    Toasts.error(qsTr("Erro ao reenquadrar timeline: %1").arg(res.error || ""))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ThemedChip {
                 text: qsTr("Auto keyframes")
                 selected: EditorState.autoKeyEnabled
