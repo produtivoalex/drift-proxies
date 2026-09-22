@@ -1256,6 +1256,27 @@ PanelFrame {
                                         acceptedButtons: Qt.LeftButton
                                     }
 
+                                    TapHandler {
+                                        enabled: !transitionDrag.active && !Theme.touchUi
+                                        onTapped: {
+                                            const kind = transitionCard.modelData.kind
+                                            if (EditorState.selectedTransitionLeftClip >= 0) {
+                                                const data = EditorState.selectedTransitionData
+                                                if (data && data.id) {
+                                                    EditorState.setTransitionKind(EditorState.selectedTransitionTrack, data.id, kind)
+                                                    Toasts.success(qsTr("Transição alterada para “%1”!").arg(transitionCard.modelData.label))
+                                                    return
+                                                }
+                                            }
+                                            if (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0) {
+                                                EditorState.addTransition(EditorState.selectedTrack, EditorState.selectedClip, kind, 0.5)
+                                                Toasts.success(qsTr("Transição “%1” aplicada!").arg(transitionCard.modelData.label))
+                                                return
+                                            }
+                                            Toasts.info(qsTr("Arraste “%1” para a junção entre dois clipes na timeline.").arg(transitionCard.modelData.label))
+                                        }
+                                    }
+
                                     // Hold to carry the transition onto the join between two
                                     // clips. This used to be a tap that applied to whatever was
                                     // selected, which gave no say over which boundary it landed on.

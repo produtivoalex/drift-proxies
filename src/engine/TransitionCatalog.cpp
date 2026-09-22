@@ -30,6 +30,7 @@ void rebuildLocked(const QStringList &packageRoots)
         g_idIndex.insert(g_catalog.at(i).meta.id, i);
 
     static const QHash<QString, const char *> kCategoryLabels = {
+        {QStringLiteral("viral"), QT_TRANSLATE_NOOP("TransitionCatalog", "Viral & Camera")},
         {QStringLiteral("basic"), QT_TRANSLATE_NOOP("TransitionCatalog", "Basic")},
         {QStringLiteral("geometric"), QT_TRANSLATE_NOOP("TransitionCatalog", "Grid & Geometric")},
         {QStringLiteral("liquid"), QT_TRANSLATE_NOOP("TransitionCatalog", "Particle & Liquid")},

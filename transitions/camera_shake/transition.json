@@ -1,0 +1,46 @@
+{
+  "id": "camera_shake",
+  "displayName": "Camera Shake",
+  "category": "viral",
+  "order": 11,
+  "parameters": [
+    {
+      "identifier": "intensity",
+      "displayName": "Shake Intensity",
+      "type": "float",
+      "minValue": 0.1,
+      "maxValue": 2.0,
+      "defaultValue": 0.75
+    },
+    {
+      "identifier": "frequency",
+      "displayName": "Shake Frequency",
+      "type": "float",
+      "minValue": 10.0,
+      "maxValue": 80.0,
+      "defaultValue": 48.0
+    }
+  ],
+  "pipeline": {
+    "intermediateBuffers": [],
+    "passes": [
+      {
+        "passIndex": 0,
+        "fragmentShader": "main.frag",
+        "inputs": [
+          {
+            "type": "source_texture",
+            "index": 0
+          },
+          {
+            "type": "source_texture",
+            "index": 1
+          }
+        ],
+        "output": {
+          "type": "canvas"
+        }
+      }
+    ]
+  }
+}

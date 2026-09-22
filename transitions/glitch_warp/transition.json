@@ -1,0 +1,46 @@
+{
+  "id": "glitch_warp",
+  "displayName": "Glitch RGB Warp",
+  "category": "viral",
+  "order": 14,
+  "parameters": [
+    {
+      "identifier": "glitchAmount",
+      "displayName": "Glitch Intensity",
+      "type": "float",
+      "minValue": 0.1,
+      "maxValue": 2.0,
+      "defaultValue": 0.85
+    },
+    {
+      "identifier": "sliceBands",
+      "displayName": "Horizontal Slices",
+      "type": "float",
+      "minValue": 4.0,
+      "maxValue": 32.0,
+      "defaultValue": 14.0
+    }
+  ],
+  "pipeline": {
+    "intermediateBuffers": [],
+    "passes": [
+      {
+        "passIndex": 0,
+        "fragmentShader": "main.frag",
+        "inputs": [
+          {
+            "type": "source_texture",
+            "index": 0
+          },
+          {
+            "type": "source_texture",
+            "index": 1
+          }
+        ],
+        "output": {
+          "type": "canvas"
+        }
+      }
+    ]
+  }
+}

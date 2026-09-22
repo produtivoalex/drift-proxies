@@ -1,0 +1,46 @@
+{
+  "id": "zoom_punch",
+  "displayName": "Zoom Punch",
+  "category": "viral",
+  "order": 10,
+  "parameters": [
+    {
+      "identifier": "punchScale",
+      "displayName": "Zoom Peak",
+      "type": "float",
+      "minValue": 1.1,
+      "maxValue": 3.0,
+      "defaultValue": 1.75
+    },
+    {
+      "identifier": "chromatic",
+      "displayName": "RGB Fringing",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.5
+    }
+  ],
+  "pipeline": {
+    "intermediateBuffers": [],
+    "passes": [
+      {
+        "passIndex": 0,
+        "fragmentShader": "main.frag",
+        "inputs": [
+          {
+            "type": "source_texture",
+            "index": 0
+          },
+          {
+            "type": "source_texture",
+            "index": 1
+          }
+        ],
+        "output": {
+          "type": "canvas"
+        }
+      }
+    ]
+  }
+}
