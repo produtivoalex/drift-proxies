@@ -1,0 +1,63 @@
+{
+  "id": "glitch_pro",
+  "displayName": "Glitch Pro",
+  "category": "viral",
+  "order": 7,
+  "soundFx": "glitch_rise",
+  "parameters": [
+    {
+      "identifier": "glitchIntensity",
+      "displayName": "Intensidade do Glitch",
+      "type": "float",
+      "minValue": 0.2,
+      "maxValue": 3.0,
+      "defaultValue": 1.2
+    },
+    {
+      "identifier": "blockScale",
+      "displayName": "Tamanho dos Blocos",
+      "type": "float",
+      "minValue": 4.0,
+      "maxValue": 40.0,
+      "defaultValue": 16.0
+    },
+    {
+      "identifier": "chromaticShift",
+      "displayName": "Separação RGB (Split)",
+      "type": "float",
+      "minValue": 0.1,
+      "maxValue": 2.5,
+      "defaultValue": 1.0
+    },
+    {
+      "identifier": "noiseJitter",
+      "displayName": "Ruído Digital & Scanlines",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 2.0,
+      "defaultValue": 0.8
+    }
+  ],
+  "pipeline": {
+    "intermediateBuffers": [],
+    "passes": [
+      {
+        "passIndex": 0,
+        "fragmentShader": "main.frag",
+        "inputs": [
+          {
+            "type": "source_texture",
+            "index": 0
+          },
+          {
+            "type": "source_texture",
+            "index": 1
+          }
+        ],
+        "output": {
+          "type": "canvas"
+        }
+      }
+    ]
+  }
+}

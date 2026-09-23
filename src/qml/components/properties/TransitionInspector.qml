@@ -400,19 +400,27 @@ Item {
                         spacing: 6
 
                         ThemedButton {
-                            text: qsTr("Whoosh Rápido")
-                            variant: "secondary"
+                            text: {
+                                const s = root.activeTransition.soundFx || "whoosh_fast"
+                                if (s === "whoosh_deep") return qsTr("Sincronizar Whoosh Profundo")
+                                if (s === "glitch_rise") return qsTr("Sincronizar Som de Glitch")
+                                return qsTr("Sincronizar Whoosh Rápido")
+                            }
+                            variant: "primary"
                             glyph: "volumeHigh"
                             onClicked: EditorState.attachTransitionSfx(
-                                           root.transitionEditTrack, root.activeTransition.id, "whoosh_fast")
+                                           root.transitionEditTrack, root.activeTransition.id, root.activeTransition.soundFx || "whoosh_fast")
                         }
 
                         ThemedButton {
-                            text: qsTr("Whoosh Profundo")
+                            text: root.activeTransition.soundFx === "glitch_rise" ? qsTr("Whoosh") : qsTr("Glitch")
                             variant: "secondary"
-                            glyph: "volumeHigh"
-                            onClicked: EditorState.attachTransitionSfx(
-                                           root.transitionEditTrack, root.activeTransition.id, "whoosh_deep")
+                            glyph: "sparkles"
+                            onClicked: {
+                                const target = root.activeTransition.soundFx === "glitch_rise" ? "whoosh_fast" : "glitch_rise"
+                                EditorState.attachTransitionSfx(
+                                    root.transitionEditTrack, root.activeTransition.id, target)
+                            }
                         }
                     }
                 }

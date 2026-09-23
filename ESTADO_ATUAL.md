@@ -41,10 +41,11 @@
 * **Smooth Zoom In (`transitions/smooth_zoom_in/`)**: Zoom contínuo com aceleração cúbica ($1.0\times \rightarrow 2.2\times$), micro-rotação dinâmica ($4^\circ$), radial motion blur multiamostrado com dither anti-banding e aberração cromática RGB split.
 * **Smooth Zoom Out (`transitions/smooth_zoom_out/`)**: Recuo dinâmico centrípeto, contra-rotação, desfoque radial convergente e dispersão óptica.
 * **Whip Pan Direcional (`transitions/whip_pan/`)**: Chicotada de câmera 4-way (Esquerda, Direita, Cima, Baixo) com curva de velocidade cúbica Hermite extrema, desfoque de movimento direcional 9-tap e separação cromática prismática.
-* **Sound FX Whoosh Nativo Integrado**:
-  - Propriedade nativa `soundFx` no manifesto `transition.json` (`whoosh_fast` e `whoosh_deep`).
+* **Glitch Pro (`transitions/glitch_pro/`)**: Fatiamento digital em blocos 2D (*macro block tearing*), micro-scanlines com jitter, dispersão cromática RGB 2D e inversão estroboscópica de cores nos blocos críticos, integrado ao som nativo `glitch_rise`.
+* **Sound FX Whoosh & Glitch Nativo Integrado**:
+  - Propriedade nativa `soundFx` no manifesto `transition.json` (`whoosh_fast`, `whoosh_deep`, `glitch_rise`).
   - Suporte no backend C++ (`TransitionCatalog.h`, `TransitionPackageLoader.cpp`, `AppController::addTransitionWithSfx`, `AppController::attachTransitionSfx`).
-  - Painel de propriedades (`TransitionInspector.qml`) com card dedicado para sincronização de Whoosh com 1 clique na timeline, com pico acústico alinhado ao corte.
+  - Painel de propriedades (`TransitionInspector.qml`) com card dedicado para sincronização dinâmica do som sugerido com 1 clique na timeline, com pico acústico alinhado ao corte.
 
 ---
 
