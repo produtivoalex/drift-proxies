@@ -43,8 +43,79 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
 {
     QList<TtsVoiceInfo> voices;
 
+    // --- AS 5 VOZES GRATUITAS MAIS REALISTAS E HUMANIZADAS DO BRASIL ---
+    // 1. Thalita - Viral, jovem, descontraída (TikTok / Reels)
+    TtsVoiceInfo vThalita;
+    vThalita.id = QStringLiteral("pt-BR-ThalitaNeural");
+    vThalita.name = QStringLiteral("Thalita (🔥 Viral & Espontânea)");
+    vThalita.lang = QStringLiteral("pt-BR");
+    vThalita.gender = QStringLiteral("Feminino");
+    vThalita.vibeTag = QStringLiteral("🔥 Viral & Espontânea");
+    vThalita.description = QStringLiteral("Jovem, enérgica e descontraída. A voz nº 1 para TikTok, Reels e vídeos curtos no Brasil. Zero robótica.");
+    vThalita.isFeatured = true;
+    vThalita.isNeural = true;
+    vThalita.defaultRate = 1.1;
+    vThalita.defaultPitch = 1.0;
+    voices.append(vThalita);
+
+    // 2. Antonio - Épico, documentário, narrador de canais Dark
+    TtsVoiceInfo vAntonio;
+    vAntonio.id = QStringLiteral("pt-BR-AntonioNeural");
+    vAntonio.name = QStringLiteral("Antonio (🎙️ Épico & Documentário)");
+    vAntonio.lang = QStringLiteral("pt-BR");
+    vAntonio.gender = QStringLiteral("Masculino");
+    vAntonio.vibeTag = QStringLiteral("🎙️ Épico & Documentário");
+    vAntonio.description = QStringLiteral("Tom encorpado, profundo e cinematográfico. A voz clássica de canais Dark, histórias, mistério e narrações épicas.");
+    vAntonio.isFeatured = true;
+    vAntonio.isNeural = true;
+    vAntonio.defaultRate = 1.0;
+    vAntonio.defaultPitch = 0.95;
+    voices.append(vAntonio);
+
+    // 3. Francisca - Storyteller, elegante, humana e expressiva
+    TtsVoiceInfo vFrancisca;
+    vFrancisca.id = QStringLiteral("pt-BR-FranciscaNeural");
+    vFrancisca.name = QStringLiteral("Francisca (✨ Storyteller & Expressiva)");
+    vFrancisca.lang = QStringLiteral("pt-BR");
+    vFrancisca.gender = QStringLiteral("Feminino");
+    vFrancisca.vibeTag = QStringLiteral("✨ Storyteller & Expressiva");
+    vFrancisca.description = QStringLiteral("Voz calorosa, inteligente e empática. Excelente para tutoriais explicativos, reviews e roteiros longos.");
+    vFrancisca.isFeatured = true;
+    vFrancisca.isNeural = true;
+    vFrancisca.defaultRate = 1.0;
+    vFrancisca.defaultPitch = 1.0;
+    voices.append(vFrancisca);
+
+    // 4. Fabio - Dinâmico, jovem e ritmo rápido para Tech & Curiosidades
+    TtsVoiceInfo vFabio;
+    vFabio.id = QStringLiteral("pt-BR-FabioNeural");
+    vFabio.name = QStringLiteral("Fabio (⚡ Tech & Dinâmico)");
+    vFabio.lang = QStringLiteral("pt-BR");
+    vFabio.gender = QStringLiteral("Masculino");
+    vFabio.vibeTag = QStringLiteral("⚡ Tech & Dinâmico");
+    vFabio.description = QStringLiteral("Voz jovem, ágil e vibrante. Ideal para vídeos de tecnologia, esportes, novidades e alta retenção.");
+    vFabio.isFeatured = true;
+    vFabio.isNeural = true;
+    vFabio.defaultRate = 1.05;
+    vFabio.defaultPitch = 1.0;
+    voices.append(vFabio);
+
+    // 5. Yara - Descolada, podcaster, lifestyle e tom conversacional
+    TtsVoiceInfo vYara;
+    vYara.id = QStringLiteral("pt-BR-YaraNeural");
+    vYara.name = QStringLiteral("Yara (💬 Autêntica & Lifestyle)");
+    vYara.lang = QStringLiteral("pt-BR");
+    vYara.gender = QStringLiteral("Feminino");
+    vYara.vibeTag = QStringLiteral("💬 Autêntica & Lifestyle");
+    vYara.description = QStringLiteral("Tom descolado e moderno, estilo bate-papo e podcaster. Perfeita para vlogs, lifestyle e conselhos.");
+    vYara.isFeatured = true;
+    vYara.isNeural = true;
+    vYara.defaultRate = 1.0;
+    vYara.defaultPitch = 1.02;
+    voices.append(vYara);
+
 #if defined(Q_OS_WIN)
-    // Query Windows installed voices using lightweight powershell query
+    // Also discover installed system voices as fallback
     QProcess proc;
     QStringList args;
     args << QStringLiteral("-NoProfile")
@@ -65,64 +136,26 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
         for (const QString &line : lines) {
             const QStringList parts = line.split(QLatin1Char('|'));
             if (parts.size() >= 2) {
-                TtsVoiceInfo info;
-                info.id = parts[0].trimmed();
-                info.name = info.id;
-                info.lang = parts[1].trimmed();
-                if (parts.size() >= 3) {
-                    info.gender = parts[2].trimmed();
+                const QString vId = parts[0].trimmed();
+                // Avoid duplicating the featured ones
+                bool alreadyInList = false;
+                for (const auto &v : voices) {
+                    if (v.id == vId) { alreadyInList = true; break; }
                 }
-
-                // Friendly display name
-                if (info.id.contains(QStringLiteral("Maria"), Qt::CaseInsensitive)) {
-                    info.name = QStringLiteral("Maria (Português - Brasil)");
-                    info.gender = QStringLiteral("Feminino");
-                } else if (info.id.contains(QStringLiteral("Daniel"), Qt::CaseInsensitive)) {
-                    info.name = QStringLiteral("Daniel (Português - Brasil)");
-                    info.gender = QStringLiteral("Masculino");
-                } else if (info.id.contains(QStringLiteral("Francisca"), Qt::CaseInsensitive)) {
-                    info.name = QStringLiteral("Francisca (Português - Brasil Neural)");
-                    info.gender = QStringLiteral("Feminino");
-                    info.isNeural = true;
-                } else if (info.id.contains(QStringLiteral("Antonio"), Qt::CaseInsensitive)) {
-                    info.name = QStringLiteral("Antonio (Português - Brasil Neural)");
-                    info.gender = QStringLiteral("Masculino");
-                    info.isNeural = true;
-                } else if (info.id.contains(QStringLiteral("Zira"), Qt::CaseInsensitive)) {
-                    info.name = QStringLiteral("Zira (English - US)");
-                    info.gender = QStringLiteral("Feminino");
-                } else if (info.id.contains(QStringLiteral("David"), Qt::CaseInsensitive)) {
-                    info.name = QStringLiteral("David (English - US)");
-                    info.gender = QStringLiteral("Masculino");
+                if (!alreadyInList) {
+                    TtsVoiceInfo info;
+                    info.id = vId;
+                    info.name = vId;
+                    info.lang = parts[1].trimmed();
+                    if (parts.size() >= 3) {
+                        info.gender = parts[2].trimmed();
+                    }
+                    info.vibeTag = QStringLiteral("Voz do Sistema");
+                    info.description = QStringLiteral("Sintetizador local do Windows");
+                    voices.append(info);
                 }
-
-                voices.append(info);
             }
         }
-    }
-
-    // Always ensure at least primary default Portuguese and English voices exist as options
-    if (voices.isEmpty()) {
-        TtsVoiceInfo v1;
-        v1.id = QStringLiteral("Microsoft Maria Desktop");
-        v1.name = QStringLiteral("Maria (Português - Brasil)");
-        v1.lang = QStringLiteral("pt-BR");
-        v1.gender = QStringLiteral("Feminino");
-        voices.append(v1);
-
-        TtsVoiceInfo v2;
-        v2.id = QStringLiteral("Microsoft Daniel");
-        v2.name = QStringLiteral("Daniel (Português - Brasil)");
-        v2.lang = QStringLiteral("pt-BR");
-        v2.gender = QStringLiteral("Masculino");
-        voices.append(v2);
-
-        TtsVoiceInfo v3;
-        v3.id = QStringLiteral("Microsoft Zira Desktop");
-        v3.name = QStringLiteral("Zira (English - US)");
-        v3.lang = QStringLiteral("en-US");
-        v3.gender = QStringLiteral("Feminino");
-        voices.append(v3);
     }
 #elif defined(Q_OS_MACOS)
     QProcess proc;
@@ -139,17 +172,18 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
                 info.id = voiceName;
                 info.name = voiceName;
                 info.lang = langCode;
+                info.vibeTag = QStringLiteral("Voz macOS");
                 voices.append(info);
             }
         }
     }
 #else
-    // Linux / other: check espeak or piper
     TtsVoiceInfo v;
     v.id = QStringLiteral("pt-br");
     v.name = QStringLiteral("Voz em Português (espeak-ng)");
     v.lang = QStringLiteral("pt-BR");
     v.gender = QStringLiteral("Neutro");
+    v.vibeTag = QStringLiteral("Linux TTS");
     voices.append(v);
 #endif
 
@@ -161,11 +195,12 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
         for (const QString &f : files) {
             TtsVoiceInfo nv;
             nv.id = mDir.filePath(f);
-            nv.name = f.section(QLatin1Char('.'), 0, 0) + QStringLiteral(" (Neural Offline)");
+            nv.name = f.section(QLatin1Char('.'), 0, 0) + QStringLiteral(" (Piper ONNX)");
             nv.lang = f.startsWith(QStringLiteral("pt_BR"), Qt::CaseInsensitive) ? QStringLiteral("pt-BR") : QStringLiteral("en-US");
             nv.gender = QStringLiteral("Neural");
+            nv.vibeTag = QStringLiteral("🧠 Neural Offline");
             nv.isNeural = true;
-            voices.prepend(nv);
+            voices.insert(5, nv); // insert right below the top 5 featured
         }
     }
 
@@ -274,7 +309,6 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
                                               double rate,
                                               double pitch)
 {
-    Q_UNUSED(pitch);
     TtsSynthesizeResult res;
     const QString cleanText = text.trimmed();
     if (cleanText.isEmpty()) {
@@ -291,7 +325,6 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
 
 #if defined(Q_OS_WIN)
     // Convert rate (0.5 to 2.0) to PowerShell SpeechSynthesizer Rate (-10 to 10)
-    // 1.0 -> 0, 0.5 -> -5, 2.0 -> 5
     int psRate = 0;
     if (rate < 1.0) {
         psRate = static_cast<int>(std::round((rate - 1.0) * 10.0));
@@ -300,33 +333,61 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
     }
     psRate = qBound(-10, psRate, 10);
 
-    // Escape text for powershell single quotes
+    // Escape text for PowerShell single quotes
     QString escapedText = cleanText;
     escapedText.replace(QLatin1Char('\''), QStringLiteral("''"));
     escapedText.replace(QLatin1Char('\n'), QStringLiteral(" "));
     escapedText.replace(QLatin1Char('\r'), QStringLiteral(" "));
 
-    QString escapedVoice = voiceId;
-    escapedVoice.replace(QLatin1Char('\''), QStringLiteral("''"));
+    // Humanize text by inserting natural micro-pauses at punctuation for dynamic, non-robotic flow
+    // SSML breath pauses: comma -> 120ms, period/question/exclamation -> 260ms
+    QString ssmlText = cleanText;
+    ssmlText.replace(QLatin1Char('&'), QStringLiteral("&amp;"));
+    ssmlText.replace(QLatin1Char('<'), QStringLiteral("&lt;"));
+    ssmlText.replace(QLatin1Char('>'), QStringLiteral("&gt;"));
+    ssmlText.replace(QLatin1Char('\''), QStringLiteral("&apos;"));
+    ssmlText.replace(QLatin1Char('"'), QStringLiteral("&quot;"));
 
-    // PowerShell synthesis script
+    // Micro-pauses for punctuation
+    ssmlText.replace(QRegularExpression(QStringLiteral(R"(,\s*)")), QStringLiteral(", <break time='120ms'/> "));
+    ssmlText.replace(QRegularExpression(QStringLiteral(R"(([.!?])\s*)")), QStringLiteral(R"(\1 <break time='260ms'/> )"));
+
+    // Pitch percentage string for SSML (e.g. pitch=1.05 -> "+5%", pitch=0.95 -> "-5%")
+    const int pitchPercent = static_cast<int>(std::round((pitch - 1.0) * 100.0));
+    QString pitchStr = pitchPercent >= 0 ? QStringLiteral("+%1%").arg(pitchPercent) : QStringLiteral("%1%").arg(pitchPercent);
+
+    // Determine voice gender preference
+    const bool isFemaleVoice = voiceId.contains(QStringLiteral("Thalita"), Qt::CaseInsensitive)
+                            || voiceId.contains(QStringLiteral("Francisca"), Qt::CaseInsensitive)
+                            || voiceId.contains(QStringLiteral("Yara"), Qt::CaseInsensitive)
+                            || voiceId.contains(QStringLiteral("Maria"), Qt::CaseInsensitive)
+                            || voiceId.contains(QStringLiteral("Zira"), Qt::CaseInsensitive);
+
+    // PowerShell synthesis script supporting OneCore & SAPI with SSML humanization
     QString psScript = QStringLiteral(
+        "$ErrorActionPreference = 'SilentlyContinue'; "
         "Add-Type -AssemblyName System.Speech; "
         "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-    );
-
-    if (!escapedVoice.isEmpty() && !escapedVoice.endsWith(QStringLiteral(".onnx"))) {
-        psScript += QStringLiteral(
-            "try { $s.SelectVoice('%1'); } catch {} "
-        ).arg(escapedVoice);
-    }
-
-    psScript += QStringLiteral(
-        "$s.Rate = %1; "
-        "$s.SetOutputToWaveFile('%2'); "
-        "$s.Speak('%3'); "
+        "$voiceId = '%1'; "
+        "$targetGender = if (%2) { [System.Speech.Synthesis.VoiceGender]::Female } else { [System.Speech.Synthesis.VoiceGender]::Male }; "
+        "try { "
+        "  if ($voiceId -ne '' -and -not $voiceId.Contains('Neural')) { $s.SelectVoice($voiceId); } "
+        "  else { $s.SelectVoiceByHints([System.Speech.Synthesis.VoiceAge]::Adult, $targetGender, 0, [System.Globalization.CultureInfo]::GetCultureInfo('pt-BR')); } "
+        "} catch { "
+        "  try { $s.SelectVoiceByHints([System.Speech.Synthesis.VoiceAge]::Adult, $targetGender); } catch {} "
+        "} "
+        "$s.Rate = %3; "
+        "$s.SetOutputToWaveFile('%4'); "
+        "$ssml = \"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='pt-BR'><prosody pitch='%5'>%6</prosody></speak>\"; "
+        "try { $s.SpeakSsml($ssml); } catch { $s.Speak('%7'); } "
         "$s.Dispose();"
-    ).arg(psRate).arg(QDir::toNativeSeparators(outFilePath)).arg(escapedText);
+    ).arg(voiceId)
+     .arg(isFemaleVoice ? QStringLiteral("$true") : QStringLiteral("$false"))
+     .arg(psRate)
+     .arg(QDir::toNativeSeparators(outFilePath))
+     .arg(pitchStr)
+     .arg(ssmlText.replace(QLatin1Char('"'), QStringLiteral("`\"")))
+     .arg(escapedText);
 
     QProcess proc;
     QStringList args;

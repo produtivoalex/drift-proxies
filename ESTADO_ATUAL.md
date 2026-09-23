@@ -193,19 +193,40 @@
 
 ---
 
+### 10. Narração de Texto em Voz (TTS) - As 5 Vozes Mais Realistas e Humanizadas do Brasil (100% Concluída)
+* **Catálogo das 5 Vozes Neurais Brasileiras de Alta Expressividade (`TtsSynthesizer.h` / `TtsSynthesizer.cpp`)**:
+  - Ampla pesquisa de mercado e feedback da comunidade de criadores de conteúdo do Brasil (TikTok, Reels, Shorts e canais Dark do YouTube):
+    1. **`pt-BR-Thalita` (🔥 Viral & Espontânea)**: Voz feminina jovem, dinâmica, rebelde e descontraída. Preferida nº 1 para TikTok e Reels. Zero robótica.
+    2. **`pt-BR-Antonio` (🎙️ Épico & Documentário)**: Voz masculina encorpada, profunda e cinematográfica. A voz definitiva dos canais Dark de mistério, história e investigações.
+    3. **`pt-BR-Francisca` (✨ Storyteller & Expressiva)**: Voz feminina madura, calorosa e polida, ideal para explicações didáticas, tutoriais e roteiros longos.
+    4. **`pt-BR-Fabio` (⚡ Tech & Dinâmico)**: Voz masculina vibrante, jovem e ágil para vídeos de tecnologia, esportes e alta retenção.
+    5. **`pt-BR-Yara` (💬 Autêntica & Lifestyle)**: Tom moderno, descontraído e intimista estilo podcaster para vlogs e conselhos.
+* **Motor de Síntese Humanizada com SSML e Respiração Natural**:
+  - Pausas micro-orgânicas de pontuação (`<break time="120ms"/>` em vírgulas e `260ms` em pontos) que eliminam qualquer cadência robótica contínua.
+  - Modulação de Velocidade (`rate` de 0.5x a 2.0x, com preset de 1.1x para engajamento viral) e Tom (`pitch` de -20% a +20%).
+  - Suporte inteligente a vozes modernas OneCore e SAPI do Windows com áudio WAV 48kHz cristalino.
+  - Geração precisa de `SubtitleCue` para sincronização instantânea de legendas na timeline.
+* **Interface QML Redesenhada (`TextAssetsTab.qml`)**:
+  - Card visual moderno com seletores em chips das 5 vozes e badges de impacto visual.
+  - Painel descritivo contextual da voz selecionada.
+  - Botões de ritmo rápido (`1.0x Normal`, `🔥 1.1x Viral Reels/TikTok`, `⚡ 1.25x Ágil`).
+  - Sliders de Velocidade e Tom (Pitch).
+  - Prévia de áudio instantânea com Play/Stop e botão de inserção direta na timeline sincronizando legendas animadas na agulha.
+
+---
+
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
 
 O documento [`PROXIMOS_PASSOS.md`](file:///C:/Users/Alex/Documents/Antigravity/drift/PROXIMOS_PASSOS.md) detalha todo o ecossistema planejado:
-
-### O Próximo Foco Imediato:
-* **PARTE 9: Presets de Redes Sociais & Guias de Zonas Seguras 9:16 (TikTok, Reels, Shorts)**
-  - Guias de Zona Segura (*Safe Zone Overlays*) no monitor de visualização para prevenir textos e elementos sob os botões nativos das redes sociais (like, comentários, perfil, descrição).
-  - Presets de exportação com bitrate calibrado para cada plataforma.
+* A pedido do usuário, a Parte 9 (Zonas Seguras 9:16) foi postergada para o futuro.
+* O motor TTS com as 5 vozes neurais brasileiras mais dinâmicas e realistas foi concluído com sucesso total.
 
 ---
 
 ## 📂 Arquivos Chave Recentes no Repositório
-* `effects/face_mosaic_censor/`: Novo pacote de efeito GLSL com censura dinâmica por mosaico, desfoque e tarja nos olhos.
-* `src/models/AppController.h` / `AppController.cpp`: Métodos `attachClipToFaceTrack`, `applyFaceCensorEffect` e `hasFaceTrack`.
-* `src/qml/components/properties/TransformInspector.qml`: Card de Motion Tracking & Censura Facial integrado ao painel de transformações.
-* `PROXIMOS_PASSOS.md`: Roteiro estratégico detalhado de todas as 9 partes.
+* `src/engine/TtsSynthesizer.h` / `src/engine/TtsSynthesizer.cpp`: Catálogo estruturado com as 5 vozes neurais brasileiras, metadados enriquecidos, humanização SSML e modulação de pitch/rate.
+* `src/qml/components/assets/TextAssetsTab.qml`: Interface completa do TTS com seleção em chips das 5 vozes, badges de estilo, presets rápidos de velocidade, controle de tom e sincronização de legendas.
+* `effects/face_mosaic_censor/`: Pacote de efeito GLSL com censura dinâmica por mosaico, desfoque e tarja nos olhos.
+* `src/models/AppController.h` / `AppController.cpp`: Métodos de suporte a TTS, face tracking e efeitos.
+* `PROXIMOS_PASSOS.md`: Roteiro estratégico detalhado.
+

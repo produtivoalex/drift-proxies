@@ -36,14 +36,15 @@ Item {
         }
     }
 
-    function toggleTtsPreview(text, voiceId, rate) {
+    function toggleTtsPreview(text, voiceId, rate, pitch) {
         if (root.isTtsAudioPlaying) {
             ttsPreviewPlayer.stop()
             root.isTtsAudioPlaying = false
             return
         }
         if (text.trim().length === 0) return
-        const path = EditorState.ttsPreviewAudio(text.trim(), voiceId, rate, 1.0)
+        const p = pitch !== undefined ? pitch : 1.0
+        const path = EditorState.ttsPreviewAudio(text.trim(), voiceId, rate, p)
         if (path.length > 0) {
             root.isTtsAudioPlaying = true
             ttsPreviewPlayer.stop()
@@ -86,15 +87,18 @@ Item {
             spacing: Theme.spacingMd
             topPadding: Theme.pagePadding
 
-            // --- CapCut-Style Text-to-Speech (TTS) Card ---
+            // --- CapCut-Style Text-to-Speech (TTS) Card with Top 5 Brazilian Voices ---
             Rectangle {
                 id: ttsCard
                 width: parent.width
                 implicitHeight: ttsCardCol.implicitHeight + Theme.spacingLg * 2
                 radius: Theme.radiusMd
-                color: Theme.darkMode ? "#131c2e" : "#eff6ff"
+                color: Theme.darkMode ? "#101726" : "#eff6ff"
                 border.width: Theme.borderWidth
-                border.color: Theme.darkMode ? "#1e3a8a" : "#bfdbfe"
+                border.color: Theme.darkMode ? "#1d4ed8" : "#93c5fd"
+
+                property int selectedVoiceIdx: 0
+                readonly property var currentVoiceObj: (root.ttsVoices && root.ttsVoices.length > selectedVoiceIdx) ? root.ttsVoices[selectedVoiceIdx] : ({})
 
                 Column {
                     id: ttsCardCol
@@ -114,7 +118,7 @@ Item {
                         }
 
                         Text {
-                            text: qsTr("Narração de Texto em Voz (Text-to-Speech)")
+                            text: qsTr("Narração de Texto em Voz (Top 5 Vozes do Brasil)")
                             color: Theme.panelForeground
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeSm
@@ -131,15 +135,16 @@ Item {
                             height: 20
                             width: ttsBadgeText.implicitWidth + 12
                             radius: 10
-                            color: Theme.darkMode ? "#1e293b" : "#e2e8f0"
+                            color: Theme.darkMode ? "#1e293b" : "#dbeafe"
                             anchors.verticalCenter: parent.verticalCenter
 
                             Text {
                                 id: ttsBadgeText
-                                text: qsTr("100% Offline")
-                                color: Theme.mutedForeground
+                                text: qsTr("🇧🇷 100% Dinâmicas & Rebeldes")
+                                color: Theme.darkMode ? "#60a5fa" : "#1d4ed8"
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 10
+                                font.weight: Font.Medium
                                 anchors.centerIn: parent
                             }
                         }
@@ -148,7 +153,7 @@ Item {
                     Text {
                         width: parent.width
                         wrapMode: Text.WordWrap
-                        text: qsTr("Gere vozes realistas nativas ou neurais sem nuvem. O Drift sintetiza o áudio e sincroniza as legendas animadas na agulha com 1 clique.")
+                        text: qsTr("Vozes ultrarrealistas e humanizadas para Reels, TikTok, Shorts e canais Dark. Zero robóticas, com respiração natural e sincronização automática de legendas animadas.")
                         color: Theme.mutedForeground
                         font.family: Theme.fontFamily
                         font.pixelSize: Theme.fontSizeXs
@@ -157,39 +162,212 @@ Item {
                     ThemedTextArea {
                         id: ttsInputArea
                         width: parent.width
-                        implicitHeight: 70
-                        placeholderText: qsTr("Digite ou cole o texto para ser narrado pelo assistente...")
+                        implicitHeight: 74
+                        placeholderText: qsTr("Digite ou cole aqui o roteiro para ser narrado pelo Drift...")
                     }
 
+                    // --- Grid Seletor das 5 Melhores Vozes do Brasil ---
+                    Text {
+                        text: qsTr("Escolha a Voz Ideal para seu Vídeo:")
+                        color: Theme.panelForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: 11
+                        font.weight: Font.DemiBold
+                        topPadding: 2
+                    }
+
+                    Flow {
+                        width: parent.width
+                        spacing: 6
+
+                        Repeater {
+                            model: Math.min(5, (root.ttsVoices ? root.ttsVoices.length : 0))
+
+                            delegate: Rectangle {
+                                id: voiceChip
+                                readonly property var vObj: root.ttsVoices[index] || ({})
+                                readonly property bool isSelected: ttsCard.selectedVoiceIdx === index
+
+                                width: (parent.width - 6) / 2 - 1
+                                height: 42
+                                radius: Theme.radiusSm
+                                color: isSelected 
+                                    ? (Theme.darkMode ? "#1e3a8a" : "#bfdbfe")
+                                    : (Theme.darkMode ? "#1e293b" : "#f1f5f9")
+                                border.width: isSelected ? 2 : 1
+                                border.color: isSelected ? "#3b82f6" : (Theme.darkMode ? "#334155" : "#cbd5e1")
+
+                                Row {
+                                    anchors.fill: parent
+                                    anchors.leftMargin: 8
+                                    anchors.rightMargin: 8
+                                    spacing: 6
+
+                                    Column {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        width: parent.width - 24
+                                        spacing: 1
+
+                                        Text {
+                                            text: vObj.vibeTag || vObj.name || ""
+                                            color: isSelected ? (Theme.darkMode ? "#ffffff" : "#1e3a8a") : Theme.panelForeground
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 11
+                                            font.weight: isSelected ? Font.Bold : Font.Medium
+                                            elide: Text.ElideRight
+                                            width: parent.width
+                                        }
+
+                                        Text {
+                                            text: (vObj.gender || "") + " • " + (vObj.lang || "pt-BR")
+                                            color: Theme.mutedForeground
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 9
+                                            elide: Text.ElideRight
+                                            width: parent.width
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        width: 14
+                                        height: 14
+                                        radius: 7
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        color: isSelected ? "#3b82f6" : "transparent"
+                                        border.width: 1
+                                        border.color: isSelected ? "#60a5fa" : Theme.mutedForeground
+
+                                        Rectangle {
+                                            width: 6
+                                            height: 6
+                                            radius: 3
+                                            color: "#ffffff"
+                                            anchors.centerIn: parent
+                                            visible: isSelected
+                                        }
+                                    }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        ttsCard.selectedVoiceIdx = index
+                                        if (vObj.defaultRate) {
+                                            ttsRateSlider.value = vObj.defaultRate
+                                        }
+                                        if (vObj.defaultPitch) {
+                                            ttsPitchSlider.value = vObj.defaultPitch
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Card de Descrição da Voz Selecionada
+                    Rectangle {
+                        width: parent.width
+                        implicitHeight: voiceDescText.implicitHeight + 12
+                        radius: Theme.radiusSm
+                        color: Theme.darkMode ? "#0f172a" : "#f8fafc"
+                        border.width: 1
+                        border.color: Theme.darkMode ? "#334155" : "#e2e8f0"
+
+                        Row {
+                            anchors.fill: parent
+                            anchors.margins: 6
+                            spacing: 6
+
+                            Text {
+                                id: voiceDescText
+                                width: parent.width
+                                wrapMode: Text.WordWrap
+                                text: {
+                                    const v = ttsCard.currentVoiceObj
+                                    if (v && v.description) {
+                                        return "💡 " + v.description
+                                    }
+                                    return qsTr("💡 Voz neural em português brasileiro otimizada para narrações dinâmicas.")
+                                }
+                                color: Theme.mutedForeground
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 10
+                            }
+                        }
+                    }
+
+                    // Se houver mais vozes (vozes locais do sistema/piper)
+                    Row {
+                        width: parent.width
+                        spacing: Theme.spacingSm
+                        visible: root.ttsVoices && root.ttsVoices.length > 5
+
+                        Text {
+                            text: qsTr("Outras vozes:")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ThemedComboBox {
+                            id: ttsExtraVoiceCombo
+                            width: parent.width - 80
+                            model: root.ttsVoices ? root.ttsVoices.slice(5) : []
+                            textRole: "name"
+                            onActivated: {
+                                if (currentIndex >= 0) {
+                                    ttsCard.selectedVoiceIdx = currentIndex + 5
+                                }
+                            }
+                        }
+                    }
+
+                    // --- Presets Rápidos de Velocidade ---
+                    Row {
+                        width: parent.width
+                        spacing: Theme.spacingSm
+                        topPadding: 2
+
+                        Text {
+                            text: qsTr("Ritmo Rápido:")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 10
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ThemedButton {
+                            text: qsTr("1.0x Normal")
+                            variant: "secondary"
+                            onClicked: ttsRateSlider.value = 1.0
+                        }
+
+                        ThemedButton {
+                            text: qsTr("🔥 1.1x Viral (Reels/TikTok)")
+                            variant: "secondary"
+                            onClicked: ttsRateSlider.value = 1.1
+                        }
+
+                        ThemedButton {
+                            text: qsTr("⚡ 1.25x Ágil")
+                            variant: "secondary"
+                            onClicked: ttsRateSlider.value = 1.25
+                        }
+                    }
+
+                    // --- Sliders de Velocidade e Tom ---
                     Row {
                         width: parent.width
                         spacing: Theme.spacingMd
 
                         Column {
-                            width: (parent.width - Theme.spacingMd) * 0.58
-                            spacing: 4
+                            width: (parent.width - Theme.spacingMd) * 0.5
+                            spacing: 2
 
                             Text {
-                                text: qsTr("Voz:")
-                                color: Theme.mutedForeground
-                                font.family: Theme.fontFamily
-                                font.pixelSize: 11
-                            }
-
-                            ThemedComboBox {
-                                id: ttsVoiceCombo
-                                width: parent.width
-                                model: root.ttsVoices
-                                textRole: "name"
-                            }
-                        }
-
-                        Column {
-                            width: (parent.width - Theme.spacingMd) * 0.42
-                            spacing: 4
-
-                            Text {
-                                text: qsTr("Velocidade: %1x").arg(ttsRateSlider.value.toFixed(1))
+                                text: qsTr("Velocidade: %1x").arg(ttsRateSlider.value.toFixed(2))
                                 color: Theme.mutedForeground
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 11
@@ -200,7 +378,31 @@ Item {
                                 width: parent.width
                                 from: 0.5
                                 to: 2.0
-                                stepSize: 0.1
+                                stepSize: 0.05
+                                value: 1.1
+                            }
+                        }
+
+                        Column {
+                            width: (parent.width - Theme.spacingMd) * 0.5
+                            spacing: 2
+
+                            Text {
+                                text: {
+                                    const diff = Math.round((ttsPitchSlider.value - 1.0) * 100)
+                                    return qsTr("Tom (Pitch): %1%").arg(diff >= 0 ? "+" + diff : diff)
+                                }
+                                color: Theme.mutedForeground
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 11
+                            }
+
+                            ThemedSlider {
+                                id: ttsPitchSlider
+                                width: parent.width
+                                from: 0.8
+                                to: 1.2
+                                stepSize: 0.02
                                 value: 1.0
                             }
                         }
@@ -222,9 +424,9 @@ Item {
                             glyph: root.isTtsAudioPlaying ? Theme.icons.pause : Theme.icons.play
                             enabled: ttsInputArea.text.trim().length > 0
                             onClicked: {
-                                const voiceObj = (root.ttsVoices && root.ttsVoices[ttsVoiceCombo.currentIndex]) || {}
+                                const voiceObj = ttsCard.currentVoiceObj || {}
                                 const voiceId = voiceObj.id || ""
-                                root.toggleTtsPreview(ttsInputArea.text, voiceId, ttsRateSlider.value)
+                                root.toggleTtsPreview(ttsInputArea.text, voiceId, ttsRateSlider.value, ttsPitchSlider.value)
                             }
                         }
 
@@ -234,18 +436,18 @@ Item {
                             glyph: Theme.icons.plus
                             enabled: ttsInputArea.text.trim().length > 0
                             onClicked: {
-                                const voiceObj = (root.ttsVoices && root.ttsVoices[ttsVoiceCombo.currentIndex]) || {}
+                                const voiceObj = ttsCard.currentVoiceObj || {}
                                 const voiceId = voiceObj.id || ""
                                 const ok = EditorState.ttsCreateClip(
                                     ttsInputArea.text.trim(),
                                     voiceId,
                                     ttsRateSlider.value,
-                                    1.0,
+                                    ttsPitchSlider.value,
                                     ttsSyncSubtitles.checked
                                 )
                                 if (ok) {
                                     root.added()
-                                    Toasts.success(qsTr("Narração em áudio e legendas inseridas na timeline!"))
+                                    Toasts.success(qsTr("Narração em áudio e legendas sincronizadas inseridas na timeline!"))
                                 }
                             }
                         }
