@@ -17587,6 +17587,171 @@ void AppController::applyStudioVoicePreset(int trackIndex, int clipIndex, double
     }
 }
 
+bool AppController::hasAutoDucking(int trackIndex, int clipIndex) const
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    const drift::Track &track = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+    const drift::Clip &clip = track.clips.at(clipIndex);
+    return clip.volume.keyframes().size() > 1;
+}
+
+void AppController::clearAutoDucking(int trackIndex, int clipIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return;
+
+    const drift::Project before = m_project;
+    track.clips[clipIndex].volume = drift::KeyframeTrack<double>{};
+    track.clips[clipIndex].volume.setKeyframe(0, 1.0);
+    pushProjectEdit(before, tr("Clear Auto-Ducking"));
+    finishEdit(tr("Auto-Ducking cleared"));
+    setLastMessage(tr("Auto-Ducking removido (volume restaurado para 100%)"), QStringLiteral("info"));
+}
+
+int AppController::applyAutoDucking(int trackIndex, int clipIndex,
+                                    double duckingDb,
+                                    double fadeTimeSeconds,
+                                    double holdTimeSeconds)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return 0;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return 0;
+
+    drift::Clip &targetClip = track.clips[clipIndex];
+    const drift::TimeUs clipStartUs = targetClip.timelineStart;
+    const drift::TimeUs clipEndUs = targetClip.timelineEnd();
+    const drift::TimeUs clipDurationUs = targetClip.timelineDuration;
+    if (clipDurationUs <= 0)
+        return 0;
+
+    struct Interval {
+        drift::TimeUs startUs;
+        drift::TimeUs endUs;
+    };
+    QList<Interval> rawSpeech;
+
+    // 1. Check for subtitle cues across all tracks (Whisper or imported captions give highest accuracy)
+    for (const drift::Track &t : m_project.tracks()) {
+        for (const drift::Clip &c : t.clips) {
+            if (c.type == drift::ClipType::Subtitle) {
+                for (const drift::SubtitleCue &cue : c.subtitleCues) {
+                    const drift::TimeUs cueStart = c.timelineStart + cue.startUs;
+                    const drift::TimeUs cueEnd = c.timelineStart + cue.endUs;
+                    if (cueEnd > clipStartUs && cueStart < clipEndUs) {
+                        rawSpeech.append({qMax(clipStartUs, cueStart), qMin(clipEndUs, cueEnd)});
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. If no subtitles are present, use other tracks' audio/video clips as dialogue regions
+    if (rawSpeech.isEmpty()) {
+        for (int tIdx = 0; tIdx < m_project.tracks().size(); ++tIdx) {
+            if (tIdx == trackIndex)
+                continue;
+            const drift::Track &otherTrack = m_project.tracks().at(tIdx);
+            for (const drift::Clip &c : otherTrack.clips) {
+                if (c.type == drift::ClipType::Audio || c.type == drift::ClipType::Video) {
+                    if (c.timelineEnd() > clipStartUs && c.timelineStart < clipEndUs) {
+                        rawSpeech.append({qMax(clipStartUs, c.timelineStart), qMin(clipEndUs, c.timelineEnd())});
+                    }
+                }
+            }
+        }
+    }
+
+    if (rawSpeech.isEmpty()) {
+        setLastMessage(tr("Nenhuma fala ou áudio detectado em outras faixas para ducking"), QStringLiteral("warning"));
+        return 0;
+    }
+
+    // Sort intervals by start time
+    std::sort(rawSpeech.begin(), rawSpeech.end(), [](const Interval &a, const Interval &b) {
+        return a.startUs < b.startUs;
+    });
+
+    // Merge intervals that are closer than holdTimeSeconds to prevent volume pumping
+    const drift::TimeUs holdUs = drift::secondsToUs(qMax(0.1, holdTimeSeconds));
+    QList<Interval> merged;
+    Interval current = rawSpeech.first();
+    for (int i = 1; i < rawSpeech.size(); ++i) {
+        const Interval &next = rawSpeech.at(i);
+        if (next.startUs <= current.endUs + holdUs) {
+            current.endUs = qMax(current.endUs, next.endUs);
+        } else {
+            merged.append(current);
+            current = next;
+        }
+    }
+    merged.append(current);
+
+    // Compute ducked amplitude from dB
+    const double baseVol = 1.0;
+    const double duckedVol = std::clamp(std::pow(10.0, duckingDb / 20.0), 0.01, 1.0);
+    const drift::TimeUs fadeUs = drift::secondsToUs(qMax(0.05, fadeTimeSeconds));
+
+    const drift::Project before = m_project;
+    targetClip.volume = drift::KeyframeTrack<double>{};
+    targetClip.volume.setEnabled(true);
+
+    auto addKey = [&](drift::TimeUs relTime, double val) {
+        relTime = qBound<drift::TimeUs>(0, relTime, clipDurationUs);
+        targetClip.volume.setKeyframe(relTime, val);
+    };
+
+    // Initial base volume if speech doesn't start at the very beginning
+    const drift::TimeUs firstSpeechRel = merged.first().startUs - clipStartUs;
+    if (firstSpeechRel > fadeUs) {
+        addKey(0, baseVol);
+    }
+
+    for (const Interval &seg : merged) {
+        const drift::TimeUs relStart = seg.startUs - clipStartUs;
+        const drift::TimeUs relEnd = seg.endUs - clipStartUs;
+
+        const drift::TimeUs rampDownStart = qMax<drift::TimeUs>(0, relStart - fadeUs);
+        const drift::TimeUs duckStart = qBound<drift::TimeUs>(0, relStart, clipDurationUs);
+        const drift::TimeUs duckEnd = qBound<drift::TimeUs>(0, relEnd, clipDurationUs);
+        const drift::TimeUs rampUpEnd = qMin<drift::TimeUs>(clipDurationUs, relEnd + fadeUs);
+
+        // Ramp down smoothly
+        addKey(rampDownStart, baseVol);
+        addKey(duckStart, duckedVol);
+
+        // Duck hold during speech
+        addKey(duckEnd, duckedVol);
+
+        // Ramp up back to base volume
+        addKey(rampUpEnd, baseVol);
+    }
+
+    // Trailing base volume if speech ends before clip end
+    const drift::TimeUs lastSpeechRel = merged.last().endUs - clipStartUs;
+    if (lastSpeechRel + fadeUs < clipDurationUs) {
+        addKey(clipDurationUs, baseVol);
+    }
+
+    // Apply cubic Ease curves to each keyframe for studio-smooth ramps
+    for (auto it = targetClip.volume.keyframes().constBegin(); it != targetClip.volume.keyframes().constEnd(); ++it) {
+        targetClip.volume.setEasing(it.key(), drift::Interpolation::Ease);
+    }
+
+    pushProjectEdit(before, tr("Apply Auto-Ducking"));
+    finishEdit(tr("Auto-Ducking applied"));
+    setLastMessage(tr("Auto-Ducking inteligente aplicado: %1 trechos de fala sincronizados").arg(merged.size()), QStringLiteral("success"));
+    return merged.size();
+}
+
+
 // --- effect stacks: copy/paste and user presets ------------------------------
 
 drift::EffectStackPreset AppController::effectStackFor(int trackIndex, int clipIndex,

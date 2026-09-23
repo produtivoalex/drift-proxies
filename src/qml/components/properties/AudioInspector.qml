@@ -347,6 +347,239 @@ Item {
             }
         }
 
+        // ----- Auto-Ducking Inteligente (Abaixar Música na Fala) ------------
+        Rectangle {
+            id: autoDuckingCard
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            implicitHeight: duckingCol.implicitHeight + 20
+            radius: Theme.radiusMd
+            color: hasDucking
+                   ? (Theme.darkMode ? "#141e2e" : "#eff6ff")
+                   : Theme.panelAccent
+            border.width: 1
+            border.color: hasDucking
+                          ? (Theme.darkMode ? "#2563eb" : "#3b82f6")
+                          : Theme.panelBorder
+
+            readonly property bool hasDucking: {
+                void root.clipDataRevision
+                return (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0)
+                    ? EditorState.hasAutoDucking(EditorState.selectedTrack, EditorState.selectedClip)
+                    : false
+            }
+
+            property real duckingDb: -14.0
+            property real fadeSpeedSec: 0.4
+            property real holdTimeSec: 1.0
+
+            Behavior on color { ColorAnimation { duration: Theme.durationFast } }
+            Behavior on border.color { ColorAnimation { duration: Theme.durationFast } }
+
+            Column {
+                id: duckingCol
+                x: 10
+                y: 10
+                width: parent.width - 20
+                spacing: Theme.spacingSm
+
+                Row {
+                    width: parent.width
+                    spacing: 8
+
+                    Text {
+                        text: "📉"
+                        font.pixelSize: Theme.fontSizeBase
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Column {
+                        width: parent.width - 32 - (statusBadge.visible ? statusBadge.width : 0)
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: qsTr("Auto-Ducking Inteligente")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: qsTr("Abaixa a música automaticamente ao detectar fala")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            elide: Text.ElideRight
+                            width: parent.width
+                        }
+                    }
+
+                    Rectangle {
+                        id: statusBadge
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: autoDuckingCard.hasDucking
+                        width: badgeText.implicitWidth + 12
+                        height: 22
+                        radius: 11
+                        color: Theme.darkMode ? "#1e3a8a" : "#dbeafe"
+
+                        Text {
+                            id: badgeText
+                            anchors.centerIn: parent
+                            text: qsTr("Ativo")
+                            color: Theme.darkMode ? "#93c5fd" : "#1d4ed8"
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            font.weight: Font.Bold
+                        }
+                    }
+                }
+
+                // Divider
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: Theme.panelBorder
+                    opacity: 0.5
+                }
+
+                // Presets de atenuação
+                Column {
+                    width: parent.width
+                    spacing: 6
+
+                    Row {
+                        width: parent.width
+                        spacing: 4
+
+                        Text {
+                            text: qsTr("Redução de Volume:")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Text {
+                            text: qsTr("%1 dB (%2%)").arg(Math.round(autoDuckingCard.duckingDb))
+                                                     .arg(Math.round(Math.pow(10, autoDuckingCard.duckingDb / 20) * 100))
+                            color: Theme.panelForeground
+                            font.family: Theme.monoFontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            font.weight: Font.DemiBold
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 6
+
+                        ThemedButton {
+                            text: qsTr("Suave (-9 dB)")
+                            variant: Math.abs(autoDuckingCard.duckingDb - (-9)) < 0.5 ? "solid" : "ghost"
+                            tooltip: qsTr("Música ainda bem audível ao fundo")
+                            onClicked: autoDuckingCard.duckingDb = -9.0
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Padrão (-14 dB)")
+                            variant: Math.abs(autoDuckingCard.duckingDb - (-14)) < 0.5 ? "solid" : "ghost"
+                            tooltip: qsTr("Equilíbrio perfeito de clareza vocal e ambiência")
+                            onClicked: autoDuckingCard.duckingDb = -14.0
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Forte (-20 dB)")
+                            variant: Math.abs(autoDuckingCard.duckingDb - (-20)) < 0.5 ? "solid" : "ghost"
+                            tooltip: qsTr("Música bem baixa para destaque total da voz")
+                            onClicked: autoDuckingCard.duckingDb = -20.0
+                        }
+                    }
+
+                    ThemedSlider {
+                        width: parent.width
+                        from: -30
+                        to: -3
+                        stepSize: 1
+                        value: autoDuckingCard.duckingDb
+                        onMoved: autoDuckingCard.duckingDb = value
+                    }
+                }
+
+                // Velocidade de fade
+                Row {
+                    width: parent.width
+                    spacing: 6
+
+                    Text {
+                        text: qsTr("Fade:")
+                        color: Theme.mutedForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    ThemedButton {
+                        text: qsTr("Rápido (0.2s)")
+                        variant: Math.abs(autoDuckingCard.fadeSpeedSec - 0.2) < 0.05 ? "solid" : "ghost"
+                        onClicked: autoDuckingCard.fadeSpeedSec = 0.2
+                    }
+
+                    ThemedButton {
+                        text: qsTr("Suave (0.4s)")
+                        variant: Math.abs(autoDuckingCard.fadeSpeedSec - 0.4) < 0.05 ? "solid" : "ghost"
+                        onClicked: autoDuckingCard.fadeSpeedSec = 0.4
+                    }
+
+                    ThemedButton {
+                        text: qsTr("Longo (0.8s)")
+                        variant: Math.abs(autoDuckingCard.fadeSpeedSec - 0.8) < 0.05 ? "solid" : "ghost"
+                        onClicked: autoDuckingCard.fadeSpeedSec = 0.8
+                    }
+                }
+
+                // Botões de ação
+                Row {
+                    width: parent.width
+                    spacing: 8
+
+                    ThemedButton {
+                        text: qsTr("⚡ Aplicar Auto-Ducking")
+                        variant: "solid"
+                        tooltip: qsTr("Gera curvas suaves na música sincronizadas com as falas e legendas")
+                        onClicked: {
+                            const t = EditorState.selectedTrack
+                            const c = EditorState.selectedClip
+                            if (t >= 0 && c >= 0) {
+                                EditorState.applyAutoDucking(t, c, autoDuckingCard.duckingDb,
+                                                             autoDuckingCard.fadeSpeedSec,
+                                                             autoDuckingCard.holdTimeSec)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+
+                    ThemedButton {
+                        text: qsTr("↺ Redefinir Volume")
+                        variant: "ghost"
+                        enabled: autoDuckingCard.hasDucking
+                        tooltip: qsTr("Remove as curvas de ducking e restaura o volume contínuo de 100%")
+                        onClicked: {
+                            const t = EditorState.selectedTrack
+                            const c = EditorState.selectedClip
+                            if (t >= 0 && c >= 0) {
+                                EditorState.clearAutoDucking(t, c)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ----- Noise removal ---------------------------------------------
         Column {
             id: denoiseSection

@@ -1446,6 +1446,14 @@ public:
     Q_INVOKABLE int studioVoiceEffectIndex(int trackIndex, int clipIndex) const;
     Q_INVOKABLE void applyStudioVoicePreset(int trackIndex, int clipIndex, double warmth, double clarity, double compression);
 
+    // Smart Auto-Ducking: lowers background audio volume during voice/speech intervals
+    Q_INVOKABLE int applyAutoDucking(int trackIndex, int clipIndex,
+                                     double duckingDb = -14.0,
+                                     double fadeTimeSeconds = 0.4,
+                                     double holdTimeSeconds = 1.0);
+    Q_INVOKABLE void clearAutoDucking(int trackIndex, int clipIndex);
+    Q_INVOKABLE bool hasAutoDucking(int trackIndex, int clipIndex) const;
+
     // Effect stacks travel as JSON on the system clipboard, so a copy also crosses to a second
     // running instance. -1 for both indices means the whole clip.
     Q_INVOKABLE void copyEffectToClipboard(int trackIndex, int clipIndex, int effectIndex);
