@@ -17,11 +17,6 @@
    - Faça `git add <arquivos>` e `git commit -m "feat/fix/docs: ..."` com mensagens claras em inglês ou português.
    - Sempre envie com `git push origin main`.
 
-3. **Formatação de Encerramento de Mensagem**:
-   - **TODA E QUALQUER RESPOSTA** deve terminar com:
-     `💡 **Sugestão de Próxima Implementação:** ...`  
-     `**Dificuldade:** ...`
-
 ---
 
 ## ⚡ OS SUPERPODERES NATIVOS DO DRIFT (NÃO REINVENTE A RODA!)
