@@ -77,6 +77,12 @@ public:
     // A constant-rate curve — the seed for a fresh editing session.
     static SpeedCurve flat(double speed);
 
+    // Built-in presets for viral speed ramping
+    static SpeedCurve montage();
+    static SpeedCurve hero();
+    static SpeedCurve bullet();
+    static SpeedCurve flashInOut();
+
     // Break Qt implicit sharing so a cross-thread reader cannot race a detach on the live copy.
     void detachSharedData()
     {

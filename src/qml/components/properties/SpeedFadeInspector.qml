@@ -77,6 +77,27 @@ Item {
             }
         }
 
+        Flow {
+            width: parent.width
+            spacing: 6
+            visible: root.clipKind === "video" || root.clipKind === "audio"
+
+            Repeater {
+                model: [
+                    { label: qsTr("Montage"), id: "montage" },
+                    { label: qsTr("Hero"), id: "hero" },
+                    { label: qsTr("Bullet"), id: "bullet" },
+                    { label: qsTr("Flash"), id: "flashInOut" }
+                ]
+                delegate: ThemedChip {
+                    required property var modelData
+                    text: modelData.label
+                    onClicked: EditorState.applySpeedCurvePreset(
+                                   EditorState.selectedTrack, EditorState.selectedClip, modelData.id)
+                }
+            }
+        }
+
             Row {
                 width: parent.width
                 spacing: 6

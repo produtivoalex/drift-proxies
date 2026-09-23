@@ -260,4 +260,52 @@ SpeedCurve SpeedCurve::flat(double speed)
     return curve;
 }
 
+SpeedCurve SpeedCurve::montage()
+{
+    SpeedPoint p0{0.0, 2.5, 0.0, 0.0, 0.10, 0.0, false};
+    SpeedPoint p1{0.35, 0.5, -0.10, 0.0, 0.10, 0.0, false};
+    SpeedPoint p2{0.65, 0.5, -0.10, 0.0, 0.10, 0.0, false};
+    SpeedPoint p3{1.0, 2.5, -0.10, 0.0, 0.0, 0.0, false};
+
+    SpeedCurve curve;
+    curve.setPoints({p0, p1, p2, p3});
+    return curve;
+}
+
+SpeedCurve SpeedCurve::hero()
+{
+    SpeedPoint p0{0.0, 1.0, 0.0, 0.0, 0.12, 0.0, false};
+    SpeedPoint p1{0.38, 0.3, -0.10, 0.0, 0.08, 0.0, false};
+    SpeedPoint p2{0.62, 0.3, -0.08, 0.0, 0.10, 0.0, false};
+    SpeedPoint p3{1.0, 1.0, -0.12, 0.0, 0.0, 0.0, false};
+
+    SpeedCurve curve;
+    curve.setPoints({p0, p1, p2, p3});
+    return curve;
+}
+
+SpeedCurve SpeedCurve::bullet()
+{
+    SpeedPoint p0{0.0, 3.5, 0.0, 0.0, 0.08, 0.0, false};
+    SpeedPoint p1{0.25, 0.2, -0.06, 0.0, 0.15, 0.0, false};
+    SpeedPoint p2{0.75, 0.2, -0.15, 0.0, 0.06, 0.0, false};
+    SpeedPoint p3{1.0, 3.5, -0.08, 0.0, 0.0, 0.0, false};
+
+    SpeedCurve curve;
+    curve.setPoints({p0, p1, p2, p3});
+    return curve;
+}
+
+SpeedCurve SpeedCurve::flashInOut()
+{
+    SpeedPoint p0{0.0, 4.0, 0.0, 0.0, 0.06, 0.0, false};
+    SpeedPoint p1{0.20, 1.0, -0.06, 0.0, 0.15, 0.0, false};
+    SpeedPoint p2{0.80, 1.0, -0.15, 0.0, 0.06, 0.0, false};
+    SpeedPoint p3{1.0, 4.0, -0.06, 0.0, 0.0, 0.0, false};
+
+    SpeedCurve curve;
+    curve.setPoints({p0, p1, p2, p3});
+    return curve;
+}
+
 } // namespace drift

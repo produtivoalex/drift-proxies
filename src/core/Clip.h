@@ -135,9 +135,10 @@ struct Clip
     // Used when fadeCurve == Custom; shared by fade-in and fade-out.
     FadeShape fadeShape;
 
-    // CapCut-style body intro/outro (whole-clip opacity/transform motion).
+    // CapCut-style body intro/outro/combo (whole-clip opacity/transform motion).
     ClipAnimation animIn;
     ClipAnimation animOut;
+    ClipAnimation animCombo;
 
     // Layout on the project canvas in pixels: top-left origin, size in px.
     // Empty tracks use defaults (0,0,projectW,projectH) at evaluate time.

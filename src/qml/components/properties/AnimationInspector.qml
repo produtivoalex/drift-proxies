@@ -22,12 +22,18 @@ Item {
 
     readonly property var animKinds: [
         "none", "fade", "slideUp", "slideDown", "slideLeft", "slideRight",
-        "zoomIn", "zoomOut", "pop", "spinCW", "spinCCW", "bounce"
+        "zoomIn", "zoomOut", "pop", "spinCW", "spinCCW", "bounce",
+        "elasticPop", "zoomPunch"
     ]
     readonly property var animKindLabels: [
         qsTr("None"), qsTr("Fade"), qsTr("Slide up"), qsTr("Slide down"),
         qsTr("Slide left"), qsTr("Slide right"), qsTr("Zoom in"), qsTr("Zoom out"),
-        qsTr("Pop"), qsTr("Spin CW"), qsTr("Spin CCW"), qsTr("Bounce")
+        qsTr("Pop"), qsTr("Spin CW"), qsTr("Spin CCW"), qsTr("Bounce"),
+        qsTr("Elastic Pop"), qsTr("Zoom Punch")
+    ]
+    readonly property var comboKinds: ["none", "pendulum", "shake", "pulse", "kenBurns"]
+    readonly property var comboKindLabels: [
+        qsTr("None"), qsTr("Pendulum"), qsTr("Camera Shake"), qsTr("Pulse"), qsTr("Ken Burns")
     ]
     readonly property var styleIds: ["linear", "smooth", "equalPower", "custom", "bezier"]
     readonly property var styleLabels: [qsTr("Linear"), qsTr("Smooth"), qsTr("Natural"), qsTr("Custom"), qsTr("Bezier")]
@@ -43,6 +49,12 @@ Item {
         return (clipData && clipData.animOut)
                ? clipData.animOut
                : { kind: "none", duration: 0.5, curve: "smooth" }
+    }
+    readonly property var animCombo: {
+        void clipDataRevision
+        return (clipData && clipData.animCombo)
+               ? clipData.animCombo
+               : { kind: "none", duration: 1.0, curve: "smooth" }
     }
 
     height: column.height
@@ -80,6 +92,8 @@ Item {
                 animInDurationField.value = root.animIn.duration || 0.5
             if (animOutDurationField && !animOutDurationField.activeFocus)
                 animOutDurationField.value = root.animOut.duration || 0.5
+            if (animComboDurationField && !animComboDurationField.activeFocus)
+                animComboDurationField.value = root.animCombo.duration || 1.0
         }
         if (root.clipKind === "audio") {
             if (audioFadeInField && !audioFadeInField.activeFocus)
@@ -200,6 +214,8 @@ Item {
                     { label: qsTr("Fade"), kind: "fade" },
                     { label: qsTr("Slide up"), kind: "slideUp" },
                     { label: qsTr("Pop"), kind: "pop" },
+                    { label: qsTr("Elastic Pop"), kind: "elasticPop" },
+                    { label: qsTr("Zoom Punch"), kind: "zoomPunch" },
                     { label: qsTr("Zoom in"), kind: "zoomIn" },
                     { label: qsTr("Bounce"), kind: "bounce" },
                     { label: qsTr("Clear"), kind: "none" }
@@ -286,6 +302,70 @@ Item {
                 step: 0.05
                 from: 0
                 onEdited: v => root.setAnim("animOut", { duration: v })
+            }
+        }
+
+        // ----- Combo / Living Camera ----------------------------------------------------
+        Text {
+            visible: root.supportsBodyAnim
+            text: qsTr("Combo / Living Camera")
+            color: Theme.mutedForeground
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSizeXs
+        }
+
+        Text {
+            visible: root.supportsBodyAnim
+            width: parent.width
+            wrapMode: Text.WordWrap
+            text: qsTr("Continuous dynamic motion across the entire clip (handheld shake, pendulum sway, heartbeat pulse, Ken Burns pan & zoom).")
+            color: Theme.mutedForeground
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSizeXs
+        }
+
+        Flow {
+            visible: root.supportsBodyAnim
+            width: parent.width
+            spacing: 6
+
+            Repeater {
+                model: [
+                    { label: qsTr("None"), kind: "none" },
+                    { label: qsTr("Pendulum"), kind: "pendulum" },
+                    { label: qsTr("Camera Shake"), kind: "shake" },
+                    { label: qsTr("Pulse"), kind: "pulse" },
+                    { label: qsTr("Ken Burns"), kind: "kenBurns" }
+                ]
+                delegate: ThemedChip {
+                    required property var modelData
+                    text: modelData.label
+                    selected: root.animCombo.kind === modelData.kind
+                    onClicked: root.setAnim("animCombo", { kind: modelData.kind, duration: root.animCombo.duration || 1.0 })
+                }
+            }
+        }
+
+        Row {
+            visible: root.supportsBodyAnim
+            width: parent.width
+            spacing: 6
+
+            ThemedComboBox {
+                width: Math.max(40, parent.width - 56 - parent.spacing)
+                model: root.comboKindLabels
+                currentIndex: Math.max(0, root.comboKinds.indexOf(root.animCombo.kind || "none"))
+                onActivated: root.setAnim("animCombo", { kind: root.comboKinds[currentIndex] })
+            }
+            ThemedNumberField {
+                id: animComboDurationField
+                to: 10
+                unit: "s"
+                width: 56
+                decimals: 2
+                step: 0.1
+                from: 0.1
+                onEdited: v => root.setAnim("animCombo", { duration: v })
             }
         }
 

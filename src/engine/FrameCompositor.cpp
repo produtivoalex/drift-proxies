@@ -640,12 +640,13 @@ void applyClipBodyAnimation(const drift::Clip &clip, drift::TimeUs timelineUs, d
         return;
     if (clip.type == drift::ClipType::Audio || clip.type == drift::ClipType::Subtitle)
         return;
-    if (clip.animIn.kind == drift::ClipAnimKind::None && clip.animOut.kind == drift::ClipAnimKind::None)
+    if (clip.animIn.kind == drift::ClipAnimKind::None && clip.animOut.kind == drift::ClipAnimKind::None
+        && clip.animCombo.kind == drift::ClipAnimKind::None)
         return;
 
     const drift::ClipAnimSample body =
         drift::evaluateClipAnimation(clip.timelineStart, clip.timelineDuration, clip.animIn,
-                                     clip.animOut, timelineUs, layoutW, layoutH);
+                                     clip.animOut, timelineUs, layoutW, layoutH, clip.animCombo);
     *opacity *= body.opacity;
     destRect->translate(body.dx, body.dy);
     if (!qFuzzyCompare(body.scale, 1.0)) {

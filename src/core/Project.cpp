@@ -276,6 +276,7 @@ QJsonObject clipToJson(const Clip &clip)
         {QStringLiteral("fadeShape"), clip.fadeShape.toJson()},
         {QStringLiteral("animIn"), clipAnimationToJson(clip.animIn)},
         {QStringLiteral("animOut"), clipAnimationToJson(clip.animOut)},
+        {QStringLiteral("animCombo"), clipAnimationToJson(clip.animCombo)},
         {QStringLiteral("timelineStartUs"), static_cast<double>(clip.timelineStart)},
         {QStringLiteral("timelineDurationUs"), static_cast<double>(clip.timelineDuration)},
         {QStringLiteral("srcInUs"), static_cast<double>(clip.srcIn)},
@@ -395,6 +396,8 @@ Clip clipFromJsonV2(const QJsonObject &object, int canvasW = 1920, int canvasH =
     clip.fadeShape = FadeShape::fromJson(object.value(QStringLiteral("fadeShape")));
     clip.animIn = clipAnimationFromJson(object.value(QStringLiteral("animIn")).toObject());
     clip.animOut = clipAnimationFromJson(object.value(QStringLiteral("animOut")).toObject());
+    if (object.contains(QStringLiteral("animCombo")))
+        clip.animCombo = clipAnimationFromJson(object.value(QStringLiteral("animCombo")).toObject());
     clip.timelineStart = static_cast<TimeUs>(object.value(QStringLiteral("timelineStartUs")).toDouble());
     clip.timelineDuration = static_cast<TimeUs>(object.value(QStringLiteral("timelineDurationUs")).toDouble());
     clip.srcIn = static_cast<TimeUs>(object.value(QStringLiteral("srcInUs")).toDouble());

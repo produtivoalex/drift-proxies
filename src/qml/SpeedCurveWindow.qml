@@ -170,6 +170,13 @@ Window {
         root.commit()
     }
 
+    function applyPreset(presetId) {
+        EditorState.applySpeedCurvePreset(root.trackIndex, root.clipIndex, presetId)
+        root.points = EditorState.speedCurvePoints
+        root.selectedPoint = -1
+        curveCanvas.requestPaint()
+    }
+
     readonly property var selected: root.selectedPoint >= 0 && root.selectedPoint < root.points.length
                                     ? root.points[root.selectedPoint] : null
 
@@ -376,6 +383,36 @@ Window {
                 variant: "ghost"
                 text: qsTr("Reset")
                 onClicked: root.resetCurve()
+            }
+
+            Rectangle {
+                width: 1
+                height: 18
+                anchors.verticalCenter: parent.verticalCenter
+                color: Theme.panelBorder
+            }
+
+            ThemedLabel {
+                anchors.verticalCenter: parent.verticalCenter
+                tone: "muted"
+                text: qsTr("Presets:")
+            }
+
+            ThemedChip {
+                text: qsTr("Montage")
+                onClicked: root.applyPreset("montage")
+            }
+            ThemedChip {
+                text: qsTr("Hero")
+                onClicked: root.applyPreset("hero")
+            }
+            ThemedChip {
+                text: qsTr("Bullet")
+                onClicked: root.applyPreset("bullet")
+            }
+            ThemedChip {
+                text: qsTr("Flash")
+                onClicked: root.applyPreset("flashInOut")
             }
 
             ThemedLabel {

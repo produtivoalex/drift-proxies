@@ -22,7 +22,14 @@ enum class ClipAnimKind {
     Pop,
     SpinCW,
     SpinCCW,
-    Bounce
+    Bounce,
+    // Advanced In/Out & Combo motions
+    ElasticPop,
+    ZoomPunch,
+    Pendulum,
+    Shake,
+    Pulse,
+    KenBurns
 };
 
 // Legacy ease names kept for project JSON compatibility. New UI uses FadeCurve.
@@ -63,6 +70,7 @@ ClipAnimation clipAnimationFromJson(const QJsonObject &object);
 // Fade kind is a no-op here — opacity comes from Clip::fadeMultiplier.
 ClipAnimSample evaluateClipAnimation(TimeUs timelineStart, TimeUs timelineDuration,
                                      const ClipAnimation &animIn, const ClipAnimation &animOut,
-                                     TimeUs timelineUs, double layoutW, double layoutH);
+                                     TimeUs timelineUs, double layoutW, double layoutH,
+                                     const ClipAnimation &animCombo = {});
 
 } // namespace drift

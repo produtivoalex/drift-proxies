@@ -34,6 +34,18 @@ QString clipAnimKindToString(ClipAnimKind kind)
         return QStringLiteral("spinCCW");
     case ClipAnimKind::Bounce:
         return QStringLiteral("bounce");
+    case ClipAnimKind::ElasticPop:
+        return QStringLiteral("elasticPop");
+    case ClipAnimKind::ZoomPunch:
+        return QStringLiteral("zoomPunch");
+    case ClipAnimKind::Pendulum:
+        return QStringLiteral("pendulum");
+    case ClipAnimKind::Shake:
+        return QStringLiteral("shake");
+    case ClipAnimKind::Pulse:
+        return QStringLiteral("pulse");
+    case ClipAnimKind::KenBurns:
+        return QStringLiteral("kenBurns");
     }
     return QStringLiteral("none");
 }
@@ -62,6 +74,18 @@ ClipAnimKind clipAnimKindFromString(const QString &kind)
         return ClipAnimKind::SpinCCW;
     if (kind == QStringLiteral("bounce"))
         return ClipAnimKind::Bounce;
+    if (kind == QStringLiteral("elasticPop"))
+        return ClipAnimKind::ElasticPop;
+    if (kind == QStringLiteral("zoomPunch"))
+        return ClipAnimKind::ZoomPunch;
+    if (kind == QStringLiteral("pendulum"))
+        return ClipAnimKind::Pendulum;
+    if (kind == QStringLiteral("shake"))
+        return ClipAnimKind::Shake;
+    if (kind == QStringLiteral("pulse"))
+        return ClipAnimKind::Pulse;
+    if (kind == QStringLiteral("kenBurns"))
+        return ClipAnimKind::KenBurns;
     return ClipAnimKind::None;
 }
 
@@ -217,12 +241,29 @@ void applyKind(ClipAnimKind kind, double settled, bool entering, double layoutW,
         out->opacity *= qBound(0.0, a * 4.0, 1.0);
         break;
     }
+    case ClipAnimKind::ElasticPop: {
+        const double e = QEasingCurve(QEasingCurve::OutElastic).valueForProgress(a);
+        out->scale *= entering ? (0.2 + 0.8 * e) : (1.0 + 0.3 * (1.0 - a));
+        out->opacity *= qBound(0.0, a * 3.0, 1.0);
+        break;
+    }
+    case ClipAnimKind::ZoomPunch: {
+        out->scale *= entering ? (1.65 - 0.65 * std::pow(a, 2.5)) : (1.0 + 0.5 * away);
+        out->opacity *= qBound(0.0, a * 2.0, 1.0);
+        break;
+    }
+    case ClipAnimKind::Pendulum:
+    case ClipAnimKind::Shake:
+    case ClipAnimKind::Pulse:
+    case ClipAnimKind::KenBurns:
+        break;
     }
 }
 
 ClipAnimSample evaluateClipAnimation(TimeUs timelineStart, TimeUs timelineDuration,
                                      const ClipAnimation &animIn, const ClipAnimation &animOut,
-                                     TimeUs timelineUs, double layoutW, double layoutH)
+                                     TimeUs timelineUs, double layoutW, double layoutH,
+                                     const ClipAnimation &animCombo)
 {
     ClipAnimSample sample;
     if (timelineDuration <= 0)
@@ -234,6 +275,41 @@ ClipAnimSample evaluateClipAnimation(TimeUs timelineStart, TimeUs timelineDurati
         && animIn.durationUs > 0 && rel < animIn.durationUs) {
         const double settled = static_cast<double>(rel) / static_cast<double>(animIn.durationUs);
         applyKind(animIn.kind, settled, true, layoutW, layoutH, animIn.curve, animIn.shape, &sample);
+    }
+
+    if (animCombo.kind != ClipAnimKind::None) {
+        const double relSec = static_cast<double>(rel) / 1'000'000.0;
+        const double progress = static_cast<double>(rel) / static_cast<double>(timelineDuration);
+        const double pi = 3.14159265358979323846;
+
+        switch (animCombo.kind) {
+        case ClipAnimKind::Pendulum: {
+            const double angle = 6.0 * std::sin(2.0 * pi * 1.2 * relSec);
+            sample.rotationDeg += angle;
+            break;
+        }
+        case ClipAnimKind::Shake: {
+            const int step = static_cast<int>(relSec * 28.0);
+            const double sx = std::sin(step * 17.13 + 0.5) * 0.025 * layoutW;
+            const double sy = std::cos(step * 29.41 + 1.2) * 0.025 * layoutH;
+            const double srot = std::sin(step * 41.7) * 2.0;
+            sample.dx += sx;
+            sample.dy += sy;
+            sample.rotationDeg += srot;
+            break;
+        }
+        case ClipAnimKind::Pulse: {
+            const double pulse = 1.0 + 0.07 * std::pow(std::sin(2.0 * pi * 1.4 * relSec), 2.0);
+            sample.scale *= pulse;
+            break;
+        }
+        case ClipAnimKind::KenBurns: {
+            sample.scale *= 1.0 + 0.15 * progress;
+            break;
+        }
+        default:
+            break;
+        }
     }
 
     if (animOut.kind != ClipAnimKind::None && animOut.kind != ClipAnimKind::Fade

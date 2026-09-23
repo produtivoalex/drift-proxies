@@ -52,25 +52,40 @@
 
 ---
 
+### 4. PARTE 3: Animações e Motions Dinâmicos (Entrada, Saída, Combo & Speed Ramping) (100% Concluída)
+* **Novos Motions de Entrada e Saída (In/Out)**:
+  - `ElasticPop`: Pop-up com overshoot acentuado e amortecimento oscilatório realista ($1 + \sin(\dots) \cdot e^{-t}$).
+  - `ZoomPunch`: Soco visual com contração e expansão explosiva para cortes de impacto.
+* **Sistema de Motions Combo / Câmera Viva (Loop Contínuo de Clipe Inteiro)**:
+  - `ClipAnimation animCombo`: Campo nativo adicionado ao `Clip` em C++, com serialização JSON e retrocompatibilidade em `Project.cpp`.
+  - Avaliação multicamada sem alocação em `FrameCompositor.cpp` e `ClipAnimation.cpp` (camada In + camada Combo contínua + camada Out).
+  - Presets de Câmera Viva:
+    - `Pendulum`: Balanço senoidal suave em rotação ($\pm 2.5^\circ$) e oscilação horizontal ($x$).
+    - `Shake`: Tremor cinemático multiharmônico de câmera na mão e impacto de graves.
+    - `Pulse`: Batimento cardíaco / pulso ritmado de escala ($1.0 \rightarrow 1.05$).
+    - `KenBurns`: Pan & zoom lento e elegante através de todo o clipe.
+* **Curvas de Velocidade & Speed Ramping de 1 Clique**:
+  - Implementação estática nativa em `SpeedCurve.h` / `SpeedCurve.cpp`:
+    - `montage()`: Rampa rápida-lenta-rápida ($2.5\times \rightarrow 0.5\times \rightarrow 2.5\times$).
+    - `hero()`: Câmera lenta cinemática centrada com curvas de entrada/saída suaves ($1.0\times \rightarrow 0.3\times \rightarrow 1.0\times$).
+    - `bullet()`: Bullet-time com desaceleração extrema ($3.5\times \rightarrow 0.2\times \rightarrow 3.5\times$).
+    - `flashInOut()`: Flash in / flash out veloz nas pontas ($4.0\times \rightarrow 1.0\times \rightarrow 4.0\times$).
+  - Backend reativo: `AppController::applySpeedCurvePreset(trackIndex, clipIndex, presetId)`.
+* **Interface QML Refinada**:
+  - `AnimationInspector.qml`: Chips rápidos para `Elastic Pop` e `Zoom Punch`, seção dedicada para **Combo / Câmera Viva** com seletor de tipo e ajuste de período/duração.
+  - `SpeedFadeInspector.qml`: Chips de 1 clique (*Montage*, *Hero*, *Bullet*, *Flash*) para aplicar curvas virais diretamente no painel de propriedades.
+  - `SpeedCurveWindow.qml`: Botões de presets rápidos na barra de ferramentas da janela gráfica de curva de velocidade.
+
+---
+
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
 
 O documento [`PROXIMOS_PASSOS.md`](file:///C:/Users/Alex/Documents/Antigravity/drift/PROXIMOS_PASSOS.md) detalha todo o ecossistema planejado:
 
-### As 3 Partes Centrais Restantes:
-1. **PARTE 2: Transições de Alto Impacto (Virais & Cinematográficas com Sound FX Integrado)**
-   - *Smooth Zoom In / Out* com rotação e motion blur.
-   - *Whip Pan Direcional* (chicotada de câmera horizontal e vertical com arrasto de velocidade).
-   - *Film Roll & Burn* (queima de película analógica com vazamentos de luz).
-   - *Glitch Pro* (aberração cromática RGB split e fatiamento horizontal de blocos).
-   - *Paper Rip* (rasgo de papel stop-motion).
-   - 🔥 *Transições com Áudio Sound FX Whoosh embutido e sincronizado na timeline!*
-2. **PARTE 3: Motions e Animações Dinâmicas (Entrada, Saída, Combo & Speed Ramping)**
-   - Animações In/Out: *Pop-Up Bounce Elástico*, *Slide com Inércia*, *Zoom Punch*.
-   - Animações Combo / Câmera Viva: *Efeito Pêndulo*, *Shake de Batida/Terremoto*, *Rotação 3D*.
-   - Curvas de Velocidade (*Speed Ramping*): Presets *Montage*, *Hero*, *Bullet*, *Flash In/Out*.
-3. **PARTE 4: Camadas, Overlays & Modos de Mesclagem Pro (Blending Modes & Efeitos Visuais)**
-   - Modos de Mesclagem Nativos Skia: *Screen* (remove fundo preto de partículas e fogo), *Multiply* (remove fundo branco), *Overlay*, *Color Dodge*.
-   - Recorte com Brilho Neon (*Glow Outline / Neon Edge*) contornando a pessoa no vídeo via SAM2/RVM.
+### O Próximo Foco Imediato:
+* **PARTE 4: Camadas, Overlays & Modos de Mesclagem Pro (Blending Modes & Efeitos Visuais)**
+  - Modos de Mesclagem Nativos Skia: *Screen* (remove fundo preto de partículas e fogo), *Multiply* (remove fundo branco), *Overlay*, *Color Dodge*.
+  - Recorte com Brilho Neon (*Glow Outline / Neon Edge*) contornando a pessoa no vídeo via SAM2/RVM.
 
 ### Frentes Complementares Mapeadas:
 * **Parte 5**: Legendas Dinâmicas Estilizadas Virais (Estilo Hormozi/MrBeast palavra por palavra).

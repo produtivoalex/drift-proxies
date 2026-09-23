@@ -931,6 +931,7 @@ public:
     Q_INVOKABLE void seekSpeedCurvePreviewAtSource(double position);
     Q_INVOKABLE void applySpeedCurve();
     Q_INVOKABLE void clearClipSpeedCurve(int trackIndex, int clipIndex);
+    Q_INVOKABLE void applySpeedCurvePreset(int trackIndex, int clipIndex, const QString &presetId);
 
     // Media-bin preview session. beginAssetPreview auditions the bin row; the page owns the
     // trim and crop values and hands them to saveAssetEdit itself.
@@ -1357,7 +1358,7 @@ public:
     Q_INVOKABLE QVariantMap inspectModel3dClip(int trackIndex, int clipIndex) const;
     Q_INVOKABLE void setClipFade(int trackIndex, int clipIndex, double fadeInSeconds, double fadeOutSeconds);
     Q_INVOKABLE void setClipFadeCurve(int trackIndex, int clipIndex, const QString &curve);
-    // which: "animIn" | "animOut". Partial patch: kind / duration / curve (or legacy ease).
+    // which: "animIn" | "animOut" | "animCombo". Partial patch: kind / duration / curve (or legacy ease).
     Q_INVOKABLE void setClipAnimation(int trackIndex, int clipIndex, const QString &which,
                                       const QVariantMap &patch);
     Q_INVOKABLE void addTransition(int trackIndex, int clipIndex, const QString &kind, double durationSeconds);

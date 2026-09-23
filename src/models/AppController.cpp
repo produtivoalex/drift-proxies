@@ -4074,6 +4074,12 @@ QVariantMap AppController::clipToMap(const drift::Clip &clip, const drift::Clip 
              {QStringLiteral("ease"), drift::clipAnimEaseToString(clip.animOut.ease)},
              {QStringLiteral("curve"), drift::fadeCurveToString(clip.animOut.curve)},
          }},
+        {QStringLiteral("animCombo"), QVariantMap{
+             {QStringLiteral("kind"), drift::clipAnimKindToString(clip.animCombo.kind)},
+             {QStringLiteral("duration"), drift::usToSeconds(clip.animCombo.durationUs)},
+             {QStringLiteral("ease"), drift::clipAnimEaseToString(clip.animCombo.ease)},
+             {QStringLiteral("curve"), drift::fadeCurveToString(clip.animCombo.curve)},
+         }},
         {QStringLiteral("effects"), effects},
         {QStringLiteral("audioEffects"), audioEffects},
         {QStringLiteral("keyframes"), keyframesToMap(clip)},
@@ -8876,6 +8882,45 @@ void AppController::clearClipSpeedCurve(int trackIndex, int clipIndex)
         1, llround(static_cast<double>(clip.srcOut - clip.srcIn) / clip.effectiveSpeed()));
     pushProjectEdit(before, tr("Speed curve removed"));
     finishEdit(tr("Speed curve removed"));
+}
+
+void AppController::applySpeedCurvePreset(int trackIndex, int clipIndex, const QString &presetId)
+{
+    drift::SpeedCurve curve;
+    if (presetId == QLatin1String("montage")) {
+        curve = drift::SpeedCurve::montage();
+    } else if (presetId == QLatin1String("hero")) {
+        curve = drift::SpeedCurve::hero();
+    } else if (presetId == QLatin1String("bullet")) {
+        curve = drift::SpeedCurve::bullet();
+    } else if (presetId == QLatin1String("flashInOut") || presetId == QLatin1String("flash")) {
+        curve = drift::SpeedCurve::flashInOut();
+    } else {
+        return;
+    }
+
+    if (m_speedCurveActive && (trackIndex < 0 || m_speedCurveTrack == trackIndex)) {
+        m_speedCurve = curve;
+        m_speedCurveClip.speedCurve = m_speedCurve;
+        m_speedCurvePlayer.setSpeedCurve(m_speedCurve);
+        emit speedCurveChanged();
+        return;
+    }
+
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Video && clip.type != drift::ClipType::Audio)
+        return;
+
+    const drift::Project before = m_project;
+    clip.speedCurve = curve;
+    clip.syncDurationFromSpeedCurve();
+    pushProjectEdit(before, tr("Speed curve preset applied: %1").arg(presetId));
+    finishEdit(tr("Speed curve preset applied"));
 }
 
 void AppController::beginFadeCurveSession(int trackIndex, int clipIndex)
@@ -14707,10 +14752,11 @@ void AppController::setClipAnimation(int trackIndex, int clipIndex, const QStrin
 
     const bool isIn = which == QLatin1String("animIn");
     const bool isOut = which == QLatin1String("animOut");
-    if (!isIn && !isOut)
+    const bool isCombo = which == QLatin1String("animCombo");
+    if (!isIn && !isOut && !isCombo)
         return;
 
-    drift::ClipAnimation next = isIn ? clip.animIn : clip.animOut;
+    drift::ClipAnimation next = isIn ? clip.animIn : (isOut ? clip.animOut : clip.animCombo);
     if (patch.contains(QStringLiteral("kind")))
         next.kind = drift::clipAnimKindFromString(patch.value(QStringLiteral("kind")).toString());
     if (patch.contains(QStringLiteral("duration")))
@@ -14727,10 +14773,10 @@ void AppController::setClipAnimation(int trackIndex, int clipIndex, const QStrin
     }
 
     if (next.kind != drift::ClipAnimKind::None && next.durationUs <= 0)
-        next.durationUs = 500000;
+        next.durationUs = isCombo ? clip.timelineDuration : 500000;
     next.durationUs = qMin(next.durationUs, clip.timelineDuration);
 
-    const drift::ClipAnimation &current = isIn ? clip.animIn : clip.animOut;
+    const drift::ClipAnimation &current = isIn ? clip.animIn : (isOut ? clip.animOut : clip.animCombo);
     if (next.kind == current.kind && next.durationUs == current.durationUs
         && next.curve == current.curve && next.ease == current.ease)
         return;
@@ -14739,8 +14785,10 @@ void AppController::setClipAnimation(int trackIndex, int clipIndex, const QStrin
     drift::Clip &mutableClip = m_project.tracks()[trackIndex].clips[clipIndex];
     if (isIn)
         mutableClip.animIn = next;
-    else
+    else if (isOut)
         mutableClip.animOut = next;
+    else
+        mutableClip.animCombo = next;
 
     // CapCut: Fade kind owns the timeline edge fade on that side; motion clears it.
     if (isIn) {
@@ -14752,7 +14800,7 @@ void AppController::setClipAnimation(int trackIndex, int clipIndex, const QStrin
         } else {
             mutableClip.fadeInUs = 0;
         }
-    } else {
+    } else if (isOut) {
         if (next.kind == drift::ClipAnimKind::Fade) {
             mutableClip.fadeOutUs = next.durationUs;
             mutableClip.fadeCurve = next.curve;
