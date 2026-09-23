@@ -344,6 +344,80 @@ Item {
                 }
             }
 
+            // Sound FX (Whoosh) integration card
+            Rectangle {
+                width: parent.width
+                height: sfxCol.height + 16
+                radius: Theme.radiusMd
+                color: Theme.panelAccent
+                border.color: Theme.panelBorder
+                border.width: 1
+
+                Column {
+                    id: sfxCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 8
+                    spacing: 6
+
+                    Row {
+                        width: parent.width
+                        spacing: 8
+
+                        Text {
+                            text: qsTr("Efeito Sonoro (SFX)")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            font.bold: true
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        Text {
+                            text: root.activeTransition.soundFx
+                                  ? qsTr("• %1 sugerido").arg(root.activeTransition.soundFx === "whoosh_deep" ? "Whoosh Profundo" : "Whoosh Rápido")
+                                  : ""
+                            color: Theme.panelSecondaryForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            anchors.verticalCenter: parent.verticalCenter
+                            visible: !!root.activeTransition.soundFx
+                        }
+                    }
+
+                    Text {
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                        text: qsTr("Insere o efeito sonoro de transição perfeitamente sincronizado com o corte na timeline.")
+                        color: Theme.mutedForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 6
+
+                        ThemedButton {
+                            text: qsTr("Whoosh Rápido")
+                            variant: "secondary"
+                            glyph: "volumeHigh"
+                            onClicked: EditorState.attachTransitionSfx(
+                                           root.transitionEditTrack, root.activeTransition.id, "whoosh_fast")
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Whoosh Profundo")
+                            variant: "secondary"
+                            glyph: "volumeHigh"
+                            onClicked: EditorState.attachTransitionSfx(
+                                           root.transitionEditTrack, root.activeTransition.id, "whoosh_deep")
+                        }
+                    }
+                }
+            }
+
             ThemedButton {
                 text: qsTr("Remove transition")
                 variant: "destructive"

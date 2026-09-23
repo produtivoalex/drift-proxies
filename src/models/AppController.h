@@ -1361,6 +1361,9 @@ public:
     Q_INVOKABLE void setClipAnimation(int trackIndex, int clipIndex, const QString &which,
                                       const QVariantMap &patch);
     Q_INVOKABLE void addTransition(int trackIndex, int clipIndex, const QString &kind, double durationSeconds);
+    Q_INVOKABLE void addTransitionWithSfx(int trackIndex, int clipIndex, const QString &kind, double durationSeconds,
+                                          const QString &sfxId = {});
+    Q_INVOKABLE void attachTransitionSfx(int trackIndex, const QString &transitionId, const QString &sfxId = {});
     Q_INVOKABLE void removeTransition(int trackIndex, const QString &transitionId);
     Q_INVOKABLE void setTransitionDuration(int trackIndex, const QString &transitionId, double durationSeconds);
     Q_INVOKABLE void setTransitionKind(int trackIndex, const QString &transitionId, const QString &kind);

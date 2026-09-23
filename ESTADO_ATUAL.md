@@ -37,6 +37,15 @@
 * **Efeitos Retrô Vintage**: *Voz de Telefone Vintage* (Chamada, Telefone Antigo, Walkie-Talkie) e *Rádio Lo-Fi & Vinil* (Lo-Fi Beats, Disco de Vinil, Fita Cassete).
 * **Interface**: Cards dedicados e modernos integrados no Inspetor de Áudio do clipe (`AudioInspector.qml`).
 
+### 3. PARTE 2: Transições de Alto Impacto & Shaders Virais (Em Andamento)
+* **Smooth Zoom In (`transitions/smooth_zoom_in/`)**: Zoom contínuo com aceleração cúbica ($1.0\times \rightarrow 2.2\times$), micro-rotação dinâmica ($4^\circ$), radial motion blur multiamostrado com dither anti-banding e aberração cromática RGB split.
+* **Smooth Zoom Out (`transitions/smooth_zoom_out/`)**: Recuo dinâmico centrípeto, contra-rotação, desfoque radial convergente e dispersão óptica.
+* **Whip Pan Direcional (`transitions/whip_pan/`)**: Chicotada de câmera 4-way (Esquerda, Direita, Cima, Baixo) com curva de velocidade cúbica Hermite extrema, desfoque de movimento direcional 9-tap e separação cromática prismática.
+* **Sound FX Whoosh Nativo Integrado**:
+  - Propriedade nativa `soundFx` no manifesto `transition.json` (`whoosh_fast` e `whoosh_deep`).
+  - Suporte no backend C++ (`TransitionCatalog.h`, `TransitionPackageLoader.cpp`, `AppController::addTransitionWithSfx`, `AppController::attachTransitionSfx`).
+  - Painel de propriedades (`TransitionInspector.qml`) com card dedicado para sincronização de Whoosh com 1 clique na timeline, com pico acústico alinhado ao corte.
+
 ---
 
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)

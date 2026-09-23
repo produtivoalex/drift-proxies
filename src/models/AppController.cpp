@@ -2534,6 +2534,7 @@ QVariantMap transitionToMap(const drift::Track &track, const drift::Transition &
         {QStringLiteral("end"), hasWindow ? drift::usToSeconds(endUs) : 0.0},
         {QStringLiteral("overlapping"), overlapping},
         {QStringLiteral("label"), def ? def->meta.displayName : t.kindId},
+        {QStringLiteral("soundFx"), def ? def->soundFx : QString()},
         {QStringLiteral("params"), params},
         {QStringLiteral("easingCurve"), drift::fadeCurveToString(t.easingCurve)},
     };
@@ -15638,6 +15639,74 @@ void AppController::addTransition(int trackIndex, int clipIndex, const QString &
     selectTransition(trackIndex, clipIndex);
 }
 
+void AppController::addTransitionWithSfx(int trackIndex, int clipIndex, const QString &kind, double durationSeconds,
+                                         const QString &sfxId)
+{
+    addTransition(trackIndex, clipIndex, kind, durationSeconds);
+
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+
+    const drift::Track &track = m_project.tracks().at(trackIndex);
+    const int partnerIndex = findTransitionPartnerIndex(track, clipIndex);
+    if (partnerIndex < 0)
+        return;
+
+    const QString fromId = track.clips.at(clipIndex).id;
+    const QString toId = track.clips.at(partnerIndex).id;
+
+    for (const drift::Transition &transition : track.transitions) {
+        if (transition.fromClipId == fromId && transition.toClipId == toId) {
+            attachTransitionSfx(trackIndex, transition.id, sfxId);
+            break;
+        }
+    }
+}
+
+void AppController::attachTransitionSfx(int trackIndex, const QString &transitionId, const QString &sfxId)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size() || transitionId.isEmpty())
+        return;
+
+    const drift::Track &track = m_project.tracks().at(trackIndex);
+    const drift::Transition *targetTransition = nullptr;
+    for (const drift::Transition &trItem : track.transitions) {
+        if (trItem.id == transitionId) {
+            targetTransition = &trItem;
+            break;
+        }
+    }
+    if (!targetTransition)
+        return;
+
+    QString targetSfx = sfxId;
+    if (targetSfx.isEmpty()) {
+        const TransitionPresetEntry *def = transitionDefForId(targetTransition->kindId);
+        if (def && !def->soundFx.isEmpty())
+            targetSfx = def->soundFx;
+        else
+            targetSfx = QStringLiteral("whoosh_fast");
+    }
+
+    if (targetSfx == QLatin1String("none"))
+        return;
+
+    double sfxDuration = 0.35;
+    for (const auto &item : sfxCatalog()) {
+        if (item.id == targetSfx) {
+            sfxDuration = item.durationSeconds;
+            break;
+        }
+    }
+
+    const drift::TimeUs centerUs = drift::transitionCenterUs(track, *targetTransition);
+    const double centerSec = double(centerUs) / 1'000'000.0;
+    const double startSec = qMax(0.0, centerSec - (sfxDuration * 0.5));
+
+    addSfxClip(targetSfx, startSec);
+    finishEdit(tr("Whoosh sound added to timeline"));
+}
+
 void AppController::removeTransition(int trackIndex, const QString &transitionId)
 {
     if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
@@ -15820,6 +15889,7 @@ QVariantList AppController::transitionKinds() const
             {QStringLiteral("kind"), def.meta.id},
             {QStringLiteral("label"), def.meta.displayName},
             {QStringLiteral("category"), def.meta.category},
+            {QStringLiteral("soundFx"), def.soundFx},
             {QStringLiteral("previewStripPath"), def.previewStripPath},
             {QStringLiteral("previewFrames"), def.previewFrames},
             {QStringLiteral("params"), params},

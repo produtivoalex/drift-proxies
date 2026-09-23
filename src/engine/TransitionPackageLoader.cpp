@@ -72,6 +72,8 @@ TransitionPresetEntry TransitionPackageLoader::loadPackage(const QString &packag
         return entry;
     }
 
+    entry.soundFx = root.value(QStringLiteral("soundFx")).toString();
+
     QString stripRel = root.value(QStringLiteral("previewStrip")).toString();
     if (stripRel.isEmpty())
         stripRel = QStringLiteral("preview_strip.png");

@@ -1,33 +1,41 @@
 {
-  "id": "whip_pan",
-  "displayName": "Whip Pan Direcional",
+  "id": "smooth_zoom_out",
+  "displayName": "Smooth Zoom Out",
   "category": "viral",
-  "order": 10,
-  "soundFx": "whoosh_fast",
+  "order": 9,
+  "soundFx": "whoosh_deep",
   "parameters": [
     {
-      "identifier": "directionMode",
-      "displayName": "Direção (0:Esq, 1:Dir, 2:Cima, 3:Baixo)",
+      "identifier": "zoomIntensity",
+      "displayName": "Intensidade do Zoom",
       "type": "float",
-      "minValue": 0.0,
-      "maxValue": 3.0,
-      "defaultValue": 0.0
+      "minValue": 1.2,
+      "maxValue": 4.0,
+      "defaultValue": 2.2
     },
     {
       "identifier": "motionBlur",
-      "displayName": "Intensidade do Blur",
-      "type": "float",
-      "minValue": 0.0,
-      "maxValue": 2.5,
-      "defaultValue": 1.2
-    },
-    {
-      "identifier": "chromatic",
-      "displayName": "Aberração Cromática RGB",
+      "displayName": "Motion Blur",
       "type": "float",
       "minValue": 0.0,
       "maxValue": 2.0,
-      "defaultValue": 0.6
+      "defaultValue": 1.0
+    },
+    {
+      "identifier": "rotation",
+      "displayName": "Rotação (Graus)",
+      "type": "float",
+      "minValue": -15.0,
+      "maxValue": 15.0,
+      "defaultValue": -4.0
+    },
+    {
+      "identifier": "chromatic",
+      "displayName": "Aberração Cromática",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 2.0,
+      "defaultValue": 0.8
     }
   ],
   "pipeline": {
