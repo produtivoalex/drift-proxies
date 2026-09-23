@@ -262,4 +262,186 @@ QString formatSubtitleText(const QString &text, SubtitleCapitalization cap)
     return text;
 }
 
+QString enrichSubtitleTextWithEmojis(const QString &text)
+{
+    if (text.trimmed().isEmpty())
+        return text;
+
+    struct EmojiRule {
+        const char *emojiUtf8;
+        const char *const *keywords;
+    };
+
+    static const char *kMoneyWords[] = {
+        "dinheiro", "lucro", "riqueza", "milhao", "milhão", "grana", "faturamento", "pagar",
+        "preco", "preço", "investir", "venda", "vendas", "vender", "money", "cash", "rich",
+        "wealth", "profit", "million", "dollar", "pay", "invest", "billion", "dolares", "dólares",
+        nullptr
+    };
+
+    static const char *kFireWords[] = {
+        "fogo", "quente", "viral", "bombando", "chama", "tendencia", "tendência", "hype",
+        "fire", "hot", "trend", "trending", "flame", "famoso", "bombou",
+        nullptr
+    };
+
+    static const char *kIdeaWords[] = {
+        "ideia", "sacada", "segredo", "dica", "mente", "cerebro", "cérebro", "insight",
+        "pensar", "pensamento", "idea", "secret", "tip", "mind", "brain", "smart", "truque",
+        nullptr
+    };
+
+    static const char *kTargetWords[] = {
+        "alvo", "meta", "foco", "objetivo", "estrategia", "estratégia", "focado", "direcao",
+        "target", "focus", "goal", "strategy", "aim", "disciplina",
+        nullptr
+    };
+
+    static const char *kSpeedWords[] = {
+        "rapido", "rápido", "tempo", "velocidade", "agora", "urgente", "minuto", "segundo",
+        "instantaneo", "instantâneo", "fast", "speed", "quick", "time", "now", "urgent", "rush",
+        nullptr
+    };
+
+    static const char *kRocketWords[] = {
+        "foguete", "crescer", "escalar", "subir", "top", "explosao", "explosão", "lancamento",
+        "lançamento", "avanco", "avanço", "rocket", "growth", "scale", "moon", "launch", "explode",
+        nullptr
+    };
+
+    static const char *kWarningWords[] = {
+        "atencao", "atenção", "cuidado", "pare", "perigo", "aviso", "alerta", "stop", "warning",
+        "alert", "danger", "caution", "careful", "proibido",
+        nullptr
+    };
+
+    static const char *kShockWords[] = {
+        "choque", "uau", "caramba", "inacreditavel", "inacreditável", "loucura", "absurdo",
+        "shock", "wow", "crazy", "insane", "omg", "unbelievable", "chocado",
+        nullptr
+    };
+
+    static const char *kHeartWords[] = {
+        "amor", "amar", "paixao", "paixão", "coracao", "coração", "adorar", "love", "heart",
+        "passion", "adore", "apaixonado",
+        nullptr
+    };
+
+    static const char *kTrophyWords[] = {
+        "vitoria", "vitória", "trofeu", "troféu", "vencer", "campeao", "campeão", "sucesso",
+        "vencedor", "ganhar", "ganhou", "win", "winner", "trophy", "champion", "victory", "success",
+        nullptr
+    };
+
+    static const char *kEyeWords[] = {
+        "olha", "olhar", "veja", "assista", "repare", "espia", "look", "watch", "see", "eye",
+        "witness", "olhem",
+        nullptr
+    };
+
+    static const char *kPowerWords[] = {
+        "forca", "força", "poder", "treino", "academia", "forte", "firme", "strong", "power",
+        "muscle", "gym", "workout", "hard", "potencia", "potência",
+        nullptr
+    };
+
+    static const char *kSparkleWords[] = {
+        "magica", "mágica", "magico", "mágico", "incrivel", "incrível", "brilho", "estrela",
+        "show", "magic", "star", "glow", "sparkle", "wonder", "maravilha",
+        nullptr
+    };
+
+    static const char *kCrossWords[] = {
+        "erro", "falha", "nunca", "perder", "errado", "bloqueio", "ban", "perdeu", "wrong",
+        "fail", "lose", "never", "error", "block", "mentira",
+        nullptr
+    };
+
+    static const char *kCheckWords[] = {
+        "certo", "verdade", "sim", "perfeito", "correto", "concluido", "concluído", "feito",
+        "right", "yes", "true", "check", "done", "correct", "perfect", "aprovado",
+        nullptr
+    };
+
+    static const char *kQuestionWords[] = {
+        "duvida", "dúvida", "pergunta", "question", "doubt",
+        nullptr
+    };
+
+    static const char *kMusicWords[] = {
+        "musica", "música", "som", "batida", "ritmo", "cantar", "cancao", "canção", "audio",
+        "áudio", "music", "song", "beat", "sound", "audio", "sing",
+        nullptr
+    };
+
+    static const char *kLaughWords[] = {
+        "engracado", "engraçado", "piada", "haha", "kkk", "lol", "risos", "funny", "laugh",
+        "joke", "hilarious",
+        nullptr
+    };
+
+    static const EmojiRule kRules[] = {
+        { "💸", kMoneyWords },
+        { "🔥", kFireWords },
+        { "💡", kIdeaWords },
+        { "🎯", kTargetWords },
+        { "⚡", kSpeedWords },
+        { "🚀", kRocketWords },
+        { "⚠️", kWarningWords },
+        { "😱", kShockWords },
+        { "❤️", kHeartWords },
+        { "🏆", kTrophyWords },
+        { "👀", kEyeWords },
+        { "💪", kPowerWords },
+        { "✨", kSparkleWords },
+        { "❌", kCrossWords },
+        { "✅", kCheckWords },
+        { "❓", kQuestionWords },
+        { "🎵", kMusicWords },
+        { "😂", kLaughWords }
+    };
+
+    // Clean text words into comparable tokens
+    static const QRegularExpression wordCleanRe(QStringLiteral(R"([^\p{L}\p{N}]+)"));
+    const QStringList rawWords = text.split(QRegularExpression(QStringLiteral(R"(\s+)")), Qt::SkipEmptyParts);
+
+    QString matchedEmoji;
+    for (const QString &raw : rawWords) {
+        QString clean = raw.toLower();
+        clean.remove(wordCleanRe);
+        if (clean.isEmpty())
+            continue;
+
+        for (const EmojiRule &rule : kRules) {
+            for (const char *const *kw = rule.keywords; *kw != nullptr; ++kw) {
+                if (clean == QString::fromUtf8(*kw)) {
+                    const QString emojiStr = QString::fromUtf8(rule.emojiUtf8);
+                    if (!text.contains(emojiStr)) {
+                        matchedEmoji = emojiStr;
+                        break;
+                    }
+                }
+            }
+            if (!matchedEmoji.isEmpty())
+                break;
+        }
+        if (!matchedEmoji.isEmpty())
+            break;
+    }
+
+    if (!matchedEmoji.isEmpty()) {
+        return text + QLatin1Char(' ') + matchedEmoji;
+    }
+    return text;
+}
+
+QList<SubtitleCue> enrichSubtitleCuesWithEmojis(const QList<SubtitleCue> &cues)
+{
+    QList<SubtitleCue> enriched = cues;
+    for (SubtitleCue &cue : enriched) {
+        cue.text = enrichSubtitleTextWithEmojis(cue.text);
+    }
+    return enriched;
+}
+
 } // namespace drift

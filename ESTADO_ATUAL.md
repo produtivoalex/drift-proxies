@@ -97,6 +97,46 @@
   - Método C++ `AppController::applyNeonGlowOutline(trackIndex, clipIndex, color)` integrando o pipeline neural SAM2/RVM ao shader procedural `edge_neon` e template `neon_cutout`.
   - Card interativo em `MasksInspector.qml` com paleta de 5 cores luminosas (*Ciano Cyberpunk*, *Magenta Neon*, *Dourado Solar*, *Verde Matrix*, *Roxo*) para aplicar o contorno brilhante com 1 clique.
 
+### 6. PARTE 5: Legendas Dinâmicas & Estilizadas Virais (Auto-Captions Estilo Hormozi / MrBeast) (100% Concluída)
+* **Motor de Emojis Automáticos Contextuais (`SubtitleCue.h` / `SubtitleCue.cpp`)**:
+  - Dicionário bilíngue inteligente (Português + Inglês) para termos de alto impacto viral:
+    - Dinheiro/Lucro/Vendas/Milhão $\rightarrow$ 💸
+    - Fogo/Viral/Hype/Quente $\rightarrow$ 🔥
+    - Ideia/Sacada/Segredo/Dica $\rightarrow$ 💡
+    - Alvo/Meta/Foco/Objetivo $\rightarrow$ 🎯
+    - Rápido/Velocidade/Agora/Urgente $\rightarrow$ ⚡
+    - Foguete/Crescer/Escalar/Top $\rightarrow$ 🚀
+    - Atenção/Cuidado/Pare/Perigo $\rightarrow$ ⚠️
+    - Choque/Uau/Inacreditável/Loucura $\rightarrow$ 😱
+    - Amor/Coração/Paixão $\rightarrow$ ❤️
+    - Vitória/Troféu/Vencer/Campeão $\rightarrow$ 🏆
+    - Olhar/Veja/Assista $\rightarrow$ 👀
+    - Força/Poder/Treino/Academia $\rightarrow$ 💪
+    - Mágica/Brilho/Estrela $\rightarrow$ ✨
+    - Erro/Falha/Nunca/Perder $\rightarrow$ ❌
+    - Certo/Verdade/Perfeito/Feito $\rightarrow$ ✅
+    - Dúvida/Pergunta/Por que $\rightarrow$ ❓
+    - Música/Som/Ritmo/Batida $\rightarrow$ 🎵
+    - Risos/Engraçado/Piada $\rightarrow$ 😂
+  - Funções `enrichSubtitleTextWithEmojis` e `enrichSubtitleCuesWithEmojis` que anexam emojis automaticamente sem duplicações.
+* **Presets de Legendas Virais Calibrados (`TextStyle.cpp`)**:
+  - `tiktok-viral-yellow`: Montserrat 900, AllCaps, contorno preto 5.5px, sombra 0 5 9, palavra ativa em amarelo elétrico `#FFE600` com escala pop de 1.22x.
+  - `hormozi-beast`: Anton 96, AllCaps, contorno preto espesso 6.0px, sombra 0 7 12, palavra ativa em verde limão elétrico `#00FF66` (Alex Hormozi) com escala pop de 1.25x.
+  - `mrbeast-pop`: Montserrat 92, AllCaps, contorno preto 5.5px, palavra ativa em ouro brilhante `#FFD700` com destaque pill e pop de 1.26x.
+  - `tiktok-cyan-glow`: Montserrat 86, contorno preto 4.0px, glow ciano `#00F2FE`, palavra ativa em ciano com escala 1.22x.
+  - `danger-red`: Anton 94, AllCaps, contorno preto 5.5px, sombra dramática, palavra ativa em vermelho fogo `#FF2A2A` com escala 1.24x.
+  - `reels-pill-box`: Inter 800, contorno sutil, pílula animada vermelha `#FF3B30` ou verde destacando a palavra falada.
+  - `shorts-single-word`: Montserrat 98, AllCaps, retenção máxima de 1 palavra por tela com escala 1.20x.
+* **Backend de Alta Produtividade (`AppController.h` / `AppController.cpp`)**:
+  - `generateSubtitlesForClip`: suporte a flag `bool addEmojis` integrada ao Whisper local e finalização do clipe.
+  - `applyViralCaptionsStyle`: aplica empacotamento de palavras por tela, emojis contextuais, caixa alta e preset viral em 1 clique.
+  - `autoEnrichSubtitlesWithEmojis`: enriquece qualquer clipe de legenda existente na timeline com emojis contextuais e suporte a Undo/Redo.
+  - `repackSubtitleCues`: reempacota as legendas existentes em 1 palavra por tela (estilo Hormozi) ou 2-3 palavras (estilo Shorts/Reels).
+  - Modernização de `setSubtitleClipVisuals` com APIs nativas de `TextStyle` (camadas, stroke, shadow, pixelSize, primaryColor).
+* **Interface QML Atualizada (`SubtitlesTab.qml` & `SubtitleEditor.qml`)**:
+  - `SubtitlesTab.qml`: Checkbox nativo `ThemedCheckBox` para ativação de emojis automáticos e galeria completa de estilos virais.
+  - `SubtitleEditor.qml`: Barra superior de ações virais rápidas (*✨ Emojis Automáticos*, *⚡ 1 Palavra/Tela*, *🔥 2-3 Palavras*) e seletor em fluxo (Flow) com todos os presets estilizados.
+
 ---
 
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
@@ -104,23 +144,22 @@
 O documento [`PROXIMOS_PASSOS.md`](file:///C:/Users/Alex/Documents/Antigravity/drift/PROXIMOS_PASSOS.md) detalha todo o ecossistema planejado:
 
 ### O Próximo Foco Imediato:
-* **PARTE 5: Legendas Dinâmicas Estilizadas Virais (Estilo Hormozi/MrBeast palavra por palavra)**
-  - Animação e destaque ativo palavra por palavra (*Word-by-word active highlight* com cor vibrante e escala pop).
-  - Presets virais de 1 clique (Hormozi Amarelo/Verde, MrBeast Pop, Clean White).
-  - Emojis automáticos e marcações de ênfase.
+* **PARTE 6: Recorte Inteligente de Fundo (Smart Cutout / Auto Cutout em 1-Clique)**
+  - O Drift já possui o motor C++ com `RvmMatter` e `Sam2Segmenter` usando ONNX Runtime local.
+  - Adicionar botão de 1 clique no painel de vídeo e timeline *"Remover Fundo (Auto Cutout)"*.
+  - Permitir o fluxo viral de duplicar a faixa e colocar **textos grandes flutuando atrás da pessoa**.
 
 ### Frentes Complementares Mapeadas:
-* **Parte 6**: Recorte Inteligente de Fundo em 1-Clique (*Auto Cutout* de pessoa sem tela verde).
-* **Parte 7**: Detecção de Batidas e Cortes no Ritmo (*Auto-Beats / Snap to Beat* na timeline).
+* **Parte 7**: Detecção de Batidas e Cortes no Ritmo (*Auto-Beats / Snap to Beat* na timeline via `AudioOnsets.cpp`).
 * **Parte 8**: Rastreamento de Movimento (*Motion Tracking* via OpenCV).
 * **Parte 9**: Presets de Redes Sociais & Guias de Zonas Seguras 9:16 (TikTok/Reels/Shorts).
 
 ---
 
 ## 📂 Arquivos Chave Recentes no Repositório
+* `src/core/SubtitleCue.h` / `SubtitleCue.cpp`: Motor de quebra de legendas, Karaoke timings e enriquecimento com emojis contextuais.
+* `src/core/TextStyle.h` / `TextStyle.cpp`: Presets virais com WordAccent Karaoke e escalas pop dinâmicas.
+* `src/models/AppController.h` / `AppController.cpp`: Métodos de legendas virais, transcrição Whisper e empacotamento.
+* `src/qml/components/assets/SubtitlesTab.qml`: Painel de geração automática de legendas com Whisper.
+* `src/qml/components/SubtitleEditor.qml`: Editor ao vivo de legendas estilo lyrics com ações virais e presets rápidos.
 * `PROXIMOS_PASSOS.md`: Roteiro estratégico detalhado de todas as 9 partes.
-* `src/qml/components/properties/AudioInspector.qml`: Controles de UI para todos os efeitos de áudio.
-* `src/models/AppController.h` / `src/models/AppController.cpp`: Métodos C++ para orquestração de efeitos, ducking, isolamento vocal e cortes.
-* `src/engine/audio/FilterProcessors.h` / `FilterProcessors.cpp`: Implementação dos DSPs (ex: `VocalIsolatorProcessor`).
-* `src/engine/audio/AudioEffectFactory.cpp`: Registro de todos os efeitos de áudio.
-* `audio-effects/`: Pacotes de manifesto JSON dos efeitos (`utility_studio_voice`, `space_eightd`, `transmission_party_next_door`, `utility_vocal_isolation`).

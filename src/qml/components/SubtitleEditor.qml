@@ -516,8 +516,35 @@ Item {
             }
         }
 
-        // Quick Visual Style Presets
+        // Quick Viral Actions Row
         Row {
+            width: parent.width
+            spacing: 6
+
+            ThemedButton {
+                text: qsTr("✨ Emojis Automáticos")
+                variant: "secondary"
+                tooltip: qsTr("Detecta palavras-chave de impacto no texto e insere emojis contextuais (💸, 🔥, 💡, ⚡, 🎯)")
+                onClicked: EditorState.autoEnrichSubtitlesWithEmojis(root.trackIndex, root.clipIndex)
+            }
+
+            ThemedButton {
+                text: qsTr("⚡ 1 Palavra/Tela")
+                variant: "ghost"
+                tooltip: qsTr("Reempacota as legendas com 1 palavra por tela no estilo dinâmico de Alex Hormozi")
+                onClicked: EditorState.repackSubtitleCues(root.trackIndex, root.clipIndex, 1)
+            }
+
+            ThemedButton {
+                text: qsTr("🔥 2-3 Palavras")
+                variant: "ghost"
+                tooltip: qsTr("Reempacota as legendas com 2 a 3 palavras por tela (ritmo perfeito para Reels e Shorts)")
+                onClicked: EditorState.repackSubtitleCues(root.trackIndex, root.clipIndex, 3)
+            }
+        }
+
+        // Quick Visual Style Presets (Flow wrapping for comfortable clicking)
+        Flow {
             width: parent.width
             spacing: 4
 
@@ -527,33 +554,55 @@ Item {
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeXs
                 anchors.verticalCenter: parent.verticalCenter
+                rightPadding: 4
             }
 
             ThemedButton {
-                text: "TikTok Amarelo"
+                text: qsTr("⚡ TikTok Amarelo")
                 variant: "ghost"
-                tooltip: qsTr("Amarelo vibrante com contorno preto e karaoke")
+                tooltip: qsTr("Amarelo vibrante com contorno preto 5.5px e Karaoke pop")
                 onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "tiktok-viral-yellow")
             }
 
             ThemedButton {
-                text: "Hormozi"
+                text: qsTr("🔥 Hormozi Verde")
                 variant: "ghost"
-                tooltip: qsTr("Branco/Verde virais em destaque")
+                tooltip: qsTr("Anton 96 AllCaps, contorno preto espesso e Karaoke verde limão vibrante")
                 onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "hormozi-beast")
             }
 
             ThemedButton {
-                text: "Neon"
+                text: qsTr("🦁 MrBeast Dourado")
                 variant: "ghost"
-                tooltip: qsTr("Ciano brilhante com glow")
+                tooltip: qsTr("Letras grandes, destaque dourado brilhante com pop de 1.28x")
+                onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "mrbeast-pop")
+            }
+
+            ThemedButton {
+                text: qsTr("💎 Ciano Glow")
+                variant: "ghost"
+                tooltip: qsTr("Ciano neon elétrico com brilho e efeito karaoke glow")
                 onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "tiktok-cyan-glow")
             }
 
             ThemedButton {
-                text: "Padrão"
+                text: qsTr("🔴 Alerta Vermelho")
                 variant: "ghost"
-                tooltip: qsTr("Estilo clássico limpo")
+                tooltip: qsTr("Impacto extremo com palavra ativa em vermelho fogo e sombra dramática")
+                onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "danger-red")
+            }
+
+            ThemedButton {
+                text: qsTr("💊 Pílula Reels")
+                variant: "ghost"
+                tooltip: qsTr("Pílula colorida animada destacando cada palavra ao ser dita")
+                onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "reels-pill-box")
+            }
+
+            ThemedButton {
+                text: qsTr("📄 Padrão")
+                variant: "ghost"
+                tooltip: qsTr("Estilo clássico limpo e legível")
                 onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "subtitle")
             }
         }

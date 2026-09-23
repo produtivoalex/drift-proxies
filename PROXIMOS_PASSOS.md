@@ -151,11 +151,11 @@ Para além das 4 partes originais, um editor para criadores no topo absoluto da 
 | Frente / Módulo | CapCut Pro | Drift Video Editor | Status no Drift |
 | :--- | :--- | :--- | :--- |
 | **Parte 1: Áudio Pro (Voz Estúdio, Ducking, 8D, Isolador Vocal)** | Pago (Pro / Nuvem) | **Nativo C++, 100% Offline e Grátis** | ✅ **100% Concluído** |
-| **Parte 2: Transições de Alto Impacto com Sound FX** | Limitado (Som separado) | **Nativo com Whoosh Integrado** | ⏳ *Próxima Etapa (Planejado)* |
-| **Parte 3: Motions Dinâmicos & Speed Ramping** | Biblioteca rica | **Bézier Curves & Motions Skia** | ⏳ *Planejado* |
-| **Parte 4: Modos de Mesclagem & Overlays** | Suportado | **Nativo Skia/OpenGL (`SkBlendMode`)** | ⏳ *Planejado* |
-| **Parte 5: Legendas Dinâmicas (Hormozi/MrBeast)** | Pago (Pro) | **Transcrição Whisper Local + Animação** | ⏳ *Planejado* |
-| **Parte 6: Auto Cutout (Recorte de Fundo de Pessoa)** | Pago (Pro) | **RVM/SAM2 ONNX Nativo Local** | ⏳ *Planejado* |
+| **Parte 2: Transições de Alto Impacto com Sound FX** | Limitado (Som separado) | **Nativo com Whoosh Integrado** | ✅ **100% Concluído** |
+| **Parte 3: Motions Dinâmicos & Speed Ramping** | Biblioteca rica | **Bézier Curves & Motions Skia** | ✅ **100% Concluído** |
+| **Parte 4: Modos de Mesclagem & Overlays** | Suportado | **Nativo Skia/OpenGL (`SkBlendMode`)** | ✅ **100% Concluído** |
+| **Parte 5: Legendas Dinâmicas (Hormozi/MrBeast)** | Pago (Pro) | **Transcrição Whisper Local + Animação** | ✅ **100% Concluído** |
+| **Parte 6: Auto Cutout (Recorte de Fundo de Pessoa)** | Pago (Pro) | **RVM/SAM2 ONNX Nativo Local** | ⏳ *Próxima Etapa (Planejado)* |
 | **Parte 7: Auto-Beats (Detecção Rítmica na Timeline)** | Suportado | **Engine `AudioOnsets` C++** | ⏳ *Planejado* |
 | **Parte 8: Rastreamento de Movimento (Motion Tracking)** | Pago (Pro) | **OpenCV Tracker Integrado** | ⏳ *Planejado* |
 | **Parte 9: Zonas Seguras de Redes Sociais (9:16 Safe Zones)** | Suportado | **Canvas 9:16 com Guias Visuais** | ⏳ *Planejado* |

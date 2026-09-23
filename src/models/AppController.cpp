@@ -7677,7 +7677,8 @@ QVariantList AppController::whisperLanguages()
 
 void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, const QString &language,
                                              int maxWordsPerCue, const QString &stylePreset,
-                                             bool allCaps, int capitalizationMode, int maxCharsPerLine)
+                                             bool allCaps, int capitalizationMode, int maxCharsPerLine,
+                                             bool addEmojis)
 {
     if (m_subtitleGenerating) {
         setLastMessage(tr("Subtitle generation already in progress"), QStringLiteral("warning"));
@@ -7722,7 +7723,7 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
     const int charsPerLine = maxCharsPerLine > 0 ? maxCharsPerLine : 42;
 
     (void)QtConcurrent::run([this, path, srcIn, srcOut, timelineStart, timelineDuration, speed,
-                             reverse, languageCode, wordsPerCue, charsPerLine, stylePreset, allCaps, capitalizationMode]() {
+                             reverse, languageCode, wordsPerCue, charsPerLine, stylePreset, allCaps, capitalizationMode, addEmojis]() {
         auto setProgress = [this](double fraction, const QString &status) {
             QMetaObject::invokeMethod(
                 this,
@@ -7737,11 +7738,11 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
                 Qt::QueuedConnection);
         };
 
-        auto finish = [this, timelineStart, timelineDuration, stylePreset, allCaps, capitalizationMode](bool ok, const QString &message,
+        auto finish = [this, timelineStart, timelineDuration, stylePreset, allCaps, capitalizationMode, addEmojis](bool ok, const QString &message,
                                                               const QList<drift::SubtitleCue> &cues) {
             QMetaObject::invokeMethod(
                 this,
-                [this, ok, message, cues, timelineStart, timelineDuration, stylePreset, allCaps, capitalizationMode]() {
+                [this, ok, message, cues, timelineStart, timelineDuration, stylePreset, allCaps, capitalizationMode, addEmojis]() {
                     m_subtitleGenerating = false;
                     emit subtitleGeneratingChanged();
                     m_subtitleGenProgress = ok ? 1.0 : 0.0;
@@ -7753,7 +7754,7 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
                         emit subtitleGenerationFinished(false, message);
                         return;
                     }
-                    finalizeGeneratedSubtitles(timelineStart, timelineDuration, cues, stylePreset, allCaps, capitalizationMode);
+                    finalizeGeneratedSubtitles(timelineStart, timelineDuration, cues, stylePreset, allCaps, capitalizationMode, addEmojis);
                 },
                 Qt::QueuedConnection);
         };
@@ -11345,13 +11346,14 @@ void AppController::finalizeGeneratedSubtitles(drift::TimeUs timelineStart,
                                                const QList<drift::SubtitleCue> &cues,
                                                const QString &stylePreset,
                                                bool allCaps,
-                                               int capitalizationMode)
+                                               int capitalizationMode,
+                                               bool addEmojis)
 {
     const drift::Project before = m_project;
     const int trackIndex = drift::ensureTrackForClipType(m_project, drift::ClipType::Subtitle, true);
     qWarning() << "[subtitles] finalize: trackIndex" << trackIndex << "cues" << cues.size()
                << "start" << timelineStart << "dur" << timelineDuration << "preset" << stylePreset << "allCaps" << allCaps
-               << "capitalizationMode" << capitalizationMode;
+               << "capitalizationMode" << capitalizationMode << "addEmojis" << addEmojis;
     if (trackIndex < 0)
         return;
 
@@ -11393,6 +11395,10 @@ void AppController::finalizeGeneratedSubtitles(drift::TimeUs timelineStart,
         for (drift::SubtitleCue &cue : processedCues) {
             cue.text = cue.text.toUpper();
         }
+    }
+
+    if (addEmojis) {
+        processedCues = drift::enrichSubtitleCuesWithEmojis(processedCues);
     }
 
     clip.subtitleCues = processedCues;
@@ -13215,21 +13221,150 @@ bool AppController::setSubtitleClipVisuals(int trackIndex, int clipIndex, const 
     if (!fontFamily.isEmpty())
         clip.textStyle.fontFamily = fontFamily;
     if (fontSize > 0.0)
-        clip.textStyle.fontSize = fontSize;
+        clip.textStyle.pixelSize = static_cast<int>(fontSize);
     if (!fillColor.isEmpty())
-        clip.textStyle.fillColor = fillColor;
-    if (!highlightColor.isEmpty())
-        clip.textStyle.highlightColor = highlightColor;
-    if (!strokeColor.isEmpty())
-        clip.textStyle.strokeColor = strokeColor;
-    if (strokeWidth >= 0.0)
-        clip.textStyle.strokeWidth = strokeWidth;
-    clip.textStyle.shadow = shadow;
-    if (!shadowColor.isEmpty())
-        clip.textStyle.shadowColor = shadowColor;
+        drift::setSolidFill(clip.textStyle, QColor(fillColor));
+    if (!highlightColor.isEmpty()) {
+        clip.textStyle.accent.color = QColor(highlightColor);
+        clip.textStyle.accent.colorEnabled = true;
+        if (clip.textStyle.accent.rule == drift::WordAccentRule::None) {
+            clip.textStyle.accent.rule = drift::WordAccentRule::Karaoke;
+        }
+    }
+    if (strokeWidth >= 0.0 || !strokeColor.isEmpty()) {
+        const QColor sc = strokeColor.isEmpty() ? Qt::black : QColor(strokeColor);
+        const double sw = strokeWidth >= 0.0 ? strokeWidth : 4.0;
+        drift::TextShadingLayer *stroke = drift::firstTextLayerOfKind(clip.textStyle.layers, drift::TextLayerKind::Stroke, false);
+        if (stroke) {
+            stroke->enabled = (sw > 0.0);
+            stroke->width = sw;
+            stroke->paint.color = sc;
+        } else if (sw > 0.0) {
+            clip.textStyle.layers.prepend(drift::strokeLayer(sw, sc));
+        }
+    }
+    drift::TextShadingLayer *sh = drift::firstTextLayerOfKind(clip.textStyle.layers, drift::TextLayerKind::Shadow, false);
+    if (shadow) {
+        const QColor sc = shadowColor.isEmpty() ? QColor(0, 0, 0, 220) : QColor(shadowColor);
+        if (sh) {
+            sh->enabled = true;
+            sh->paint.color = sc;
+        } else {
+            clip.textStyle.layers.prepend(drift::shadowLayer(sc, 0.0, 5.0, 8.0));
+        }
+    } else if (sh) {
+        sh->enabled = false;
+    }
 
     pushProjectEdit(before, tr("Update subtitle style"));
     finishEdit(tr("Update subtitle style"));
+    return true;
+}
+
+bool AppController::applyViralCaptionsStyle(int trackIndex, int clipIndex,
+                                           const QString &presetId,
+                                           bool addEmojis,
+                                           int wordsPerScreen,
+                                           int capitalizationMode)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle || clip.subtitleCues.isEmpty())
+        return false;
+
+    const drift::Project before = m_project;
+
+    // 1. Re-pack cues if wordsPerScreen is specified (1 = Hormozi, 2..3 = Shorts/Reels)
+    QList<drift::SubtitleCue> cues = clip.subtitleCues;
+    if (wordsPerScreen > 0) {
+        cues = drift::packSubtitleCues(cues, 42, 1, wordsPerScreen);
+    }
+
+    // 2. Contextual emojis
+    if (addEmojis) {
+        cues = drift::enrichSubtitleCuesWithEmojis(cues);
+    }
+
+    // 3. Capitalization (3 = AllCaps default for viral)
+    if (capitalizationMode >= 0) {
+        const drift::SubtitleCapitalization cap = static_cast<drift::SubtitleCapitalization>(
+            qBound(0, capitalizationMode, static_cast<int>(drift::SubtitleCapitalization::Lowercase)));
+        for (drift::SubtitleCue &cue : cues) {
+            cue.text = drift::formatSubtitleText(cue.text, cap);
+        }
+    }
+
+    clip.subtitleCues = cues;
+    clip.name = drift::subtitleClipName(cues);
+
+    // 4. Apply viral style preset
+    const QString presetToUse = presetId.trimmed().isEmpty() ? QStringLiteral("tiktok-viral-yellow") : presetId;
+    if (const std::optional<drift::TextStyle> preset = drift::textStyleForPresetId(presetToUse)) {
+        clip.textStyle = *preset;
+    }
+
+    pushProjectEdit(before, tr("Apply viral caption style"));
+    finishEdit(tr("Apply viral caption style"));
+    setLastMessage(tr("Estilo viral aplicado com sucesso!"), QStringLiteral("success"));
+    return true;
+}
+
+int AppController::autoEnrichSubtitlesWithEmojis(int trackIndex, int clipIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return 0;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return 0;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle || clip.subtitleCues.isEmpty())
+        return 0;
+
+    const drift::Project before = m_project;
+    int modified = 0;
+    for (drift::SubtitleCue &cue : clip.subtitleCues) {
+        const QString orig = cue.text;
+        cue.text = drift::enrichSubtitleTextWithEmojis(cue.text);
+        if (cue.text != orig)
+            ++modified;
+    }
+
+    if (modified > 0) {
+        clip.name = drift::subtitleClipName(clip.subtitleCues);
+        pushProjectEdit(before, tr("Add contextual emojis (%1 cues)").arg(modified));
+        finishEdit(tr("Add contextual emojis"));
+        setLastMessage(tr("%1 legendas enriquecidas com emojis contextuais!").arg(modified), QStringLiteral("success"));
+    } else {
+        setLastMessage(tr("Nenhum novo emoji contextual necessário."), QStringLiteral("info"));
+    }
+    return modified;
+}
+
+bool AppController::repackSubtitleCues(int trackIndex, int clipIndex, int maxWordsPerCue, int maxLineWidth)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle || clip.subtitleCues.isEmpty())
+        return false;
+
+    const drift::Project before = m_project;
+    const int wordCap = std::max(0, maxWordsPerCue);
+    const int lineW = maxLineWidth > 0 ? maxLineWidth : 42;
+
+    clip.subtitleCues = drift::packSubtitleCues(clip.subtitleCues, lineW, 1, wordCap);
+    clip.name = drift::subtitleClipName(clip.subtitleCues);
+
+    pushProjectEdit(before, tr("Re-pack subtitles (%1 words/screen)").arg(wordCap));
+    finishEdit(tr("Re-pack subtitles"));
+    setLastMessage(tr("Legendas reempacotadas com sucesso!"), QStringLiteral("success"));
     return true;
 }
 

@@ -470,30 +470,66 @@ QList<TextPreset> buildPresets()
     {
         TextStyle s;
         s.fontFamily = QStringLiteral("Montserrat");
-        s.pixelSize = 86;
+        s.pixelSize = 90;
         s.fontWeight = 900;
-        s.layers = {legacyShadow(true, QColor(0, 0, 0, 230), 0.0, 5.0, 8.0), legacyStroke(4.5, QColor(0, 0, 0)),
+        s.layers = {legacyShadow(true, QColor(0, 0, 0, 240), 0.0, 5.0, 9.0), legacyStroke(5.5, QColor(0, 0, 0)),
                     solidFillLayer(Qt::white)};
         s.accent.rule = WordAccentRule::Karaoke;
         s.accent.colorEnabled = true;
         s.accent.color = QColor(255, 230, 0); // Electric TikTok Yellow
-        s.accent.sizeScale = 1.15;
-        s.animation.in = presetSlot("fade", 0.15, "easeOut");
+        s.accent.sizeScale = 1.22;
+        s.animation.in = presetSlot("pop", 0.2, "back", byWord());
         s.animation.out = presetSlot("fade", 0.15, "easeIn");
         s.animation.loop = loopSlot("karaoke-pop");
         add("tiktok-viral-yellow", "TikTok Amarelo Viral", s, "PALAVRAS VIRAIS");
     }
     {
         TextStyle s;
+        s.fontFamily = QStringLiteral("Anton");
+        s.pixelSize = 96;
+        s.fontWeight = 900;
+        s.layers = {legacyShadow(true, QColor(0, 0, 0, 250), 0.0, 7.0, 12.0), legacyStroke(6.0, QColor(0, 0, 0)),
+                    solidFillLayer(Qt::white)};
+        s.accent.rule = WordAccentRule::Karaoke;
+        s.accent.colorEnabled = true;
+        s.accent.color = QColor(0, 255, 102); // Hormozi Signature Lime Green
+        s.accent.sizeScale = 1.25;
+        s.animation.in = presetSlot("pop", 0.25, "back", byWord());
+        s.animation.out = presetSlot("fade", 0.15, "easeIn");
+        s.animation.loop = loopSlot("karaoke-pop");
+        add("hormozi-beast", "Hormozi Verde Limão", s, "LUCRO MÁXIMO");
+    }
+    {
+        TextStyle s;
+        s.fontFamily = QStringLiteral("Montserrat");
+        s.pixelSize = 92;
+        s.fontWeight = 900;
+        s.layers = {legacyShadow(true, QColor(0, 0, 0, 240), 0.0, 6.0, 10.0), legacyStroke(5.5, QColor(0, 0, 0)),
+                    solidFillLayer(Qt::white)};
+        s.accent.rule = WordAccentRule::Karaoke;
+        s.accent.colorEnabled = true;
+        s.accent.color = QColor(255, 215, 0); // MrBeast Gold Pop
+        s.accent.sizeScale = 1.26;
+        s.accent.highlight.enabled = true;
+        s.accent.highlight.color = QColor(10, 10, 10, 200);
+        s.accent.highlight.padding = 6.0;
+        s.accent.highlight.radius = 8.0;
+        s.animation.in = presetSlot("pop", 0.25, "back", byWord());
+        s.animation.out = presetSlot("fade", 0.15, "easeIn");
+        s.animation.loop = loopSlot("karaoke-pop");
+        add("mrbeast-pop", "MrBeast Dourado Pop", s, "1.000.000 DÓLARES");
+    }
+    {
+        TextStyle s;
         s.fontFamily = QStringLiteral("Inter");
         s.pixelSize = 84;
         s.fontWeight = 900;
-        s.layers = {legacyShadow(true, QColor(0, 0, 0, 230), 0.0, 5.0, 8.0), legacyStroke(4.0, QColor(0, 0, 0)),
+        s.layers = {legacyShadow(true, QColor(0, 0, 0, 230), 0.0, 5.0, 8.0), legacyStroke(4.5, QColor(0, 0, 0)),
                     solidFillLayer(Qt::white)};
         s.accent.rule = WordAccentRule::Karaoke;
         s.accent.colorEnabled = true;
         s.accent.color = QColor(34, 197, 94); // Neon Green
-        s.accent.sizeScale = 1.16;
+        s.accent.sizeScale = 1.20;
         s.animation.in = presetSlot("fade", 0.15, "easeOut");
         s.animation.out = presetSlot("fade", 0.15, "easeIn");
         s.animation.loop = loopSlot("karaoke-jump");
@@ -502,14 +538,14 @@ QList<TextPreset> buildPresets()
     {
         TextStyle s;
         s.fontFamily = QStringLiteral("Montserrat");
-        s.pixelSize = 84;
-        s.fontWeight = 800;
-        s.layers = {glowLayer(QColor(0, 242, 254), 22.0, 0.7), legacyStroke(3.5, QColor(0, 0, 0)),
+        s.pixelSize = 86;
+        s.fontWeight = 900;
+        s.layers = {glowLayer(QColor(0, 242, 254), 22.0, 0.7), legacyStroke(4.0, QColor(0, 0, 0)),
                     solidFillLayer(Qt::white)};
         s.accent.rule = WordAccentRule::Karaoke;
         s.accent.colorEnabled = true;
         s.accent.color = QColor(0, 242, 254); // Cyan Glow
-        s.accent.sizeScale = 1.15;
+        s.accent.sizeScale = 1.22;
         s.animation.in = presetSlot("fade", 0.15, "easeOut");
         s.animation.out = presetSlot("fade", 0.15, "easeIn");
         s.animation.loop = loopSlot("karaoke-glow");
@@ -518,25 +554,25 @@ QList<TextPreset> buildPresets()
     {
         TextStyle s;
         s.fontFamily = QStringLiteral("Anton");
-        s.pixelSize = 92;
+        s.pixelSize = 94;
         s.fontWeight = 900;
-        s.layers = {legacyShadow(true, QColor(0, 0, 0, 240), 0.0, 7.0, 10.0), legacyStroke(5.0, QColor(0, 0, 0)),
+        s.layers = {legacyShadow(true, QColor(0, 0, 0, 250), 0.0, 7.0, 11.0), legacyStroke(5.5, QColor(0, 0, 0)),
                     solidFillLayer(Qt::white)};
         s.accent.rule = WordAccentRule::Karaoke;
         s.accent.colorEnabled = true;
-        s.accent.color = QColor(255, 45, 45); // Hormozi Red
-        s.accent.sizeScale = 1.18;
+        s.accent.color = QColor(255, 42, 42); // Danger Red
+        s.accent.sizeScale = 1.24;
         s.animation.in = presetSlot("pop", 0.25, "back", byWord());
         s.animation.out = presetSlot("fade", 0.15, "easeIn");
         s.animation.loop = loopSlot("karaoke-pop");
-        add("hormozi-beast", "Hormozi / Beast", s, "ALTO IMPACTO");
+        add("danger-red", "Alerta Vermelho", s, "ATENÇÃO TOTAL");
     }
     {
         TextStyle s;
         s.fontFamily = QStringLiteral("Inter");
         s.pixelSize = 80;
         s.fontWeight = 800;
-        s.layers = {legacyStroke(2.0, QColor(0, 0, 0, 180)), solidFillLayer(Qt::white)};
+        s.layers = {legacyStroke(2.5, QColor(0, 0, 0, 200)), solidFillLayer(Qt::white)};
         s.accent.rule = WordAccentRule::Karaoke;
         s.accent.highlight.enabled = true;
         s.accent.highlight.color = QColor(255, 59, 48);

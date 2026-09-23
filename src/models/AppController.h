@@ -838,7 +838,8 @@ public:
                                               const QString &stylePreset = QStringLiteral("tiktok-viral-yellow"),
                                               bool allCaps = true,
                                               int capitalizationMode = -1,
-                                              int maxCharsPerLine = 42);
+                                              int maxCharsPerLine = 42,
+                                              bool addEmojis = false);
     // Transform capitalization of all cues in a subtitle clip (0=Original, 1=Sentence, 2=Title, 3=AllCaps, 4=Lower)
     Q_INVOKABLE bool transformSubtitleCase(int trackIndex, int clipIndex, int mode);
     // Find and replace text across all cues in a subtitle clip
@@ -850,6 +851,16 @@ public:
                                             const QString &highlightColor, const QString &strokeColor,
                                             double strokeWidth, bool shadow, const QString &shadowColor,
                                             const QString &presetId = QString());
+    // Applies full viral caption styling (repack words, auto-emojis, capitalization, viral preset)
+    Q_INVOKABLE bool applyViralCaptionsStyle(int trackIndex, int clipIndex,
+                                             const QString &presetId = QStringLiteral("tiktok-viral-yellow"),
+                                             bool addEmojis = false,
+                                             int wordsPerScreen = 1,
+                                             int capitalizationMode = 3);
+    // Enrich existing subtitle clip with contextual emojis based on spoken keywords
+    Q_INVOKABLE int autoEnrichSubtitlesWithEmojis(int trackIndex, int clipIndex);
+    // Re-pack existing subtitle clip cues into smaller or larger word chunks (e.g. 1 word for Hormozi, 2-3 words for Shorts)
+    Q_INVOKABLE bool repackSubtitleCues(int trackIndex, int clipIndex, int maxWordsPerCue, int maxLineWidth = 42);
     // Split cue at playhead position
     Q_INVOKABLE bool splitSubtitleCueAtPlayhead(int trackIndex, int clipIndex, int cueIndex);
     // Merge cue with the next cue
@@ -2090,7 +2101,8 @@ protected:
                                     const QList<drift::SubtitleCue> &cues,
                                     const QString &stylePreset = QStringLiteral("tiktok-viral-yellow"),
                                     bool allCaps = true,
-                                    int capitalizationMode = -1);
+                                    int capitalizationMode = -1,
+                                    bool addEmojis = false);
     void finalizeDenoise(const QString &clipId, const QString &audioPath);
     void watchStabilizeProgress(QProcess *process, const QString &clipId, qint64 durationUs,
                                 double rangeFrom, double rangeTo);

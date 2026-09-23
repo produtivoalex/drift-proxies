@@ -255,6 +255,15 @@ Item {
                 Component.onCompleted: currentIndex = 0
             }
 
+            ThemedCheckBox {
+                id: autoEmojisBox
+                visible: root.whisperReady
+                width: subtitleColumn.contentWidth
+                text: qsTr("✨ Inserir Emojis Contextuais (💸, 🔥, 💡, ⚡, 🎯)")
+                checked: true
+                tooltip: qsTr("Analisa as palavras-chave faladas e anexa automaticamente emojis vibrantes de alto impacto")
+            }
+
             ThemedButton {
                 visible: root.whisperReady && !EditorState.subtitleGenerating
                 width: subtitleColumn.contentWidth
@@ -277,10 +286,11 @@ Item {
                                     : 1
                     const charsPerLine = Math.round(charsSlider.value)
                     const isAllCaps = capMode === 3
+                    const withEmojis = autoEmojisBox.checked
 
                     EditorState.generateSubtitlesForClip(
                         EditorState.selectedTrack, EditorState.selectedClip, lang,
-                        captionWordsBox.currentValue, style, isAllCaps, capMode, charsPerLine)
+                        captionWordsBox.currentValue, style, isAllCaps, capMode, charsPerLine, withEmojis)
                 }
             }
 
@@ -356,13 +366,15 @@ Item {
     ]
 
     readonly property var captionStyleOptions: [
-        { label: qsTr("TikTok Amarelo Viral (Recomendado)"), id: "tiktok-viral-yellow" },
-        { label: qsTr("TikTok Verde Neon"), id: "tiktok-neon-green" },
-        { label: qsTr("TikTok Ciano Glow"), id: "tiktok-cyan-glow" },
-        { label: qsTr("Hormozi / Beast Style"), id: "hormozi-beast" },
-        { label: qsTr("Reels Pill Highlight"), id: "reels-pill-box" },
-        { label: qsTr("Shorts 1 Palavra"), id: "shorts-single-word" },
-        { label: qsTr("Padrão Clássico"), id: "subtitle" }
+        { label: qsTr("⚡ TikTok Amarelo Viral (Recomendado)"), id: "tiktok-viral-yellow" },
+        { label: qsTr("🔥 Hormozi Verde Limão"), id: "hormozi-beast" },
+        { label: qsTr("🦁 MrBeast Dourado Pop"), id: "mrbeast-pop" },
+        { label: qsTr("💎 TikTok Ciano Glow"), id: "tiktok-cyan-glow" },
+        { label: qsTr("🟢 TikTok Verde Neon"), id: "tiktok-neon-green" },
+        { label: qsTr("🔴 Alerta Vermelho Impacto"), id: "danger-red" },
+        { label: qsTr("💊 Reels Pill Highlight"), id: "reels-pill-box" },
+        { label: qsTr("🎯 Shorts 1 Palavra"), id: "shorts-single-word" },
+        { label: qsTr("📄 Padrão Clássico"), id: "subtitle" }
     ]
 
     property bool whisperReady: Addons.hasKind("whisper-model")

@@ -47,6 +47,13 @@ enum class SubtitleCapitalization {
 
 QString formatSubtitleText(const QString &text, SubtitleCapitalization cap);
 
+// Enriches subtitle text by appending or inserting contextual emojis based on recognized keywords
+// (e.g. money/profit -> 💸, fire/viral -> 🔥, idea -> 💡, target/goal -> 🎯, speed/time -> ⚡, etc.)
+QString enrichSubtitleTextWithEmojis(const QString &text);
+
+// Batch enrich all cues in a list
+QList<SubtitleCue> enrichSubtitleCuesWithEmojis(const QList<SubtitleCue> &cues);
+
 QList<SubtitleCue> packSubtitleCues(const QList<SubtitleCue> &cues, int maxLineWidth = 42,
                                     int maxLineCount = 1, int maxWordsPerCue = 0);
 
