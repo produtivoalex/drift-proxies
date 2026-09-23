@@ -117,20 +117,22 @@ Para além das 4 partes originais, um editor para criadores no topo absoluto da 
 
 ---
 
-### 🥁 PARTE 7: Detecção de Batidas e Cortes no Ritmo (Auto-Beats na Timeline)
+### 🥁 PARTE 7: Detecção de Batidas e Cortes no Ritmo (Auto-Beats na Timeline) (100% CONCLUÍDA)
 * **O que é:** O editor analisa a faixa de música importada e coloca marcadores visuais magnéticos (pontos amarelos) nos bumbos e caixas (*kicks & snares*).
 * **Como funciona no Drift:**
-  - O motor `AudioOnsets.cpp` já detecta transientes rítmicos.
-  - Conectar os onsets à régua da timeline em `TimelinePanel.qml` com snap magnético do cursor e da ferramenta de corte `B`.
-* **Dificuldade:** Baixa a Média.
-* **Impacto:** Economiza horas de sincronização manual de clipes com a música.
+  - O motor `AudioOnsets.cpp` analisa transientes espectrais e calcula o BPM do projeto.
+  - Conectado à régua da timeline em `TimelinePanel.qml` com losangos e ticks amarelos dourados (`#FFD600`).
+  - Snap magnético do cursor, trimming e ferramenta de corte `B` atraídos para cada batida.
+  - Fatiamento rítmico automático de clipes com 1 clique (`splitClipAtBeats`) e conversão para Bookmarks da timeline.
+  - Botão interativo no `TimelineToolbar.qml` com menu de opções e card no `AudioInspector.qml`.
+* **Status:** ✅ **100% Concluído**
 
 ---
 
-### 🎯 PARTE 8: Rastreamento de Movimento (Motion Tracking)
+### 🎯 PARTE 8: Rastreamento de Movimento & Face Tracking (Motion Tracking)
 * **O que é:** Fixar um sticker, texto, seta indicativa ou mosaico de desfoque (para censurar placas ou rostos) que acompanha o objeto ou pessoa em movimento.
 * **Como funciona no Drift:**
-  - O motor OpenCV/Tracker já presente na arquitetura do Drift calcula os vetores de movimento e atualiza os keyframes de posição X/Y automaticamente.
+  - Os motores nativos `FaceLandmarker.cpp`, `FaceMesh.cpp` e `ObjectDetector.cpp` calculam os vetores de movimento e atualizam os keyframes de posição X/Y, escala e rotação automaticamente.
 * **Dificuldade:** Média a Alta.
 * **Impacto:** Recurso profissional avançado.
 
@@ -156,8 +158,8 @@ Para além das 4 partes originais, um editor para criadores no topo absoluto da 
 | **Parte 4: Modos de Mesclagem & Overlays** | Suportado | **Nativo Skia/OpenGL (`SkBlendMode`)** | ✅ **100% Concluído** |
 | **Parte 5: Legendas Dinâmicas (Hormozi/MrBeast)** | Pago (Pro) | **Transcrição Whisper Local + Animação** | ✅ **100% Concluído** |
 | **Parte 6: Auto Cutout (Recorte de Fundo de Pessoa)** | Pago (Pro) | **RVM/SAM2 ONNX Nativo Local** | ✅ **100% Concluído** |
-| **Parte 7: Auto-Beats (Detecção Rítmica na Timeline)** | Suportado | **Engine `AudioOnsets` C++** | ⏳ *Próxima Etapa (Planejado)* |
-| **Parte 8: Rastreamento de Movimento (Motion Tracking)** | Pago (Pro) | **OpenCV Tracker Integrado** | ⏳ *Planejado* |
+| **Parte 7: Auto-Beats (Detecção Rítmica na Timeline)** | Suportado | **Engine `AudioOnsets` C++ + Snap Magnético** | ✅ **100% Concluído** |
+| **Parte 8: Rastreamento de Movimento (Motion Tracking)** | Pago (Pro) | **Motores Face/Object Tracker Nativos** | ⏳ *Próxima Etapa (Planejado)* |
 | **Parte 9: Zonas Seguras de Redes Sociais (9:16 Safe Zones)** | Suportado | **Canvas 9:16 com Guias Visuais** | ⏳ *Planejado* |
 
 ---

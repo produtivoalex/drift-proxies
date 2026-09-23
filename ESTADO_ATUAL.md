@@ -157,25 +157,38 @@
 
 ---
 
+### 8. PARTE 7: Detecção de Batidas e Cortes no Ritmo (Auto-Beats na Timeline) (100% Concluída)
+* **Motor Neural/Espectral de Áudio (`AudioOnsets.cpp` / `AppController.cpp`)**:
+  - `detectAndMarkBeats(trackIndex, clipIndex, mode, minStrength)`: Análise rítmica inteligente do clipe ou projeto inteiro via FFT/autocorrelação espectral de transientes acústicos (*kicks, snares, downbeats*).
+  - Cálculo automático de BPM em tempo real e grid de compassos musicais (*bars*).
+  - `toggleBeatSnap()`: Alterna ativação e visualização das camadas de snap rítmico.
+  - `splitClipAtBeats(trackIndex, clipIndex)`: Fatiamento rítmico em 1 clique do clipe selecionado nas batidas musicais exatas, permitindo edições dinâmicas de alta retenção visual com cortes no tempo da música.
+  - `convertBeatsToBookmarks()`: Converte todas as batidas musicais em marcadores de timeline (*Bookmarks*) com nomes ordenados ("Beat 1", "Beat 2", etc.).
+* **Snap Magnético Musical na Linha do Tempo**:
+  - `m_beatSnapTargets` e `extraSnapTargets()`: Invalidação e sincronização automática do cache magnético. A agulha da timeline (playhead), a ferramenta de corte e a movimentação/trim de clipes são atraídas com precisão cirúrgica para cada batida musical.
+* **Interface QML Refinada e Interativa**:
+  - `TimelineToolbar.qml`: Botão de Auto-Beats no grupo de controles magnéticos com indicador de status iluminado em ouro `#FFD600`, tooltip com BPM e contagem de batidas, e menu de contexto completo com clique com botão direito.
+  - `TimelinePanel.qml`: Camada visual `beatMarkerRow` com pequenos losangos e marcadores de agulha dourados brilhantes nas posições das batidas ao longo da régua, com salto do playhead ao clicar no marcador.
+  - `AudioInspector.qml`: Card dedicado de **Auto-Beats & Sincronização no Ritmo** com badge de BPM detectado, botões de 1 clique para detectar batidas do clipe, ligar/desligar snap magnético, cortar clipe nas batidas e gerar marcadores.
+
+---
+
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
 
 O documento [`PROXIMOS_PASSOS.md`](file:///C:/Users/Alex/Documents/Antigravity/drift/PROXIMOS_PASSOS.md) detalha todo o ecossistema planejado:
 
 ### O Próximo Foco Imediato:
-* **PARTE 7: Detecção de Batidas e Cortes no Ritmo (Auto-Beats na Timeline)**
-  - O motor `AudioOnsets.cpp` já detecta transientes rítmicos (*kicks & snares*).
-  - Conectar os onsets à régua da timeline em `TimelinePanel.qml` com snap magnético do cursor e da ferramenta de corte `B`.
+* **PARTE 8: Rastreamento de Movimento & Face Tracking (Motion Tracking)**
+  - Aproveitar os motores nativos `FaceLandmarker.cpp`, `FaceMesh.cpp` e `ObjectDetector.cpp` para vincular textos, stickers e efeitos de desfoque/censura a rostos ou objetos em movimento na cena.
 
 ### Frentes Complementares Mapeadas:
-* **Parte 8**: Rastreamento de Movimento (*Motion Tracking* via OpenCV).
 * **Parte 9**: Presets de Redes Sociais & Guias de Zonas Seguras 9:16 (TikTok/Reels/Shorts).
 
 ---
 
 ## 📂 Arquivos Chave Recentes no Repositório
-* `src/models/AppController.h` / `AppController.cpp`: Métodos de Auto Cutout 1-clique, Text Behind Person, Inversão e Remoção de recorte.
-* `src/qml/components/properties/GeneralInspector.qml`: Card de Recorte Inteligente de Fundo com barra de progresso.
-* `src/qml/components/assets/MasksTab.qml`: Acesso rápido ao Auto Cutout e Texto Atrás no painel de assets.
-* `src/core/SubtitleCue.h` / `SubtitleCue.cpp`: Motor de quebra de legendas, Karaoke timings e enriquecimento com emojis contextuais.
-* `src/core/TextStyle.h` / `TextStyle.cpp`: Presets virais com WordAccent Karaoke e escalas pop dinâmicas.
+* `src/models/AppController.h` / `AppController.cpp`: Métodos `detectAndMarkBeats`, `toggleBeatSnap`, `splitClipAtBeats`, `convertBeatsToBookmarks` e propriedades de Auto-Beats.
+* `src/qml/components/timeline/TimelineToolbar.qml`: Botão de Auto-Beats com menu de contexto e indicador visual de estado.
+* `src/qml/TimelinePanel.qml`: Camada de marcadores de batida rítmica `beatMarkerRow` na régua da timeline.
+* `src/qml/components/properties/AudioInspector.qml`: Card de Sincronização Rítmica & Auto-Beats com badge de BPM e ações de 1 clique.
 * `PROXIMOS_PASSOS.md`: Roteiro estratégico detalhado de todas as 9 partes.

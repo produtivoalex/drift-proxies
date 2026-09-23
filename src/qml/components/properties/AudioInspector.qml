@@ -1007,6 +1007,134 @@ Item {
             }
         }
 
+        // ----- Sincronização Rítmica & Auto-Beats ---------------------------
+        Rectangle {
+            id: autoBeatsCard
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            implicitHeight: autoBeatsCol.implicitHeight + 20
+            radius: Theme.radiusMd
+            color: EditorState.beatSnapActive
+                   ? (Theme.darkMode ? "#242010" : "#fffde7")
+                   : Theme.panelAccent
+            border.width: 1
+            border.color: EditorState.beatSnapActive
+                          ? "#FFD600"
+                          : Theme.panelBorder
+
+            Column {
+                id: autoBeatsCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 10
+                spacing: 8
+
+                Row {
+                    width: parent.width
+                    spacing: 6
+
+                    Text {
+                        text: "🥁"
+                        font.pixelSize: 14
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Text {
+                        text: qsTr("Auto-Beats & Sincronização no Ritmo")
+                        color: Theme.panelForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSm
+                        font.weight: Font.DemiBold
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Item { width: 4; height: 1 }
+
+                    Rectangle {
+                        visible: EditorState.beatCount > 0
+                        width: bpmText.implicitWidth + 10
+                        height: 18
+                        radius: 9
+                        color: "#FFD600"
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        Text {
+                            id: bpmText
+                            anchors.centerIn: parent
+                            text: qsTr("%1 BPM").arg(Math.round(EditorState.detectedBpm))
+                            color: "#000"
+                            font.pixelSize: 10
+                            font.weight: Font.Bold
+                        }
+                    }
+                }
+
+                Text {
+                    width: parent.width
+                    text: qsTr("Detecta transientes e batidas (kicks/snares) do áudio para guiar cortes e atrair a agulha magneticamente no ritmo.")
+                    color: Theme.mutedForeground
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeXs
+                    wrapMode: Text.WordWrap
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: 6
+
+                    ThemedButton {
+                        text: EditorState.beatAnalysisRunning
+                              ? qsTr("⏳ Analisando...")
+                              : qsTr("🎯 Detectar Batidas")
+                        variant: "solid"
+                        enabled: !EditorState.beatAnalysisRunning
+                        tooltip: qsTr("Analisa os graves e transientes rítmicos deste clipe")
+                        onClicked: {
+                            EditorState.detectAndMarkBeats(root.selectedTrack, root.selectedClip, "onsets", 0.35)
+                        }
+                    }
+
+                    ThemedButton {
+                        text: EditorState.beatSnapActive ? qsTr("🧲 Snap: Ligado") : qsTr("Snap: Desligado")
+                        variant: EditorState.beatSnapActive ? "solid" : "ghost"
+                        enabled: EditorState.beatCount > 0
+                        tooltip: qsTr("Ativa o ímã da timeline para atrair cortes nas batidas")
+                        onClicked: EditorState.toggleBeatSnap()
+                    }
+                }
+
+                Row {
+                    width: parent.width
+                    spacing: 6
+                    visible: EditorState.beatCount > 0
+
+                    ThemedButton {
+                        text: qsTr("✂️ Cortar Clipe nas Batidas")
+                        variant: "ghost"
+                        tooltip: qsTr("Subdivide este clipe em todas as batidas musicais detectadas")
+                        onClicked: {
+                            const cuts = EditorState.splitClipAtBeats(root.selectedTrack, root.selectedClip)
+                            if (cuts > 0)
+                                Toasts.success(qsTr("Clipe cortado em %1 batidas!").arg(cuts))
+                            else
+                                Toasts.info(qsTr("Nenhuma batida dentro do alcance deste clipe."))
+                        }
+                    }
+
+                    ThemedButton {
+                        text: qsTr("📌 Criar Bookmarks")
+                        variant: "ghost"
+                        tooltip: qsTr("Converte todas as batidas em marcadores de bookmark")
+                        onClicked: {
+                            const count = EditorState.convertBeatsToBookmarks("beats", 0.35)
+                            Toasts.success(qsTr("%1 marcadores criados!").arg(count))
+                        }
+                    }
+                }
+            }
+        }
+
         // ----- Telefone Vintage & Rádio Lo-Fi ------------------------------
         Rectangle {
             id: retroAudioCard

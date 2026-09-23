@@ -20976,21 +20976,21 @@ void AppController::rebuildBeatSnapTargets()
         for (double b : std::as_const(m_beatAnalysisRaw.beats))
             m_beatSnapTargets.append(drift::secondsToUs(b));
     }
-    if (!m_onsetsVisible)
-        return;
-
-    for (const AudioOnset &o : std::as_const(m_beatAnalysisRaw.onsets)) {
-        const drift::TimeUs at = drift::secondsToUs(o.seconds);
-        bool crowded = false;
-        for (drift::TimeUs existing : std::as_const(m_beatSnapTargets)) {
-            if (qAbs(existing - at) < drift::kSnapThresholdUs) {
-                crowded = true;
-                break;
+    if (m_onsetsVisible) {
+        for (const AudioOnset &o : std::as_const(m_beatAnalysisRaw.onsets)) {
+            const drift::TimeUs at = drift::secondsToUs(o.seconds);
+            bool crowded = false;
+            for (drift::TimeUs existing : std::as_const(m_beatSnapTargets)) {
+                if (qAbs(existing - at) < drift::kSnapThresholdUs) {
+                    crowded = true;
+                    break;
+                }
             }
+            if (!crowded)
+                m_beatSnapTargets.append(at);
         }
-        if (!crowded)
-            m_beatSnapTargets.append(at);
     }
+    invalidateExtraSnapTargets();
 }
 
 QList<drift::TimeUs> AppController::extraSnapTargets() const
@@ -21041,7 +21041,170 @@ void AppController::clearBeatAnalysis()
     // would mean a full mix render on every clip nudge.
     m_beatGridVisible = false;
     m_onsetsVisible = false;
+    invalidateExtraSnapTargets();
     emit beatAnalysisChanged();
+}
+
+QVariantList AppController::beatMarkerTimes() const
+{
+    QVariantList list;
+    if (m_beatGridVisible) {
+        for (double b : m_beatAnalysisRaw.beats)
+            list.append(b);
+    }
+    if (m_onsetsVisible) {
+        for (const AudioOnset &o : m_beatAnalysisRaw.onsets) {
+            if (o.strength >= 0.25f) {
+                const double sec = o.seconds;
+                bool exists = false;
+                for (const QVariant &v : list) {
+                    if (qAbs(v.toDouble() - sec) < 0.04) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists)
+                    list.append(sec);
+            }
+        }
+    }
+    std::sort(list.begin(), list.end(), [](const QVariant &a, const QVariant &b) {
+        return a.toDouble() < b.toDouble();
+    });
+    return list;
+}
+
+bool AppController::detectAndMarkBeats(int trackIndex, int clipIndex, const QString &mode, double minStrength)
+{
+    Q_UNUSED(minStrength);
+    double startSeconds = 0.0;
+    double durSeconds = 0.0;
+
+    if (trackIndex >= 0 && trackIndex < m_project.tracks().size()) {
+        const drift::Track &track = m_project.tracks()[trackIndex];
+        if (clipIndex >= 0 && clipIndex < track.clips.size()) {
+            const drift::Clip &clip = track.clips[clipIndex];
+            startSeconds = drift::usToSeconds(clip.timelineStart);
+            durSeconds = drift::usToSeconds(clip.durationUs());
+        }
+    } else if (m_selectedTrack >= 0 && m_selectedTrack < m_project.tracks().size()) {
+        const drift::Track &track = m_project.tracks()[m_selectedTrack];
+        if (m_selectedClip >= 0 && m_selectedClip < track.clips.size()) {
+            const drift::Clip &clip = track.clips[m_selectedClip];
+            startSeconds = drift::usToSeconds(clip.timelineStart);
+            durSeconds = drift::usToSeconds(clip.durationUs());
+        }
+    }
+
+    if (durSeconds <= 0.0) {
+        if (m_project.hasWorkArea()) {
+            startSeconds = drift::usToSeconds(m_project.workAreaInUs());
+            durSeconds = drift::usToSeconds(m_project.workAreaDurationUs());
+        } else {
+            startSeconds = 0.0;
+            durSeconds = qMin(600.0, drift::usToSeconds(m_project.durationUs()));
+        }
+    }
+
+    if (durSeconds < AudioOnsets::kMinAnalysisSec) {
+        durSeconds = qMax(durSeconds, static_cast<double>(AudioOnsets::kMinAnalysisSec));
+    }
+
+    const QString m = mode.trimmed().toLower();
+    m_beatGridVisible = (m != QStringLiteral("onsets_only"));
+    m_onsetsVisible = (m == QStringLiteral("onsets") || m == QStringLiteral("all") || m == QStringLiteral("onsets_only"));
+
+    // Reset range cache to force fresh analysis
+    m_beatAnalysis.clear();
+    analyzeBeats(startSeconds, durSeconds);
+    return true;
+}
+
+void AppController::toggleBeatSnap()
+{
+    if (m_beatSnapTargets.isEmpty() && m_beatAnalysisRaw.beats.isEmpty()) {
+        detectAndMarkBeats();
+        return;
+    }
+    const bool anyVisible = m_beatGridVisible || m_onsetsVisible;
+    setBeatGridVisible(!anyVisible);
+    setOnsetsVisible(!anyVisible);
+}
+
+int AppController::convertBeatsToBookmarks(const QString &unit, double minStrength)
+{
+    return mcpBookmarkBeats(0.0, 0.0, unit, minStrength, QStringLiteral("Beat"));
+}
+
+int AppController::splitClipAtBeats(int trackIndex, int clipIndex)
+{
+    if (trackIndex < 0 || clipIndex < 0) {
+        trackIndex = m_selectedTrack;
+        clipIndex = m_selectedClip;
+    }
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return 0;
+
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return 0;
+
+    const drift::Clip clip = track.clips[clipIndex];
+    const drift::TimeUs startUs = clip.timelineStart;
+    const drift::TimeUs endUs = clip.timelineEnd();
+
+    QList<double> cutTimes;
+    if (!m_beatSnapTargets.isEmpty()) {
+        for (drift::TimeUs targetUs : m_beatSnapTargets) {
+            if (targetUs > startUs + 250'000 && targetUs < endUs - 250'000)
+                cutTimes.append(drift::usToSeconds(targetUs));
+        }
+    }
+    if (cutTimes.isEmpty()) {
+        const QList<double> times = mcpBeatTimes(QStringLiteral("beats"), 0.3);
+        for (double t : times) {
+            const drift::TimeUs tUs = drift::secondsToUs(t);
+            if (tUs > startUs + 250'000 && tUs < endUs - 250'000)
+                cutTimes.append(t);
+        }
+    }
+
+    if (cutTimes.isEmpty())
+        return 0;
+
+    // Sort descending so cuts from the end keep the preceding indices stable
+    std::sort(cutTimes.begin(), cutTimes.end(), std::greater<double>());
+
+    beginTracksBatch();
+    const drift::Project before = m_project;
+    int cutsMade = 0;
+
+    for (double cutSec : cutTimes) {
+        drift::Track &curTrack = m_project.tracks()[trackIndex];
+        const drift::TimeUs atUs = drift::secondsToUs(cutSec);
+        for (int i = 0; i < curTrack.clips.size(); ++i) {
+            drift::Clip &c = curTrack.clips[i];
+            if (c.containsTime(atUs) && atUs > c.timelineStart + 150'000 && atUs < c.timelineEnd() - 150'000) {
+                drift::Clip tail;
+                const drift::TimeUs offset = atUs - c.timelineStart;
+                if (drift::splitClipAtOffset(c, tail, offset)) {
+                    tail.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+                    const QString tailLinkId = drift::assignSplitLinkIds(c, tail);
+                    splitLinkedPartnerAt(m_project, c, atUs, tailLinkId);
+                    curTrack.clips.insert(i + 1, tail);
+                    cutsMade++;
+                }
+                break;
+            }
+        }
+    }
+
+    endTracksBatch();
+    if (cutsMade > 0) {
+        pushProjectEdit(before, tr("Split clip at beats (%1 cuts)").arg(cutsMade));
+        finishEdit(tr("Split clip at beats (%1 cuts)").arg(cutsMade));
+    }
+    return cutsMade;
 }
 
 void AppController::restoreFilmstripsAfterLoad()

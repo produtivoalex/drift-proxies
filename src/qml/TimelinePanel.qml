@@ -1131,6 +1131,68 @@ PanelFrame {
                             }
                         }
 
+                        // Musical beat markers (Auto-Beats)
+                        Item {
+                            id: beatMarkerRow
+                            width: parent.width
+                            height: Theme.timelineRulerHeight
+                            z: 1
+                            visible: EditorState.beatSnapActive || EditorState.beatGridVisible || EditorState.onsetsVisible
+
+                            Repeater {
+                                model: EditorState.beatMarkerTimes
+                                delegate: Item {
+                                    readonly property real beatSeconds: modelData
+                                    readonly property real posX: beatSeconds * root.pxPerSecond
+                                    x: posX - width / 2
+                                    y: 0
+                                    width: 12
+                                    height: ruler.height
+                                    visible: posX >= flick.contentX - 20 && posX <= flick.contentX + flick.width + 20
+
+                                    // Yellow tick stem
+                                    Rectangle {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        y: parent.height - 10
+                                        width: 1.5
+                                        height: 10
+                                        color: "#FFD600"
+                                        opacity: 0.9
+                                    }
+
+                                    // Yellow diamond beat marker
+                                    Rectangle {
+                                        anchors.horizontalCenter: parent.horizontalCenter
+                                        y: parent.height - 14
+                                        width: 6
+                                        height: 6
+                                        rotation: 45
+                                        radius: 1
+                                        color: beatMouse.containsMouse ? "#FFF" : "#FFD600"
+                                        border.width: 1
+                                        border.color: "#FFA000"
+                                    }
+
+                                    ThemedToolTip {
+                                        visible: beatMouse.containsMouse
+                                        text: qsTr("Batida Musical @ %1 (%2 BPM)")
+                                                  .arg(root.formatTime(parent.beatSeconds))
+                                                  .arg(Math.round(EditorState.detectedBpm))
+                                    }
+
+                                    MouseArea {
+                                        id: beatMouse
+                                        anchors.fill: parent
+                                        anchors.margins: -4
+                                        hoverEnabled: true
+                                        cursorShape: Qt.PointingHandCursor
+                                        preventStealing: true
+                                        onClicked: EditorState.playheadSeconds = parent.beatSeconds
+                                    }
+                                }
+                            }
+                        }
+
                         Item {
                             id: bookmarkRow
                             y: Theme.timelineRulerHeight

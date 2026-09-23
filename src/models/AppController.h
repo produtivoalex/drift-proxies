@@ -199,6 +199,10 @@ class AppController : public QObject
                    NOTIFY beatAnalysisChanged)
     Q_PROPERTY(bool onsetsVisible READ onsetsVisible WRITE setOnsetsVisible
                    NOTIFY beatAnalysisChanged)
+    Q_PROPERTY(QVariantList beatMarkerTimes READ beatMarkerTimes NOTIFY beatAnalysisChanged)
+    Q_PROPERTY(bool beatSnapActive READ beatSnapActive NOTIFY beatAnalysisChanged)
+    Q_PROPERTY(double detectedBpm READ detectedBpm NOTIFY beatAnalysisChanged)
+    Q_PROPERTY(int beatCount READ beatCount NOTIFY beatAnalysisChanged)
     Q_PROPERTY(bool subtitleEditing READ subtitleEditing WRITE setSubtitleEditing NOTIFY subtitleEditingChanged)
     Q_PROPERTY(int selectedSubtitleCue READ selectedSubtitleCue WRITE setSelectedSubtitleCue
                    NOTIFY selectedSubtitleCueChanged)
@@ -1701,6 +1705,17 @@ public:
     void setBeatGridVisible(bool visible);
     bool onsetsVisible() const { return m_onsetsVisible; }
     void setOnsetsVisible(bool visible);
+    Q_INVOKABLE bool detectAndMarkBeats(int trackIndex = -1, int clipIndex = -1,
+                                         const QString &mode = QStringLiteral("onsets"),
+                                         double minStrength = 0.35);
+    Q_INVOKABLE void toggleBeatSnap();
+    Q_INVOKABLE int convertBeatsToBookmarks(const QString &unit = QStringLiteral("beats"),
+                                            double minStrength = 0.35);
+    Q_INVOKABLE int splitClipAtBeats(int trackIndex = -1, int clipIndex = -1);
+    QVariantList beatMarkerTimes() const;
+    bool beatSnapActive() const { return (m_beatGridVisible || m_onsetsVisible) && !m_beatSnapTargets.isEmpty(); }
+    double detectedBpm() const { return m_beatAnalysisRaw.bpm; }
+    int beatCount() const { return m_beatSnapTargets.size(); }
     // Writes a .drift bundle keeping each asset's current storage mode, so a referencing project
     // stays instant to save and a packaged one stays self-contained.
     Q_INVOKABLE void saveProject(const QUrl &url);

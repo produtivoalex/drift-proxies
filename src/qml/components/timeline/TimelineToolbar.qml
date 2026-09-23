@@ -366,6 +366,100 @@ Item {
         spacing: Theme.spacingSm
 
         IconButton {
+            id: autoBeatButton
+            glyph: Theme.icons.music
+            variant: "text"
+            tooltip: EditorState.beatAnalysisRunning
+                     ? qsTr("Analisando batidas musicais...")
+                     : (EditorState.beatSnapActive
+                        ? qsTr("Auto-Beats ativo (%1 batidas, %2 BPM) — Clique para alternar ou botão direito para opções")
+                            .arg(EditorState.beatCount)
+                            .arg(Math.round(EditorState.detectedBpm))
+                        : qsTr("Auto-Beats: Detectar batidas e alinhar cortes no ritmo musical (Clique direito para opções)"))
+            active: EditorState.beatSnapActive
+            onClicked: {
+                if (EditorState.beatCount === 0) {
+                    Toasts.info(qsTr("Detectando batidas musicais na timeline..."))
+                    EditorState.detectAndMarkBeats(-1, -1, "onsets", 0.35)
+                } else {
+                    EditorState.toggleBeatSnap()
+                }
+            }
+
+            Rectangle {
+                visible: EditorState.beatSnapActive
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.topMargin: 2
+                anchors.rightMargin: 2
+                width: 6
+                height: 6
+                radius: 3
+                color: "#FFD600"
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                cursorShape: Qt.PointingHandCursor
+                onClicked: beatMenu.popup(autoBeatButton, 0, autoBeatButton.height)
+            }
+
+            ThemedContextMenu {
+                id: beatMenu
+
+                ThemedMenuItem {
+                    text: qsTr("🥁 Detectar Batidas (Kicks & Snares)")
+                    icon.name: Theme.icons.music
+                    onTriggered: {
+                        Toasts.info(qsTr("Analisando batidas (kicks/snares)..."))
+                        EditorState.detectAndMarkBeats(-1, -1, "onsets", 0.35)
+                    }
+                }
+                ThemedMenuItem {
+                    text: qsTr("🎼 Detectar Compassos (Bars)")
+                    icon.name: Theme.icons.audioLines
+                    onTriggered: {
+                        Toasts.info(qsTr("Analisando compassos musicais..."))
+                        EditorState.detectAndMarkBeats(-1, -1, "bars", 0.35)
+                    }
+                }
+                ThemedMenuSeparator { }
+                ThemedMenuItem {
+                    text: qsTr("✂️ Cortar Clipe Selecionado nas Batidas")
+                    icon.name: Theme.icons.scissors
+                    enabled: EditorState.selectedClip >= 0 && EditorState.beatCount > 0
+                    onTriggered: {
+                        const cuts = EditorState.splitClipAtBeats(-1, -1)
+                        if (cuts > 0)
+                            Toasts.success(qsTr("Clipe cortado em %1 batidas musicais!").arg(cuts))
+                        else
+                            Toasts.info(qsTr("Nenhuma batida encontrada dentro do clipe selecionado."))
+                    }
+                }
+                ThemedMenuItem {
+                    text: qsTr("📌 Converter Batidas em Marcadores (Bookmarks)")
+                    icon.name: Theme.icons.bookmark
+                    enabled: EditorState.beatCount > 0
+                    onTriggered: {
+                        const count = EditorState.convertBeatsToBookmarks("beats", 0.35)
+                        Toasts.success(qsTr("%1 marcadores de batida criados na timeline!").arg(count))
+                    }
+                }
+                ThemedMenuSeparator { }
+                ThemedMenuItem {
+                    text: qsTr("🗑️ Limpar Batidas da Timeline")
+                    icon.name: Theme.icons.trash
+                    enabled: EditorState.beatCount > 0
+                    onTriggered: {
+                        EditorState.clearBeatAnalysis()
+                        Toasts.info(qsTr("Batidas removidas da timeline."))
+                    }
+                }
+            }
+        }
+
+        IconButton {
             id: magnetButton
             glyph: Theme.icons.magnet
             variant: "text"
