@@ -17906,6 +17906,301 @@ void AppController::applyPartyNextDoorPreset(int trackIndex, int clipIndex, int 
     }
 }
 
+bool AppController::isVocalIsolationEnabled(int trackIndex, int clipIndex) const
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return false;
+
+    for (const drift::Effect &effect : audioHost->audioEffects) {
+        if (effect.catalogId == QLatin1String("utility.vocal_isolation"))
+            return effect.enabled;
+    }
+    return false;
+}
+
+int AppController::vocalIsolationMode(int trackIndex, int clipIndex) const
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return 0;
+
+    for (const drift::Effect &effect : audioHost->audioEffects) {
+        if (effect.catalogId == QLatin1String("utility.vocal_isolation")) {
+            return static_cast<int>(std::round(effect.parameters.value(QStringLiteral("mode"), 0.0)));
+        }
+    }
+    return 0;
+}
+
+void AppController::setVocalIsolation(int trackIndex, int clipIndex, bool enabled, int mode)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    int existingIdx = -1;
+    if (audioHost) {
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("utility.vocal_isolation")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (enabled) {
+        if (existingIdx >= 0) {
+            setAudioEffectEnabled(trackIndex, clipIndex, existingIdx, true);
+        } else {
+            addAudioEffect(trackIndex, clipIndex, QStringLiteral("utility.vocal_isolation"));
+            audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+            if (audioHost) {
+                for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+                    if (audioHost->audioEffects.at(i).catalogId == QLatin1String("utility.vocal_isolation")) {
+                        existingIdx = i;
+                        break;
+                    }
+                }
+            }
+        }
+        if (existingIdx >= 0) {
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("mode"), static_cast<double>(mode));
+        }
+        setLastMessage(mode == 0 ? tr("Isolador Vocal ativado (apenas fala)")
+                                 : tr("Remover Voz ativado (modo Karaokê/Instrumental)"),
+                       QStringLiteral("success"));
+    } else {
+        if (existingIdx >= 0) {
+            removeAudioEffect(trackIndex, clipIndex, existingIdx);
+            setLastMessage(tr("Isolador Vocal desativado"), QStringLiteral("info"));
+        }
+    }
+}
+
+bool AppController::splitVocalAndMusicTracks(int trackIndex, int clipIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+
+    const drift::Project before = m_project;
+    const drift::Clip originalClip = track.clips.at(clipIndex);
+
+    // Find or add an audio track below
+    int targetTrackIndex = -1;
+    for (int t = trackIndex + 1; t < m_project.tracks().size(); ++t) {
+        if (m_project.tracks().at(t).type == drift::TrackType::Audio) {
+            targetTrackIndex = t;
+            break;
+        }
+    }
+    if (targetTrackIndex < 0) {
+        addTrack(drift::TrackType::Audio);
+        targetTrackIndex = m_project.tracks().size() - 1;
+    }
+
+    // Duplicate clip onto target track
+    drift::Clip dupClip = originalClip;
+    dupClip.name = tr("[Instrumental] ") + originalClip.name;
+    m_project.tracks()[targetTrackIndex].clips.append(dupClip);
+    const int newClipIndex = m_project.tracks()[targetTrackIndex].clips.size() - 1;
+
+    // Apply Isolate Vocals to original clip
+    m_project.tracks()[trackIndex].clips[clipIndex].name = tr("[Voz Isolada] ") + originalClip.name;
+    setVocalIsolation(trackIndex, clipIndex, true, 0); // 0 = Isolate
+
+    // Apply Remove Vocals (Instrumental) to duplicated clip
+    setVocalIsolation(targetTrackIndex, newClipIndex, true, 1); // 1 = Remove
+
+    pushProjectEdit(before, tr("Split Vocal and Instrumental Tracks"));
+    finishEdit(tr("Split Vocal and Instrumental Tracks"));
+    setLastMessage(tr("Áudio separado com sucesso em Faixa Vocal e Faixa Instrumental!"), QStringLiteral("success"));
+    return true;
+}
+
+bool AppController::isTelephoneEnabled(int trackIndex, int clipIndex) const
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return false;
+
+    for (const drift::Effect &effect : audioHost->audioEffects) {
+        if (effect.catalogId == QLatin1String("transmission.telephone"))
+            return effect.enabled;
+    }
+    return false;
+}
+
+void AppController::setTelephoneEnabled(int trackIndex, int clipIndex, bool enabled)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    int existingIdx = -1;
+    if (audioHost) {
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("transmission.telephone")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (enabled) {
+        if (existingIdx >= 0) {
+            setAudioEffectEnabled(trackIndex, clipIndex, existingIdx, true);
+        } else {
+            addAudioEffect(trackIndex, clipIndex, QStringLiteral("transmission.telephone"));
+        }
+        setLastMessage(tr("Efeito Telefone Vintage ativado"), QStringLiteral("success"));
+    } else {
+        if (existingIdx >= 0) {
+            removeAudioEffect(trackIndex, clipIndex, existingIdx);
+            setLastMessage(tr("Efeito Telefone desativado"), QStringLiteral("info"));
+        }
+    }
+}
+
+void AppController::applyTelephonePreset(int trackIndex, int clipIndex, int presetMode)
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    int existingIdx = -1;
+    if (audioHost) {
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("transmission.telephone")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+    if (existingIdx < 0) {
+        setTelephoneEnabled(trackIndex, clipIndex, true);
+        audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+        if (!audioHost)
+            return;
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("transmission.telephone")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (existingIdx >= 0) {
+        if (presetMode == 0) {
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("low_cut"), 300.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("high_cut"), 3400.0);
+            setLastMessage(tr("Perfil Ligação Telefônica aplicado"), QStringLiteral("info"));
+        } else if (presetMode == 1) {
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("low_cut"), 450.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("high_cut"), 2600.0);
+            setLastMessage(tr("Perfil Telefone Antigo aplicado"), QStringLiteral("info"));
+        } else if (presetMode == 2) {
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("low_cut"), 600.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("high_cut"), 2200.0);
+            setLastMessage(tr("Perfil Interfone / Walkie aplicado"), QStringLiteral("info"));
+        }
+    }
+}
+
+bool AppController::isLofiRadioEnabled(int trackIndex, int clipIndex) const
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return false;
+
+    for (const drift::Effect &effect : audioHost->audioEffects) {
+        if (effect.catalogId == QLatin1String("texture.vinyl"))
+            return effect.enabled;
+    }
+    return false;
+}
+
+void AppController::setLofiRadioEnabled(int trackIndex, int clipIndex, bool enabled)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    int existingIdx = -1;
+    if (audioHost) {
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("texture.vinyl")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (enabled) {
+        if (existingIdx >= 0) {
+            setAudioEffectEnabled(trackIndex, clipIndex, existingIdx, true);
+        } else {
+            addAudioEffect(trackIndex, clipIndex, QStringLiteral("texture.vinyl"));
+        }
+        setLastMessage(tr("Efeito Rádio Lo-Fi ativado"), QStringLiteral("success"));
+    } else {
+        if (existingIdx >= 0) {
+            removeAudioEffect(trackIndex, clipIndex, existingIdx);
+            setLastMessage(tr("Efeito Rádio Lo-Fi desativado"), QStringLiteral("info"));
+        }
+    }
+}
+
+void AppController::applyLofiRadioPreset(int trackIndex, int clipIndex, int presetMode)
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    int existingIdx = -1;
+    if (audioHost) {
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("texture.vinyl")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+    if (existingIdx < 0) {
+        setLofiRadioEnabled(trackIndex, clipIndex, true);
+        audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+        if (!audioHost)
+            return;
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("texture.vinyl")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (existingIdx >= 0) {
+        if (presetMode == 0) {
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("flutter"), 0.12);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("highpass"), 250.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("lowpass"), 4500.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("wobble"), 0.5);
+            setLastMessage(tr("Perfil Rádio Lo-Fi Beats aplicado"), QStringLiteral("info"));
+        } else if (presetMode == 1) {
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("flutter"), 0.28);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("highpass"), 180.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("lowpass"), 6000.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("wobble"), 1.2);
+            setLastMessage(tr("Perfil Disco de Vinil Retrô aplicado"), QStringLiteral("info"));
+        } else if (presetMode == 2) {
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("flutter"), 0.18);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("highpass"), 120.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("lowpass"), 5000.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("wobble"), 0.3);
+            setLastMessage(tr("Perfil Fita Cassete Vintage aplicado"), QStringLiteral("info"));
+        }
+    }
+}
+
+
 
 
 // --- effect stacks: copy/paste and user presets ------------------------------

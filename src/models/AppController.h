@@ -1464,6 +1464,21 @@ public:
     Q_INVOKABLE void setPartyNextDoorEnabled(int trackIndex, int clipIndex, bool enabled);
     Q_INVOKABLE void applyPartyNextDoorPreset(int trackIndex, int clipIndex, int presetMode);
 
+    // Vocal Isolation & Music Splitter (Mid-Side Vocal Separator & Karaoke)
+    Q_INVOKABLE bool isVocalIsolationEnabled(int trackIndex, int clipIndex) const;
+    Q_INVOKABLE int vocalIsolationMode(int trackIndex, int clipIndex) const;
+    Q_INVOKABLE void setVocalIsolation(int trackIndex, int clipIndex, bool enabled, int mode = 0);
+    Q_INVOKABLE bool splitVocalAndMusicTracks(int trackIndex, int clipIndex);
+
+    // Vintage Telephone & Lo-Fi Radio Quick Controls
+    Q_INVOKABLE bool isTelephoneEnabled(int trackIndex, int clipIndex) const;
+    Q_INVOKABLE void setTelephoneEnabled(int trackIndex, int clipIndex, bool enabled);
+    Q_INVOKABLE void applyTelephonePreset(int trackIndex, int clipIndex, int presetMode);
+
+    Q_INVOKABLE bool isLofiRadioEnabled(int trackIndex, int clipIndex) const;
+    Q_INVOKABLE void setLofiRadioEnabled(int trackIndex, int clipIndex, bool enabled);
+    Q_INVOKABLE void applyLofiRadioPreset(int trackIndex, int clipIndex, int presetMode);
+
     // Effect stacks travel as JSON on the system clipboard, so a copy also crosses to a second
     // running instance. -1 for both indices means the whole clip.
     Q_INVOKABLE void copyEffectToClipboard(int trackIndex, int clipIndex, int effectIndex);

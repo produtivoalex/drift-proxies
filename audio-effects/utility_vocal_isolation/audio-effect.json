@@ -1,0 +1,36 @@
+{
+  "id": "utility.vocal_isolation",
+  "displayName": "Isolador Vocal",
+  "category": "voice",
+  "icon": "mic",
+  "order": 2,
+  "backend": "juce",
+  "processor": "vocal_isolation",
+  "prerollMs": 50,
+  "parameters": [
+    {
+      "identifier": "mode",
+      "displayName": "Modo (0: Isolar Voz, 1: Remover Voz / Karaokê)",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.0
+    },
+    {
+      "identifier": "strength",
+      "displayName": "Intensidade da Separação",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.85
+    },
+    {
+      "identifier": "bass_preserve",
+      "displayName": "Preservação de Graves",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.90
+    }
+  ]
+}

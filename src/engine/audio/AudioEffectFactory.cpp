@@ -375,6 +375,14 @@ void buildPartyNextDoor(ChainProcessor &chain)
     });
 }
 
+void buildVocalIsolation(ChainProcessor &chain)
+{
+    auto *isolator = chain.addStage<VocalIsolatorProcessor>();
+    chain.bind(QStringLiteral("mode"), isolator, &VocalIsolatorProcessor::setMode);
+    chain.bind(QStringLiteral("strength"), isolator, &VocalIsolatorProcessor::setStrength);
+    chain.bind(QStringLiteral("bass_preserve"), isolator, &VocalIsolatorProcessor::setBassPreserve);
+}
+
 const QHash<QString, Builder> &registry()
 {
     static const QHash<QString, Builder> builders{
@@ -407,6 +415,7 @@ const QHash<QString, Builder> &registry()
         {QStringLiteral("studio_voice"), buildStudioVoice},
         {QStringLiteral("eightd"), buildEightD},
         {QStringLiteral("party_next_door"), buildPartyNextDoor},
+        {QStringLiteral("vocal_isolation"), buildVocalIsolation},
     };
     return builders;
 }

@@ -285,4 +285,92 @@ void GainProcessor::reset()
     m_gain.setCurrentAndTargetValue(m_target);
 }
 
+// ---- VocalIsolatorProcessor -------------------------------------------------------------
+
+VocalIsolatorProcessor::VocalIsolatorProcessor(Mode mode)
+    : m_mode(mode)
+{
+}
+
+void VocalIsolatorProcessor::setMode(float mode)
+{
+    m_mode = (mode >= 0.5f) ? Mode::RemoveVocals : Mode::IsolateVocals;
+}
+
+void VocalIsolatorProcessor::setStrength(float strength)
+{
+    m_strength.setTargetValue(juce::jlimit(0.0f, 1.0f, strength));
+}
+
+void VocalIsolatorProcessor::setBassPreserve(float preserve)
+{
+    m_bassPreserve.setTargetValue(juce::jlimit(0.0f, 1.0f, preserve));
+}
+
+void VocalIsolatorProcessor::updateCoefficients()
+{
+    m_bandFilter.coefficients = juce::dsp::IIR::Coefficients<float>::makeBandPass(
+        m_sampleRate, 1000.0f, 0.5f);
+}
+
+void VocalIsolatorProcessor::prepare(const juce::dsp::ProcessSpec &spec)
+{
+    m_sampleRate = spec.sampleRate;
+    m_strength.reset(spec.sampleRate, kParamRampSeconds);
+    m_strength.setCurrentAndTargetValue(0.85f);
+    m_bassPreserve.reset(spec.sampleRate, kParamRampSeconds);
+    m_bassPreserve.setCurrentAndTargetValue(0.90f);
+    updateCoefficients();
+    m_bandFilter.prepare(spec);
+    reset();
+}
+
+void VocalIsolatorProcessor::process(juce::dsp::AudioBlock<float> &block)
+{
+    const int channels = static_cast<int>(block.getNumChannels());
+    const int frames = static_cast<int>(block.getNumSamples());
+
+    if (channels < 2) {
+        // Mono track: Mid/Side cancellation doesn't apply; pass through or filter band
+        return;
+    }
+
+    for (int i = 0; i < frames; ++i) {
+        const float l = block.getSample(0, i);
+        const float r = block.getSample(1, i);
+        const float mid = 0.5f * (l + r);
+        const float side = 0.5f * (l - r);
+        const float strength = m_strength.getNextValue();
+        const float preserve = m_bassPreserve.getNextValue();
+
+        const float midVocal = m_bandFilter.processSample(mid);
+
+        if (m_mode == Mode::RemoveVocals) {
+            // Karaoke: Cancel vocal frequencies located in the center channel while retaining stereo width & bass
+            const float cancel = midVocal * strength;
+            const float outL = l - cancel;
+            const float outR = r - cancel;
+            // Preserving center bass (kick & sub-bass)
+            const float bassComp = (mid - midVocal) * (preserve * 0.35f);
+            block.setSample(0, i, outL + bassComp);
+            block.setSample(1, i, outR + bassComp);
+        } else {
+            // Isolate Vocals: Attenuate stereo sides and enhance speech in center
+            const float sideAtten = side * (1.0f - strength);
+            const float voiceL = midVocal * 1.25f + sideAtten;
+            const float voiceR = midVocal * 1.25f - sideAtten;
+            block.setSample(0, i, voiceL);
+            block.setSample(1, i, voiceR);
+        }
+    }
+}
+
+void VocalIsolatorProcessor::reset()
+{
+    snapToTarget(m_strength);
+    snapToTarget(m_bassPreserve);
+    m_bandFilter.reset();
+}
+
 } // namespace drift
+

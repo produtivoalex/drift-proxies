@@ -128,4 +128,31 @@ private:
     float m_target = 1.0f;
 };
 
+// Vocal Isolator & Karaoke Music Splitter (Mid-Side Vocal Separation & Center-Channel Processing)
+class VocalIsolatorProcessor final : public AudioEffectProcessor
+{
+public:
+    enum class Mode { IsolateVocals = 0, RemoveVocals = 1 };
+
+    explicit VocalIsolatorProcessor(Mode mode = Mode::IsolateVocals);
+
+    void setMode(float mode);
+    void setStrength(float strength);
+    void setBassPreserve(float preserve);
+
+    void prepare(const juce::dsp::ProcessSpec &spec) override;
+    void process(juce::dsp::AudioBlock<float> &block) override;
+    void reset() override;
+
+private:
+    Mode m_mode = Mode::IsolateVocals;
+    juce::SmoothedValue<float> m_strength;
+    juce::SmoothedValue<float> m_bassPreserve;
+    double m_sampleRate = 48000.0;
+
+    juce::dsp::IIR::Filter<float> m_bandFilter;
+    void updateCoefficients();
+};
+
 } // namespace drift
+

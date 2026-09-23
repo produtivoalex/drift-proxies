@@ -861,6 +861,372 @@ Item {
             }
         }
 
+        // ----- Isolador Vocal & Separador de Música -------------------------
+        Rectangle {
+            id: vocalIsolationCard
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            implicitHeight: vocalIsolationCol.implicitHeight + 20
+            radius: Theme.radiusMd
+            color: isVocalActive
+                   ? (Theme.darkMode ? "#141e2e" : "#eff6ff")
+                   : Theme.panelAccent
+            border.width: 1
+            border.color: isVocalActive
+                          ? (Theme.darkMode ? "#2563eb" : "#3b82f6")
+                          : Theme.panelBorder
+
+            readonly property bool isVocalActive: {
+                void root.clipDataRevision
+                return (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0)
+                    ? EditorState.isVocalIsolationEnabled(EditorState.selectedTrack, EditorState.selectedClip)
+                    : false
+            }
+            readonly property int currentMode: {
+                void root.clipDataRevision
+                return (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0)
+                    ? EditorState.vocalIsolationMode(EditorState.selectedTrack, EditorState.selectedClip)
+                    : 0
+            }
+
+            Behavior on color { ColorAnimation { duration: Theme.durationFast } }
+            Behavior on border.color { ColorAnimation { duration: Theme.durationFast } }
+
+            Column {
+                id: vocalIsolationCol
+                x: 10
+                y: 10
+                width: parent.width - 20
+                spacing: Theme.spacingSm
+
+                Row {
+                    width: parent.width
+                    spacing: 8
+
+                    Text {
+                        text: "🎙️"
+                        font.pixelSize: Theme.fontSizeBase
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Column {
+                        width: parent.width - 32 - vocalSwitch.width
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: qsTr("Isolador Vocal & Karaokê")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: qsTr("Separação de fala e trilha instrumental em tempo real")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            elide: Text.ElideRight
+                            width: parent.width
+                        }
+                    }
+
+                    ThemedSwitch {
+                        id: vocalSwitch
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: vocalIsolationCard.isVocalActive
+                        onToggled: {
+                            if (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0) {
+                                EditorState.setVocalIsolation(
+                                    EditorState.selectedTrack, EditorState.selectedClip, checked, vocalIsolationCard.currentMode)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+                }
+
+                // Controls when active
+                Column {
+                    width: parent.width
+                    visible: vocalSwitch.checked
+                    spacing: 6
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: Theme.panelBorder
+                        opacity: 0.5
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 6
+
+                        ThemedButton {
+                            text: qsTr("🗣️ Isolar Voz (Apenas Fala)")
+                            variant: vocalIsolationCard.currentMode === 0 ? "solid" : "ghost"
+                            tooltip: qsTr("Muda o foco para a voz e remove o fundo musical")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.setVocalIsolation(t, c, true, 0)
+                                root.clipDataRevision++
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("🎵 Remover Voz (Karaokê)")
+                            variant: vocalIsolationCard.currentMode === 1 ? "solid" : "ghost"
+                            tooltip: qsTr("Cancela a voz e mantém o instrumental com graves")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.setVocalIsolation(t, c, true, 1)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+                }
+
+                // Music Splitter action button
+                ThemedButton {
+                    width: parent.width
+                    text: qsTr("✂️ Separar em 2 Faixas (Voz + Instrumental)")
+                    variant: "ghost"
+                    tooltip: qsTr("Duplica o clipe na timeline dividindo em faixa de voz e faixa de música")
+                    onClicked: {
+                        const t = EditorState.selectedTrack
+                        const c = EditorState.selectedClip
+                        if (t >= 0 && c >= 0) {
+                            EditorState.splitVocalAndMusicTracks(t, c)
+                            root.clipDataRevision++
+                        }
+                    }
+                }
+            }
+        }
+
+        // ----- Telefone Vintage & Rádio Lo-Fi ------------------------------
+        Rectangle {
+            id: retroAudioCard
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            implicitHeight: retroCol.implicitHeight + 20
+            radius: Theme.radiusMd
+            color: isRetroActive
+                   ? (Theme.darkMode ? "#141e2e" : "#eff6ff")
+                   : Theme.panelAccent
+            border.width: 1
+            border.color: isRetroActive
+                          ? (Theme.darkMode ? "#2563eb" : "#3b82f6")
+                          : Theme.panelBorder
+
+            readonly property bool isPhoneOn: {
+                void root.clipDataRevision
+                return (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0)
+                    ? EditorState.isTelephoneEnabled(EditorState.selectedTrack, EditorState.selectedClip)
+                    : false
+            }
+            readonly property bool isRadioOn: {
+                void root.clipDataRevision
+                return (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0)
+                    ? EditorState.isLofiRadioEnabled(EditorState.selectedTrack, EditorState.selectedClip)
+                    : false
+            }
+            readonly property bool isRetroActive: isPhoneOn || isRadioOn
+
+            Behavior on color { ColorAnimation { duration: Theme.durationFast } }
+            Behavior on border.color { ColorAnimation { duration: Theme.durationFast } }
+
+            Column {
+                id: retroCol
+                x: 10
+                y: 10
+                width: parent.width - 20
+                spacing: Theme.spacingSm
+
+                Row {
+                    width: parent.width
+                    spacing: 8
+
+                    Text {
+                        text: "📻"
+                        font.pixelSize: Theme.fontSizeBase
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Column {
+                        width: parent.width - 32
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: qsTr("Efeitos Retrô (Telefone & Rádio Lo-Fi)")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: qsTr("Texturas vintage, som telefônico e calor analógico")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            elide: Text.ElideRight
+                            width: parent.width
+                        }
+                    }
+                }
+
+                Rectangle {
+                    width: parent.width
+                    height: 1
+                    color: Theme.panelBorder
+                    opacity: 0.5
+                }
+
+                // Row Telefone
+                Column {
+                    width: parent.width
+                    spacing: 4
+
+                    Row {
+                        width: parent.width
+                        spacing: 8
+
+                        Text {
+                            text: qsTr("📞 Voz de Telefone:")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            font.weight: Font.DemiBold
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ThemedSwitch {
+                            checked: retroAudioCard.isPhoneOn
+                            anchors.verticalCenter: parent.verticalCenter
+                            onToggled: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                if (t >= 0 && c >= 0) {
+                                    EditorState.setTelephoneEnabled(t, c, checked)
+                                    root.clipDataRevision++
+                                }
+                            }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        visible: retroAudioCard.isPhoneOn
+                        spacing: 4
+
+                        ThemedButton {
+                            text: qsTr("Ligação")
+                            variant: "ghost"
+                            tooltip: qsTr("Voz típica de ligação de celular")
+                            onClicked: {
+                                EditorState.applyTelephonePreset(EditorState.selectedTrack, EditorState.selectedClip, 0)
+                                root.clipDataRevision++
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Telefone Antigo")
+                            variant: "ghost"
+                            tooltip: qsTr("Corneta de telefone antigo de carbono")
+                            onClicked: {
+                                EditorState.applyTelephonePreset(EditorState.selectedTrack, EditorState.selectedClip, 1)
+                                root.clipDataRevision++
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Interfone / Walkie")
+                            variant: "ghost"
+                            tooltip: qsTr("Estilo rádio comunicador militar")
+                            onClicked: {
+                                EditorState.applyTelephonePreset(EditorState.selectedTrack, EditorState.selectedClip, 2)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+                }
+
+                // Row Rádio Lo-Fi
+                Column {
+                    width: parent.width
+                    spacing: 4
+
+                    Row {
+                        width: parent.width
+                        spacing: 8
+
+                        Text {
+                            text: qsTr("📻 Rádio Lo-Fi & Vinil:")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            font.weight: Font.DemiBold
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ThemedSwitch {
+                            checked: retroAudioCard.isRadioOn
+                            anchors.verticalCenter: parent.verticalCenter
+                            onToggled: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                if (t >= 0 && c >= 0) {
+                                    EditorState.setLofiRadioEnabled(t, c, checked)
+                                    root.clipDataRevision++
+                                }
+                            }
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        visible: retroAudioCard.isRadioOn
+                        spacing: 4
+
+                        ThemedButton {
+                            text: qsTr("Lo-Fi Beats")
+                            variant: "ghost"
+                            tooltip: qsTr("Corte suave de agudos e calor retrô")
+                            onClicked: {
+                                EditorState.applyLofiRadioPreset(EditorState.selectedTrack, EditorState.selectedClip, 0)
+                                root.clipDataRevision++
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Vinil Retrô")
+                            variant: "ghost"
+                            tooltip: qsTr("Flutter e textura de disco de vinil")
+                            onClicked: {
+                                EditorState.applyLofiRadioPreset(EditorState.selectedTrack, EditorState.selectedClip, 1)
+                                root.clipDataRevision++
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Fita Cassete")
+                            variant: "ghost"
+                            tooltip: qsTr("Saturação suave de fita magnética")
+                            onClicked: {
+                                EditorState.applyLofiRadioPreset(EditorState.selectedTrack, EditorState.selectedClip, 2)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ----- Noise removal ---------------------------------------------
         Column {
             id: denoiseSection
