@@ -155,8 +155,8 @@ Para além das 4 partes originais, um editor para criadores no topo absoluto da 
 | **Parte 3: Motions Dinâmicos & Speed Ramping** | Biblioteca rica | **Bézier Curves & Motions Skia** | ✅ **100% Concluído** |
 | **Parte 4: Modos de Mesclagem & Overlays** | Suportado | **Nativo Skia/OpenGL (`SkBlendMode`)** | ✅ **100% Concluído** |
 | **Parte 5: Legendas Dinâmicas (Hormozi/MrBeast)** | Pago (Pro) | **Transcrição Whisper Local + Animação** | ✅ **100% Concluído** |
-| **Parte 6: Auto Cutout (Recorte de Fundo de Pessoa)** | Pago (Pro) | **RVM/SAM2 ONNX Nativo Local** | ⏳ *Próxima Etapa (Planejado)* |
-| **Parte 7: Auto-Beats (Detecção Rítmica na Timeline)** | Suportado | **Engine `AudioOnsets` C++** | ⏳ *Planejado* |
+| **Parte 6: Auto Cutout (Recorte de Fundo de Pessoa)** | Pago (Pro) | **RVM/SAM2 ONNX Nativo Local** | ✅ **100% Concluído** |
+| **Parte 7: Auto-Beats (Detecção Rítmica na Timeline)** | Suportado | **Engine `AudioOnsets` C++** | ⏳ *Próxima Etapa (Planejado)* |
 | **Parte 8: Rastreamento de Movimento (Motion Tracking)** | Pago (Pro) | **OpenCV Tracker Integrado** | ⏳ *Planejado* |
 | **Parte 9: Zonas Seguras de Redes Sociais (9:16 Safe Zones)** | Suportado | **Canvas 9:16 com Guias Visuais** | ⏳ *Planejado* |
 

@@ -269,6 +269,142 @@ Item {
                 }
             }
         }
+
+        // ----- Recorte Inteligente de Fundo (Smart Cutout / Auto Cutout) ----------------
+        Rectangle {
+            id: smartCutoutCard
+            visible: root.clipKind === "video"
+            width: parent.width
+            radius: Theme.radiusMd
+            color: Theme.panelBackground
+            border.width: 1
+            border.color: Theme.panelBorder
+            height: cutoutCol.height + 24
+
+            Column {
+                id: cutoutCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 12
+                spacing: 10
+
+                Row {
+                    spacing: 6
+                    Text {
+                        text: "✂️"
+                        font.pixelSize: 14
+                    }
+                    Text {
+                        text: qsTr("Recorte Inteligente de Fundo (Auto Cutout)")
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeSm
+                        font.weight: Font.DemiBold
+                        color: Theme.panelForeground
+                    }
+                }
+
+                Text {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeXs
+                    color: Theme.mutedForeground
+                    text: qsTr("Remove o fundo de apresentadores instantaneamente sem tela verde usando IA local (RVM).")
+                }
+
+                // Action Buttons when not segmenting
+                Column {
+                    width: parent.width
+                    spacing: 6
+                    visible: !EditorState.segmenting
+
+                    ThemedButton {
+                        width: parent.width
+                        text: qsTr("Remover Fundo (Auto Cutout 1-Clique)")
+                        variant: "primary"
+                        glyph: Theme.icons.sparkles
+                        tooltip: qsTr("Recorta a pessoa e remove o cenário de fundo automaticamente")
+                        onClicked: EditorState.autoCutoutPerson(EditorState.selectedTrack, EditorState.selectedClip)
+                    }
+
+                    ThemedButton {
+                        width: parent.width
+                        text: qsTr("🔤 Criar Texto Atrás da Pessoa")
+                        variant: "secondary"
+                        tooltip: qsTr("Efeito viral: cria texto grande flutuando atrás da pessoa com multicamada automática")
+                        onClicked: EditorState.createTextBehindSubjectEffect(EditorState.selectedTrack, EditorState.selectedClip)
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 6
+                        visible: EditorState.hasCutoutMask(EditorState.selectedTrack, EditorState.selectedClip)
+
+                        ThemedButton {
+                            width: (parent.width - 6) / 2
+                            text: qsTr("Inverter")
+                            variant: "ghost"
+                            tooltip: qsTr("Alterna a máscara para manter apenas o fundo e esconder a pessoa")
+                            onClicked: EditorState.invertCutoutMask(EditorState.selectedTrack, EditorState.selectedClip)
+                        }
+
+                        ThemedButton {
+                            width: (parent.width - 6) / 2
+                            text: qsTr("Restaurar")
+                            variant: "destructive"
+                            glyph: Theme.icons.trash
+                            tooltip: qsTr("Remove o recorte e restaura o vídeo original completo")
+                            onClicked: EditorState.removeCutoutMask(EditorState.selectedTrack, EditorState.selectedClip)
+                        }
+                    }
+                }
+
+                // Progress Bar while cutout is processing
+                Column {
+                    width: parent.width
+                    spacing: 6
+                    visible: EditorState.segmenting
+
+                    Text {
+                        width: parent.width
+                        text: EditorState.segmentStatus.length > 0
+                              ? EditorState.segmentStatus
+                              : qsTr("Recortando apresentador… %1%").arg(Math.round(EditorState.segmentProgress * 100))
+                        color: Theme.accent
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                        elide: Text.ElideRight
+                    }
+
+                    Rectangle {
+                        width: parent.width
+                        height: 6
+                        radius: 3
+                        color: Theme.panelMuted
+
+                        Rectangle {
+                            width: parent.width * Math.max(0, Math.min(1, EditorState.segmentProgress))
+                            height: parent.height
+                            radius: parent.radius
+                            color: Theme.primary
+
+                            Behavior on width {
+                                NumberAnimation { duration: Theme.durationBase; easing.type: Theme.easing }
+                            }
+                        }
+                    }
+
+                    ThemedButton {
+                        width: parent.width
+                        text: qsTr("Cancelar Recorte")
+                        variant: "destructive"
+                        glyph: Theme.icons.x
+                        onClicked: EditorState.cancelSegmentation()
+                    }
+                }
+            }
+        }
     }
 
     NameDialog {

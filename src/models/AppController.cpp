@@ -11004,6 +11004,148 @@ void AppController::finalizeSegmentation(const QString &clipId, const QString &m
     }
 }
 
+void AppController::autoCutoutPerson(int trackIndex, int clipIndex, const QString &quality)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+    const drift::Track &track = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return;
+    const drift::Clip &clip = track.clips.at(clipIndex);
+    if (clip.type != drift::ClipType::Video) {
+        setLastMessage(tr("Select a video clip to cut out"), QStringLiteral("warning"));
+        return;
+    }
+
+    const QString qual = quality.isEmpty() ? QStringLiteral("mobilenetv3") : quality;
+    setLastMessage(tr("Recortando apresentador com IA (RVM)…"), QStringLiteral("info"));
+    segmentClip(trackIndex, clipIndex, {}, QStringLiteral("adjustment"), QStringLiteral("rvm"), qual);
+}
+
+bool AppController::createTextBehindSubjectEffect(int trackIndex, int clipIndex,
+                                                 const QString &text,
+                                                 const QString &fontFamily,
+                                                 int fontSize,
+                                                 const QString &textColor)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    const drift::Track &origTrack = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= origTrack.clips.size())
+        return false;
+    const drift::Clip origClip = origTrack.clips.at(clipIndex);
+    if (origClip.type != drift::ClipType::Video) {
+        setLastMessage(tr("Selecione um clipe de vídeo para criar o efeito"), QStringLiteral("warning"));
+        return false;
+    }
+
+    const drift::Project before = m_project;
+
+    // Track 0 is topmost track. To put clone on top and text in the middle:
+    const int at = qBound(0, trackIndex, m_project.tracks().size());
+    m_project.tracks().insert(at, drift::Track{.type = drift::TrackType::Video});
+    m_project.tracks().insert(at + 1, drift::Track{.type = drift::TrackType::Text});
+
+    // 1. Create text clip on track 'at + 1'
+    drift::Clip textClip;
+    textClip.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    textClip.type = drift::ClipType::Text;
+    textClip.name = tr("Texto Atrás");
+    textClip.timelineStart = origClip.timelineStart;
+    textClip.timelineDuration = origClip.timelineDuration;
+    textClip.srcIn = 0;
+    textClip.srcOut = origClip.timelineDuration;
+    textClip.textContent = text.trimmed().isEmpty() ? QStringLiteral("DRIFT") : text.toUpper();
+
+    textClip.textStyle.fontFamily = fontFamily.isEmpty() ? QStringLiteral("Anton") : fontFamily;
+    textClip.textStyle.pixelSize = fontSize > 0 ? fontSize : 120;
+    textClip.textStyle.fontWeight = 900;
+    textClip.textStyle.letterSpacing = 2.0;
+    drift::setSolidFill(textClip.textStyle, QColor(textColor.isEmpty() ? QStringLiteral("#FFFFFF") : textColor));
+    textClip.textStyle.layers.prepend(drift::strokeLayer(4.5, Qt::black));
+    textClip.textStyle.layers.prepend(drift::shadowLayer(QColor(0, 0, 0, 230), 0.0, 6.0, 10.0));
+
+    applyDefaultVisualLayout(textClip, m_project.width(), m_project.height());
+    {
+        const double w = m_project.width() * 0.90;
+        const double h = m_project.height() * 0.35;
+        const double x = (m_project.width() - w) / 2.0;
+        const double y = m_project.height() * 0.22;
+        setClipLayoutPixels(textClip, x, y, w, h);
+    }
+    m_project.tracks()[at + 1].clips.append(textClip);
+
+    // 2. Clone original video to track 'at' (topmost)
+    drift::Clip cloneClip = origClip;
+    cloneClip.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    cloneClip.name = origClip.name.isEmpty() ? tr("Apresentador") : (origClip.name + tr(" (Recorte)"));
+    m_project.tracks()[at].clips.append(cloneClip);
+
+    pushProjectEdit(before, tr("Create Text Behind Person"));
+    finishEdit(tr("Create Text Behind Person"));
+
+    // 3. Start RVM cutout on the clone clip at track 'at'
+    setLastMessage(tr("Efeito montado! Recortando apresentador em 1-clique…"), QStringLiteral("info"));
+    segmentClip(at, 0, {}, QStringLiteral("adjustment"), QStringLiteral("rvm"), QStringLiteral("mobilenetv3"));
+    return true;
+}
+
+bool AppController::hasCutoutMask(int trackIndex, int clipIndex) const
+{
+    const QList<drift::ClipRef> linked = drift::linkedMaskAdjustments(m_project, trackIndex, clipIndex);
+    for (const drift::ClipRef &ref : linked) {
+        if (ref.trackIndex >= 0 && ref.trackIndex < m_project.tracks().size()) {
+            const drift::Track &t = m_project.tracks().at(ref.trackIndex);
+            if (ref.clipIndex >= 0 && ref.clipIndex < t.clips.size()) {
+                const drift::Clip &adj = t.clips.at(ref.clipIndex);
+                if (adj.mask.shape == drift::MaskShape::Media || !adj.mask.mediaPath.isEmpty())
+                    return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool AppController::removeCutoutMask(int trackIndex, int clipIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    const drift::Project before = m_project;
+    drift::clearLinkedMasks(m_project, trackIndex, clipIndex, true);
+    pushProjectEdit(before, tr("Remove cutout"));
+    finishEdit(tr("Remove cutout"));
+    setLastMessage(tr("Recorte de fundo removido."), QStringLiteral("info"));
+    return true;
+}
+
+bool AppController::invertCutoutMask(int trackIndex, int clipIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    const drift::Project before = m_project;
+    const QList<drift::ClipRef> linked = drift::linkedMaskAdjustments(m_project, trackIndex, clipIndex);
+    bool toggled = false;
+    for (const drift::ClipRef &ref : linked) {
+        if (ref.trackIndex >= 0 && ref.trackIndex < m_project.tracks().size()) {
+            drift::Track &t = m_project.tracks()[ref.trackIndex];
+            if (ref.clipIndex >= 0 && ref.clipIndex < t.clips.size()) {
+                drift::Clip &adj = t.clips[ref.clipIndex];
+                if (adj.mask.shape == drift::MaskShape::Media || !adj.mask.mediaPath.isEmpty()) {
+                    adj.mask.invert = !adj.mask.invert;
+                    toggled = true;
+                }
+            }
+        }
+    }
+    if (toggled) {
+        pushProjectEdit(before, tr("Invert cutout"));
+        finishEdit(tr("Invert cutout"));
+        setLastMessage(tr("Inversão de recorte alternada."), QStringLiteral("info"));
+        return true;
+    }
+    return false;
+}
+
 // ---- Noise removal ----------------------------------------------------------------------
 
 bool AppController::denoiseAvailable()

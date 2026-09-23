@@ -137,6 +137,24 @@
   - `SubtitlesTab.qml`: Checkbox nativo `ThemedCheckBox` para ativação de emojis automáticos e galeria completa de estilos virais.
   - `SubtitleEditor.qml`: Barra superior de ações virais rápidas (*✨ Emojis Automáticos*, *⚡ 1 Palavra/Tela*, *🔥 2-3 Palavras*) e seletor em fluxo (Flow) com todos os presets estilizados.
 
+### 7. PARTE 6: Recorte Inteligente de Fundo (Smart Cutout / Auto Cutout em 1-Clique) (100% Concluída)
+* **Motor Neural RVM sem Seleção Manual (`AppController::autoCutoutPerson`)**:
+  - Remove automaticamente o fundo de apresentadores e pessoas em tempo real sem green screen usando *Robust Video Matting* local (ONNX Runtime).
+  - Execução direta com 1 clique (`mobilenetv3` otimizado), sem necessidade de abrir janela modal ou clicar em pontos.
+* **Efeito Viral: Criar Texto Atrás da Pessoa (`AppController::createTextBehindSubjectEffect`)**:
+  - Em 1 clique, monta automaticamente a arquitetura multicamada na timeline:
+    - Camada Superior: Clone do apresentador recortado sem fundo.
+    - Camada Intermediária: Texto estilizado gigante (Anton 900, AllCaps, com contorno e sombra de destaque) posicionado atrás do sujeito.
+    - Camada Inferior: Vídeo original completo com o cenário.
+  - Inicia imediatamente o rastreamento neural na camada superior.
+* **Gerenciamento de Recorte**:
+  - `hasCutoutMask`: Detecta instantaneamente se o clipe já possui máscara de recorte ativa.
+  - `invertCutoutMask`: Inverte a máscara em 1 clique (para esconder a pessoa e deixar apenas o fundo/cenário limpo).
+  - `removeCutoutMask`: Remove a máscara e restaura o clipe original com suporte a Undo/Redo.
+* **Interface QML Refinada**:
+  - `GeneralInspector.qml`: Card dedicado e moderno de **Recorte Inteligente de Fundo (Auto Cutout)** com botões de 1 clique, barra de progresso em tempo real e alternador de inversão/restauração.
+  - `MasksTab.qml`: Botões rápidos `⚡ Auto Cutout Pessoa (1-Clique)` e `🔤 Criar Texto Atrás da Pessoa`.
+
 ---
 
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
@@ -144,22 +162,20 @@
 O documento [`PROXIMOS_PASSOS.md`](file:///C:/Users/Alex/Documents/Antigravity/drift/PROXIMOS_PASSOS.md) detalha todo o ecossistema planejado:
 
 ### O Próximo Foco Imediato:
-* **PARTE 6: Recorte Inteligente de Fundo (Smart Cutout / Auto Cutout em 1-Clique)**
-  - O Drift já possui o motor C++ com `RvmMatter` e `Sam2Segmenter` usando ONNX Runtime local.
-  - Adicionar botão de 1 clique no painel de vídeo e timeline *"Remover Fundo (Auto Cutout)"*.
-  - Permitir o fluxo viral de duplicar a faixa e colocar **textos grandes flutuando atrás da pessoa**.
+* **PARTE 7: Detecção de Batidas e Cortes no Ritmo (Auto-Beats na Timeline)**
+  - O motor `AudioOnsets.cpp` já detecta transientes rítmicos (*kicks & snares*).
+  - Conectar os onsets à régua da timeline em `TimelinePanel.qml` com snap magnético do cursor e da ferramenta de corte `B`.
 
 ### Frentes Complementares Mapeadas:
-* **Parte 7**: Detecção de Batidas e Cortes no Ritmo (*Auto-Beats / Snap to Beat* na timeline via `AudioOnsets.cpp`).
 * **Parte 8**: Rastreamento de Movimento (*Motion Tracking* via OpenCV).
 * **Parte 9**: Presets de Redes Sociais & Guias de Zonas Seguras 9:16 (TikTok/Reels/Shorts).
 
 ---
 
 ## 📂 Arquivos Chave Recentes no Repositório
+* `src/models/AppController.h` / `AppController.cpp`: Métodos de Auto Cutout 1-clique, Text Behind Person, Inversão e Remoção de recorte.
+* `src/qml/components/properties/GeneralInspector.qml`: Card de Recorte Inteligente de Fundo com barra de progresso.
+* `src/qml/components/assets/MasksTab.qml`: Acesso rápido ao Auto Cutout e Texto Atrás no painel de assets.
 * `src/core/SubtitleCue.h` / `SubtitleCue.cpp`: Motor de quebra de legendas, Karaoke timings e enriquecimento com emojis contextuais.
 * `src/core/TextStyle.h` / `TextStyle.cpp`: Presets virais com WordAccent Karaoke e escalas pop dinâmicas.
-* `src/models/AppController.h` / `AppController.cpp`: Métodos de legendas virais, transcrição Whisper e empacotamento.
-* `src/qml/components/assets/SubtitlesTab.qml`: Painel de geração automática de legendas com Whisper.
-* `src/qml/components/SubtitleEditor.qml`: Editor ao vivo de legendas estilo lyrics com ações virais e presets rápidos.
 * `PROXIMOS_PASSOS.md`: Roteiro estratégico detalhado de todas as 9 partes.

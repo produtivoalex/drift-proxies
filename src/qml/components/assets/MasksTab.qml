@@ -108,7 +108,30 @@ Item {
             ThemedButton {
                 visible: segmentSection.segmentReady && segmentSection.runtimeReady
                 width: parent.width
-                text: qsTr("Cut out subject…")
+                text: qsTr("⚡ Auto Cutout Pessoa (1-Clique)")
+                variant: "primary"
+                glyph: Theme.icons.sparkles
+                enabled: !EditorState.segmenting && root.clipKind === "video"
+                tooltip: root.clipKind === "video"
+                         ? qsTr("Remove o fundo de apresentadores automaticamente com IA (sem tela verde)")
+                         : qsTr("Select a video clip first")
+                onClicked: EditorState.autoCutoutPerson(EditorState.selectedTrack, EditorState.selectedClip)
+            }
+
+            ThemedButton {
+                visible: segmentSection.segmentReady && segmentSection.runtimeReady
+                width: parent.width
+                text: qsTr("🔤 Criar Texto Atrás da Pessoa")
+                variant: "secondary"
+                enabled: !EditorState.segmenting && root.clipKind === "video"
+                tooltip: qsTr("Cria efeito multicamada com texto grande flutuando atrás do apresentador")
+                onClicked: EditorState.createTextBehindSubjectEffect(EditorState.selectedTrack, EditorState.selectedClip)
+            }
+
+            ThemedButton {
+                visible: segmentSection.segmentReady && segmentSection.runtimeReady
+                width: parent.width
+                text: qsTr("Recorte Interativo (SAM2)…")
                 enabled: !EditorState.segmenting && root.clipKind === "video"
                 tooltip: root.clipKind === "video"
                          ? qsTr("Trace the subject and pin the result as a mask layer")

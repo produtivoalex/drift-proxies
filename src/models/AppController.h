@@ -895,6 +895,22 @@ public:
     Q_INVOKABLE void endSegmentationSession();
     void openSegmentationForTemplate(int trackIndex, int clipIndex);
 
+    // 1-Click Smart Cutout (Removes background from people using RVM neural network)
+    Q_INVOKABLE void autoCutoutPerson(int trackIndex, int clipIndex,
+                                      const QString &quality = QStringLiteral("mobilenetv3"));
+    // 1-Click Viral Effect: Creates text layer behind person by cloning clip, creating stylized text, and auto-cutting person
+    Q_INVOKABLE bool createTextBehindSubjectEffect(int trackIndex, int clipIndex,
+                                                  const QString &text = QString(),
+                                                  const QString &fontFamily = QStringLiteral("Anton"),
+                                                  int fontSize = 120,
+                                                  const QString &textColor = QStringLiteral("#FFFFFF"));
+    // Checks if clip has a media cutout mask attached
+    Q_INVOKABLE bool hasCutoutMask(int trackIndex, int clipIndex) const;
+    // Removes the cutout mask from clip
+    Q_INVOKABLE bool removeCutoutMask(int trackIndex, int clipIndex);
+    // Inverts the cutout mask (leaves only background)
+    Q_INVOKABLE bool invertCutoutMask(int trackIndex, int clipIndex);
+
     // Starts a punching session from the current video selection (two or more clips on
     // distinct tracks). Returns false when there is nothing to punch and no empty-timeline
     // setup to offer; the window should stay closed.
