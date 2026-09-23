@@ -185,14 +185,16 @@ Rectangle {
                 ThemedButton {
                     variant: "primary"
                     glyph: Theme.icons.plus
-                    text: qsTr("New Project")
+                    text: qsTr("Novo Projeto")
+                    implicitHeight: 40
                     onClicked: root.newProjectRequested()
                 }
 
                 ThemedButton {
                     variant: "secondary"
                     glyph: Theme.icons.folder
-                    text: qsTr("Open Project…")
+                    text: qsTr("Abrir Projeto…")
+                    implicitHeight: 40
                     onClicked: root.openProjectRequested()
                 }
             }

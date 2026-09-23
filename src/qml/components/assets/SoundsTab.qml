@@ -236,7 +236,7 @@ Item {
                                                 width: durText.width + 8
                                                 height: 16
                                                 radius: 4
-                                                color: Theme.surface
+                                                color: Theme.panelAccent
                                                 Text {
                                                     id: durText
                                                     anchors.centerIn: parent

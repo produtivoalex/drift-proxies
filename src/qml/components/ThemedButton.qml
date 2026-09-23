@@ -19,7 +19,6 @@ Button {
     // and destructive (those commit something) and press for everything else.
     property string haptic: "auto"
     property real buttonSize: 0
-    implicitHeight: buttonSize > 0 ? buttonSize : implicitHeight
 
     font.family: Theme.fontFamily
     font.pixelSize: Theme.fontSizeSm

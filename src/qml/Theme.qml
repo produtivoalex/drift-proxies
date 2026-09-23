@@ -137,9 +137,9 @@ QtObject {
     // Qt.styleHints.colorScheme is live-updated by the platform theme (Qt 6.5+).
     // Once toggled, the choice lives in QSettings via EditorState and survives
     // restarts; it is app-wide, not stored per project.
-    readonly property bool systemPrefersDark: Qt.styleHints.colorScheme !== Qt.Light
+    readonly property bool systemPrefersDark: true
     readonly property bool darkMode: EditorState.darkModeOverridden ? EditorState.darkModePreferred
-                                                                    : systemPrefersDark
+                                                                    : true
 
     function toggleDarkMode() {
         EditorState.setDarkModePreference(!darkMode);
