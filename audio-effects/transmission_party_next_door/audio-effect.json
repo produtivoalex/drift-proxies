@@ -1,0 +1,36 @@
+{
+  "id": "transmission.party_next_door",
+  "displayName": "Festa ao Lado (Vizinho)",
+  "category": "transmission",
+  "icon": "music",
+  "order": 245,
+  "backend": "juce",
+  "processor": "party_next_door",
+  "prerollMs": 100,
+  "parameters": [
+    {
+      "identifier": "cutoff",
+      "displayName": "Abafamento da Parede (Cutoff Hz)",
+      "type": "float",
+      "minValue": 150.0,
+      "maxValue": 1200.0,
+      "defaultValue": 420.0
+    },
+    {
+      "identifier": "bass",
+      "displayName": "Vibração de Graves (Bass Boost dB)",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 12.0,
+      "defaultValue": 6.0
+    },
+    {
+      "identifier": "room_echo",
+      "displayName": "Eco do Cômodo (Room Echo)",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.40
+    }
+  ]
+}

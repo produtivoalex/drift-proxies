@@ -1,0 +1,36 @@
+{
+  "id": "space.eightd",
+  "displayName": "Áudio 8D (Binaural 360°)",
+  "category": "space",
+  "icon": "headphones",
+  "order": 455,
+  "backend": "juce",
+  "processor": "eightd",
+  "prerollMs": 100,
+  "parameters": [
+    {
+      "identifier": "speed",
+      "displayName": "Velocidade de Rotação (Hz)",
+      "type": "float",
+      "minValue": 0.05,
+      "maxValue": 1.0,
+      "defaultValue": 0.15
+    },
+    {
+      "identifier": "depth",
+      "displayName": "Largura Espacial (3D Width)",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.85
+    },
+    {
+      "identifier": "reverb",
+      "displayName": "Dimensão Acústica (Reverb)",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.35
+    }
+  ]
+}

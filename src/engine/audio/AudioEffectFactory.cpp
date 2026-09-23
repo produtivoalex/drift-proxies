@@ -316,6 +316,65 @@ void buildStereoWiden(ChainProcessor &chain)
     chain.bind(QStringLiteral("drymix"), widen, &StereoWidenProcessor::setDryMix);
 }
 
+void buildEightD(ChainProcessor &chain)
+{
+    auto *widen = chain.addStage<StereoWidenProcessor>();
+    widen->setDelayMs(22.0f);
+    widen->setCrossfeed(0.38f);
+    widen->setFeedback(0.12f);
+    widen->setDryMix(0.70f);
+
+    auto *pan = chain.addStage<AutoPanProcessor>();
+    pan->setRate(0.15f);
+    pan->setAmount(0.90f);
+    pan->setLevelIn(1.0f);
+    pan->setLevelOut(1.05f);
+
+    auto *echo = chain.addStage<EchoProcessor>();
+    echo->setDelayMs(45.0f);
+    echo->setDecay(0.20f);
+    echo->setInGain(1.0f);
+    echo->setOutGain(0.35f);
+
+    chain.bind(QStringLiteral("speed"), [pan](float v) {
+        pan->setRate(v);
+    });
+    chain.bind(QStringLiteral("depth"), [pan, widen](float v) {
+        pan->setAmount(std::clamp(v, 0.0f, 1.0f));
+        widen->setCrossfeed(v * 0.50f);
+    });
+    chain.bind(QStringLiteral("reverb"), [echo](float v) {
+        echo->setOutGain(v * 0.60f);
+    });
+}
+
+void buildPartyNextDoor(ChainProcessor &chain)
+{
+    auto *eq = chain.addStage<ThreeBandEqProcessor>();
+    eq->setLowGainDb(6.0f);
+    eq->setMidGainDb(-4.0f);
+    eq->setHighGainDb(-12.0f);
+
+    auto *lowPass = chain.addStage<BandFilterProcessor>(BandFilterProcessor::Mode::LowPass, 420.0f);
+
+    auto *echo = chain.addStage<EchoProcessor>();
+    echo->setDelayMs(75.0f);
+    echo->setDecay(0.35f);
+    echo->setInGain(1.0f);
+    echo->setOutGain(0.40f);
+
+    chain.bind(QStringLiteral("cutoff"), [lowPass](float v) {
+        lowPass->setFrequency(v);
+    });
+    chain.bind(QStringLiteral("bass"), [eq](float v) {
+        eq->setLowGainDb(v);
+    });
+    chain.bind(QStringLiteral("room_echo"), [echo](float v) {
+        echo->setOutGain(v * 0.75f);
+        echo->setDecay(v * 0.50f);
+    });
+}
+
 const QHash<QString, Builder> &registry()
 {
     static const QHash<QString, Builder> builders{
@@ -346,6 +405,8 @@ const QHash<QString, Builder> &registry()
         {QStringLiteral("autopan"), buildAutoPan},
         {QStringLiteral("stereowiden"), buildStereoWiden},
         {QStringLiteral("studio_voice"), buildStudioVoice},
+        {QStringLiteral("eightd"), buildEightD},
+        {QStringLiteral("party_next_door"), buildPartyNextDoor},
     };
     return builders;
 }

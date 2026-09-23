@@ -1454,6 +1454,16 @@ public:
     Q_INVOKABLE void clearAutoDucking(int trackIndex, int clipIndex);
     Q_INVOKABLE bool hasAutoDucking(int trackIndex, int clipIndex) const;
 
+    // 8D Audio (360° Circular Spatializer)
+    Q_INVOKABLE bool isEightDEnabled(int trackIndex, int clipIndex) const;
+    Q_INVOKABLE void setEightDEnabled(int trackIndex, int clipIndex, bool enabled);
+    Q_INVOKABLE void setEightDSpeed(int trackIndex, int clipIndex, double speedHz);
+
+    // Party Next Door (Muffled wall + room reverberation)
+    Q_INVOKABLE bool isPartyNextDoorEnabled(int trackIndex, int clipIndex) const;
+    Q_INVOKABLE void setPartyNextDoorEnabled(int trackIndex, int clipIndex, bool enabled);
+    Q_INVOKABLE void applyPartyNextDoorPreset(int trackIndex, int clipIndex, int presetMode);
+
     // Effect stacks travel as JSON on the system clipboard, so a copy also crosses to a second
     // running instance. -1 for both indices means the whole clip.
     Q_INVOKABLE void copyEffectToClipboard(int trackIndex, int clipIndex, int effectIndex);

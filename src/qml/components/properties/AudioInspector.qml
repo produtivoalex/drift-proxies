@@ -580,6 +580,287 @@ Item {
             }
         }
 
+        // ----- Áudio 8D / Binaural 360° ------------------------------------
+        Rectangle {
+            id: eightDCard
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            implicitHeight: eightDCol.implicitHeight + 20
+            radius: Theme.radiusMd
+            color: eightDSwitch.checked
+                   ? (Theme.darkMode ? "#141e2e" : "#eff6ff")
+                   : Theme.panelAccent
+            border.width: 1
+            border.color: eightDSwitch.checked
+                          ? (Theme.darkMode ? "#2563eb" : "#3b82f6")
+                          : Theme.panelBorder
+
+            Behavior on color { ColorAnimation { duration: Theme.durationFast } }
+            Behavior on border.color { ColorAnimation { duration: Theme.durationFast } }
+
+            Column {
+                id: eightDCol
+                x: 10
+                y: 10
+                width: parent.width - 20
+                spacing: Theme.spacingSm
+
+                Row {
+                    width: parent.width
+                    spacing: 8
+
+                    Text {
+                        text: "🎧"
+                        font.pixelSize: Theme.fontSizeBase
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Column {
+                        width: parent.width - 32 - eightDSwitch.width
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: qsTr("Áudio 8D (Binaural 360°)")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: qsTr("Som girando ao redor da cabeça (ouvir de fones)")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            elide: Text.ElideRight
+                            width: parent.width
+                        }
+                    }
+
+                    ThemedSwitch {
+                        id: eightDSwitch
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: {
+                            void root.clipDataRevision
+                            return (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0)
+                                ? EditorState.isEightDEnabled(EditorState.selectedTrack, EditorState.selectedClip)
+                                : false
+                        }
+                        onToggled: {
+                            if (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0) {
+                                EditorState.setEightDEnabled(
+                                    EditorState.selectedTrack, EditorState.selectedClip, checked)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+                }
+
+                // Controls when active
+                Column {
+                    width: parent.width
+                    visible: eightDSwitch.checked
+                    spacing: 6
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: Theme.panelBorder
+                        opacity: 0.5
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 6
+
+                        Text {
+                            text: qsTr("Velocidade:")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Lenta (8s)")
+                            variant: "ghost"
+                            tooltip: qsTr("Giro suave e imersivo")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.setEightDSpeed(t, c, 0.125)
+                                Toasts.info(qsTr("Velocidade 8D ajustada para 8s"))
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Média (5s)")
+                            variant: "ghost"
+                            tooltip: qsTr("Giro clássico de música 8D")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.setEightDSpeed(t, c, 0.20)
+                                Toasts.info(qsTr("Velocidade 8D ajustada para 5s"))
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Rápida (3s)")
+                            variant: "ghost"
+                            tooltip: qsTr("Giro dinâmico e acelerado")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.setEightDSpeed(t, c, 0.33)
+                                Toasts.info(qsTr("Velocidade 8D ajustada para 3s"))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ----- Festa ao Lado (Vizinho / Parede) -----------------------------
+        Rectangle {
+            id: partyCard
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            implicitHeight: partyCol.implicitHeight + 20
+            radius: Theme.radiusMd
+            color: partySwitch.checked
+                   ? (Theme.darkMode ? "#141e2e" : "#eff6ff")
+                   : Theme.panelAccent
+            border.width: 1
+            border.color: partySwitch.checked
+                          ? (Theme.darkMode ? "#2563eb" : "#3b82f6")
+                          : Theme.panelBorder
+
+            Behavior on color { ColorAnimation { duration: Theme.durationFast } }
+            Behavior on border.color { ColorAnimation { duration: Theme.durationFast } }
+
+            Column {
+                id: partyCol
+                x: 10
+                y: 10
+                width: parent.width - 20
+                spacing: Theme.spacingSm
+
+                Row {
+                    width: parent.width
+                    spacing: 8
+
+                    Text {
+                        text: "🏠"
+                        font.pixelSize: Theme.fontSizeBase
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Column {
+                        width: parent.width - 32 - partySwitch.width
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: qsTr("Festa ao Lado (Vizinho / Parede)")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: qsTr("Música abafada através da parede com eco de cômodo")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            elide: Text.ElideRight
+                            width: parent.width
+                        }
+                    }
+
+                    ThemedSwitch {
+                        id: partySwitch
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: {
+                            void root.clipDataRevision
+                            return (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0)
+                                ? EditorState.isPartyNextDoorEnabled(EditorState.selectedTrack, EditorState.selectedClip)
+                                : false
+                        }
+                        onToggled: {
+                            if (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0) {
+                                EditorState.setPartyNextDoorEnabled(
+                                    EditorState.selectedTrack, EditorState.selectedClip, checked)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+                }
+
+                // Presets when active
+                Column {
+                    width: parent.width
+                    visible: partySwitch.checked
+                    spacing: 6
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: Theme.panelBorder
+                        opacity: 0.5
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 6
+
+                        Text {
+                            text: qsTr("Cenários:")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Quarto ao Lado")
+                            variant: "ghost"
+                            tooltip: qsTr("Abafado através da parede com grave encorpado")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.applyPartyNextDoorPreset(t, c, 0)
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("No Banheiro")
+                            variant: "ghost"
+                            tooltip: qsTr("Mais abafado com eco de azulejo estilo festa")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.applyPartyNextDoorPreset(t, c, 1)
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Vizinho de Cima")
+                            variant: "ghost"
+                            tooltip: qsTr("Apenas o grave do subwoofer vibrando o teto")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.applyPartyNextDoorPreset(t, c, 2)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ----- Noise removal ---------------------------------------------
         Column {
             id: denoiseSection

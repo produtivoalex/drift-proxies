@@ -17751,6 +17751,162 @@ int AppController::applyAutoDucking(int trackIndex, int clipIndex,
     return merged.size();
 }
 
+bool AppController::isEightDEnabled(int trackIndex, int clipIndex) const
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return false;
+
+    for (const drift::Effect &effect : audioHost->audioEffects) {
+        if (effect.catalogId == QLatin1String("space.eightd"))
+            return effect.enabled;
+    }
+    return false;
+}
+
+void AppController::setEightDEnabled(int trackIndex, int clipIndex, bool enabled)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    int existingIdx = -1;
+    if (audioHost) {
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("space.eightd")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (enabled) {
+        if (existingIdx >= 0) {
+            setAudioEffectEnabled(trackIndex, clipIndex, existingIdx, true);
+        } else {
+            addAudioEffect(trackIndex, clipIndex, QStringLiteral("space.eightd"));
+        }
+        setLastMessage(tr("Áudio 8D ativado (ouça com fones de ouvido)"), QStringLiteral("success"));
+    } else {
+        if (existingIdx >= 0) {
+            removeAudioEffect(trackIndex, clipIndex, existingIdx);
+            setLastMessage(tr("Áudio 8D desativado"), QStringLiteral("info"));
+        }
+    }
+}
+
+void AppController::setEightDSpeed(int trackIndex, int clipIndex, double speedHz)
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return;
+
+    int existingIdx = -1;
+    for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+        if (audioHost->audioEffects.at(i).catalogId == QLatin1String("space.eightd")) {
+            existingIdx = i;
+            break;
+        }
+    }
+    if (existingIdx >= 0) {
+        setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("speed"), speedHz);
+    }
+}
+
+bool AppController::isPartyNextDoorEnabled(int trackIndex, int clipIndex) const
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return false;
+
+    for (const drift::Effect &effect : audioHost->audioEffects) {
+        if (effect.catalogId == QLatin1String("transmission.party_next_door"))
+            return effect.enabled;
+    }
+    return false;
+}
+
+void AppController::setPartyNextDoorEnabled(int trackIndex, int clipIndex, bool enabled)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    int existingIdx = -1;
+    if (audioHost) {
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("transmission.party_next_door")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (enabled) {
+        if (existingIdx >= 0) {
+            setAudioEffectEnabled(trackIndex, clipIndex, existingIdx, true);
+        } else {
+            addAudioEffect(trackIndex, clipIndex, QStringLiteral("transmission.party_next_door"));
+        }
+        setLastMessage(tr("Efeito Festa ao Lado ativado"), QStringLiteral("success"));
+    } else {
+        if (existingIdx >= 0) {
+            removeAudioEffect(trackIndex, clipIndex, existingIdx);
+            setLastMessage(tr("Efeito Festa ao Lado desativado"), QStringLiteral("info"));
+        }
+    }
+}
+
+void AppController::applyPartyNextDoorPreset(int trackIndex, int clipIndex, int presetMode)
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return;
+
+    int existingIdx = -1;
+    for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+        if (audioHost->audioEffects.at(i).catalogId == QLatin1String("transmission.party_next_door")) {
+            existingIdx = i;
+            break;
+        }
+    }
+    if (existingIdx < 0) {
+        setPartyNextDoorEnabled(trackIndex, clipIndex, true);
+        audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+        if (!audioHost)
+            return;
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("transmission.party_next_door")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (existingIdx >= 0) {
+        if (presetMode == 0) {
+            // Quarto ao Lado (equilibrado)
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("cutoff"), 420.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("bass"), 6.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("room_echo"), 0.40);
+            setLastMessage(tr("Perfil Quarto ao Lado aplicado"), QStringLiteral("info"));
+        } else if (presetMode == 1) {
+            // No Banheiro da Festa (eco de azulejo e abafado)
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("cutoff"), 350.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("bass"), 4.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("room_echo"), 0.75);
+            setLastMessage(tr("Perfil No Banheiro aplicado"), QStringLiteral("info"));
+        } else if (presetMode == 2) {
+            // Vizinho de Cima (apenas o grave do subwoofer vibrando o teto)
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("cutoff"), 220.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("bass"), 10.0);
+            setAudioEffectParam(trackIndex, clipIndex, existingIdx, QStringLiteral("room_echo"), 0.20);
+            setLastMessage(tr("Perfil Vizinho de Cima aplicado"), QStringLiteral("info"));
+        }
+    }
+}
+
+
 
 // --- effect stacks: copy/paste and user presets ------------------------------
 
