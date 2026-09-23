@@ -87,6 +87,48 @@ void buildLeveler(ChainProcessor &chain)
     chain.bind(QStringLiteral("peak"), leveler, &LevelerProcessor::setPeak);
 }
 
+void buildStudioVoice(ChainProcessor &chain)
+{
+    auto *gate = chain.addStage<GateProcessor>();
+    gate->setThresholdLinear(0.015f);
+    gate->setRatio(2.5f);
+    gate->setAttackMs(10.0f);
+    gate->setReleaseMs(100.0f);
+
+    auto *eq = chain.addStage<ThreeBandEqProcessor>();
+    eq->setLowGainDb(2.5f);
+    eq->setMidGainDb(-1.8f);
+    eq->setHighGainDb(3.5f);
+
+    auto *deesser = chain.addStage<DeEsserProcessor>();
+    deesser->setFrequency(6000.0f);
+    deesser->setIntensity(0.70f);
+    deesser->setAmount(0.65f);
+
+    auto *compressor = chain.addStage<CompressorProcessor>();
+    compressor->setThresholdDb(-16.0f);
+    compressor->setRatio(3.2f);
+    compressor->setAttackMs(15.0f);
+    compressor->setReleaseMs(180.0f);
+    compressor->setMakeupLinear(1.35f);
+
+    auto *leveler = chain.addStage<LevelerProcessor>();
+    leveler->setStrength(4.0f);
+    leveler->setPeak(0.96f);
+
+    chain.bind(QStringLiteral("warmth"), [eq](float v) {
+        eq->setLowGainDb(v * 5.0f);
+    });
+    chain.bind(QStringLiteral("clarity"), [eq, deesser](float v) {
+        eq->setHighGainDb(v * 5.0f);
+        deesser->setAmount(std::clamp(v, 0.2f, 0.9f));
+    });
+    chain.bind(QStringLiteral("compression"), [compressor](float v) {
+        compressor->setThresholdDb(-8.0f - v * 16.0f);
+        compressor->setMakeupLinear(1.0f + v * 0.5f);
+    });
+}
+
 // ---- voice ------------------------------------------------------------------------------
 
 void buildPitch(ChainProcessor &chain)
@@ -303,6 +345,7 @@ const QHash<QString, Builder> &registry()
         {QStringLiteral("phaser"), buildPhaser},
         {QStringLiteral("autopan"), buildAutoPan},
         {QStringLiteral("stereowiden"), buildStereoWiden},
+        {QStringLiteral("studio_voice"), buildStudioVoice},
     };
     return builders;
 }

@@ -205,6 +205,148 @@ Item {
             opacity: 0.5
         }
 
+        // ----- Voz de Estúdio / Enhance Voice (1-Click Pro Audio) ------------
+        Rectangle {
+            id: studioVoiceCard
+            visible: root.clipKind === "audio" || root.clipKind === "video"
+            width: parent.width
+            implicitHeight: studioVoiceCol.implicitHeight + 20
+            radius: Theme.radiusMd
+            color: studioVoiceSwitch.checked
+                   ? (Theme.darkMode ? "#141e2e" : "#eff6ff")
+                   : Theme.panelAccent
+            border.width: 1
+            border.color: studioVoiceSwitch.checked
+                          ? (Theme.darkMode ? "#2563eb" : "#3b82f6")
+                          : Theme.panelBorder
+
+            Behavior on color { ColorAnimation { duration: Theme.durationFast } }
+            Behavior on border.color { ColorAnimation { duration: Theme.durationFast } }
+
+            Column {
+                id: studioVoiceCol
+                x: 10
+                y: 10
+                width: parent.width - 20
+                spacing: Theme.spacingSm
+
+                Row {
+                    width: parent.width
+                    spacing: 8
+
+                    Text {
+                        text: "🎙️"
+                        font.pixelSize: Theme.fontSizeBase
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Column {
+                        width: parent.width - 32 - studioVoiceSwitch.width
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: qsTr("Voz de Estúdio (Enhance Voice)")
+                            color: Theme.panelForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.weight: Font.DemiBold
+                        }
+
+                        Text {
+                            text: qsTr("Clareza, calor de microfone e nivelamento de broadcast")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            elide: Text.ElideRight
+                            width: parent.width
+                        }
+                    }
+
+                    ThemedSwitch {
+                        id: studioVoiceSwitch
+                        anchors.verticalCenter: parent.verticalCenter
+                        checked: {
+                            void root.clipDataRevision
+                            return (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0)
+                                ? EditorState.isStudioVoiceEnabled(EditorState.selectedTrack, EditorState.selectedClip)
+                                : false
+                        }
+                        onToggled: {
+                            if (EditorState.selectedTrack >= 0 && EditorState.selectedClip >= 0) {
+                                EditorState.setStudioVoiceEnabled(
+                                    EditorState.selectedTrack, EditorState.selectedClip, checked)
+                                root.clipDataRevision++
+                            }
+                        }
+                    }
+                }
+
+                // Presets row when active
+                Column {
+                    width: parent.width
+                    visible: studioVoiceSwitch.checked
+                    spacing: 6
+
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: Theme.panelBorder
+                        opacity: 0.5
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 4
+
+                        Text {
+                            text: qsTr("Perfis:")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Podcast Quente")
+                            variant: "ghost"
+                            tooltip: qsTr("Graves aveludados e calor estilo Shure SM7B")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.applyStudioVoicePreset(t, c, 0.8, 0.6, 0.7)
+                                Toasts.info(qsTr("Perfil Podcast Quente aplicado"))
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Cristalina")
+                            variant: "ghost"
+                            tooltip: qsTr("Máxima presença e ar para fones de ouvido")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.applyStudioVoicePreset(t, c, 0.4, 0.9, 0.6)
+                                Toasts.info(qsTr("Perfil Cristalino aplicado"))
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Rádio FM")
+                            variant: "ghost"
+                            tooltip: qsTr("Compressão e firmeza de locutor de rádio")
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                EditorState.applyStudioVoicePreset(t, c, 0.7, 0.8, 0.9)
+                                Toasts.info(qsTr("Perfil Rádio FM aplicado"))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         // ----- Noise removal ---------------------------------------------
         Column {
             id: denoiseSection

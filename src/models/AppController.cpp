@@ -17513,6 +17513,80 @@ void AppController::setAudioEffectParam(int trackIndex, int clipIndex, int effec
     finishEdit(tr("Audio effect updated"));
 }
 
+bool AppController::isStudioVoiceEnabled(int trackIndex, int clipIndex) const
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return false;
+
+    for (const drift::Effect &effect : audioHost->audioEffects) {
+        if (effect.catalogId == QLatin1String("utility.studio_voice"))
+            return effect.enabled;
+    }
+    return false;
+}
+
+void AppController::setStudioVoiceEnabled(int trackIndex, int clipIndex, bool enabled)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    int existingIdx = -1;
+    if (audioHost) {
+        for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+            if (audioHost->audioEffects.at(i).catalogId == QLatin1String("utility.studio_voice")) {
+                existingIdx = i;
+                break;
+            }
+        }
+    }
+
+    if (enabled) {
+        if (existingIdx >= 0) {
+            setAudioEffectEnabled(trackIndex, clipIndex, existingIdx, true);
+        } else {
+            addAudioEffect(trackIndex, clipIndex, QStringLiteral("utility.studio_voice"));
+        }
+        setLastMessage(tr("Voz de Estúdio ativada"), QStringLiteral("success"));
+    } else {
+        if (existingIdx >= 0) {
+            removeAudioEffect(trackIndex, clipIndex, existingIdx);
+            setLastMessage(tr("Voz de Estúdio desativada"), QStringLiteral("info"));
+        }
+    }
+}
+
+int AppController::studioVoiceEffectIndex(int trackIndex, int clipIndex) const
+{
+    const drift::Clip *audioHost = effectHostClip(trackIndex, clipIndex, drift::AdjustmentKind::AudioEffects);
+    if (!audioHost)
+        return -1;
+
+    for (int i = 0; i < audioHost->audioEffects.size(); ++i) {
+        if (audioHost->audioEffects.at(i).catalogId == QLatin1String("utility.studio_voice"))
+            return i;
+    }
+    return -1;
+}
+
+void AppController::applyStudioVoicePreset(int trackIndex, int clipIndex, double warmth, double clarity, double compression)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+
+    int idx = studioVoiceEffectIndex(trackIndex, clipIndex);
+    if (idx < 0) {
+        setStudioVoiceEnabled(trackIndex, clipIndex, true);
+        idx = studioVoiceEffectIndex(trackIndex, clipIndex);
+    }
+    if (idx >= 0) {
+        setAudioEffectParam(trackIndex, clipIndex, idx, QStringLiteral("warmth"), warmth);
+        setAudioEffectParam(trackIndex, clipIndex, idx, QStringLiteral("clarity"), clarity);
+        setAudioEffectParam(trackIndex, clipIndex, idx, QStringLiteral("compression"), compression);
+    }
+}
+
 // --- effect stacks: copy/paste and user presets ------------------------------
 
 drift::EffectStackPreset AppController::effectStackFor(int trackIndex, int clipIndex,

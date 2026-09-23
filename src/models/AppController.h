@@ -1440,6 +1440,11 @@ public:
                                          const QString &key, double value);
     Q_INVOKABLE void previewSetAudioEffectParam(int trackIndex, int clipIndex, int effectIndex,
                                                 const QString &key, double value);
+    // 1-Click Studio Voice / Enhance Voice processor
+    Q_INVOKABLE bool isStudioVoiceEnabled(int trackIndex, int clipIndex) const;
+    Q_INVOKABLE void setStudioVoiceEnabled(int trackIndex, int clipIndex, bool enabled);
+    Q_INVOKABLE int studioVoiceEffectIndex(int trackIndex, int clipIndex) const;
+    Q_INVOKABLE void applyStudioVoicePreset(int trackIndex, int clipIndex, double warmth, double clarity, double compression);
 
     // Effect stacks travel as JSON on the system clipboard, so a copy also crosses to a second
     // running instance. -1 for both indices means the whole clip.
