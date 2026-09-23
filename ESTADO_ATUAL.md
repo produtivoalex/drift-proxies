@@ -173,22 +173,39 @@
 
 ---
 
+### 9. PARTE 8: Rastreamento de Movimento & Face Tracking (Motion Tracking) (100% Concluída)
+* **Motor Neural de Rastreamento Facial (`FaceLandmarker.cpp` / `FaceTrack.cpp` / `AppController.cpp`)**:
+  - `attachClipToFaceTrack(targetTrack, targetClip, sourceTrack, sourceClip, anchor, offsetX, offsetY, trackScale, trackRotation)`: Vincula qualquer camada (Texto, Sticker, Imagem, Ajuste) à trajetória rastreada de uma pessoa no vídeo com interpolação contínua e suporte a Undo/Redo.
+  - Suporte a múltiplos pontos de âncora: Cabeça/Topo (`head`), Olhos (`eyes`), Centro do Rosto (`faceCenter`), Boca (`mouth`) e Queixo (`chin`).
+  - Acompanhamento automático de Escala/Zoom proporcional à aproximação da pessoa e Rotação da cabeça.
+  - `hasFaceTrack(trackIndex, clipIndex)`: Verificação instantânea do estado de rastreamento do clipe.
+* **Efeito Nativo de Censura Facial Dinâmica (`effects/face_mosaic_censor/`)**:
+  - Efeito GPU GLSL de alta performance (`main.frag` + `effect.json`) injetado via uniformes `u_face*`.
+  - 3 Modos integrados de 1 clique:
+    - `0`: Mosaico (Pixelate) acompanhando a elipse rotacionada do rosto.
+    - `1`: Desfoque Gaussiano 9-tap com suavização nas bordas (*feather*).
+    - `2`: Tarja Preta nos Olhos (*Eyes Bar*), rotacionada no ângulo dos olhos.
+  - `applyFaceCensorEffect(trackIndex, clipIndex, mode, pixelSize, radius)`: Aciona o scan e aplica a censura em 1 clique.
+* **Interface QML Refinada (`TransformInspector.qml`)**:
+  - Card dedicado **Rastreamento de Movimento (Motion Tracking)** com badge de IA.
+  - Painel para elementos sobrepostos: seletor de âncoras, chips para ativar/desativar acompanhamento de escala e rotação, e botão para fixar ao rosto rastreado.
+  - Painel para vídeos: botão para escanear rostos com barra de progresso em tempo real e botões de 1 clique para censurar com Mosaico, Desfoque ou Tarja nos Olhos.
+
+---
+
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
 
 O documento [`PROXIMOS_PASSOS.md`](file:///C:/Users/Alex/Documents/Antigravity/drift/PROXIMOS_PASSOS.md) detalha todo o ecossistema planejado:
 
 ### O Próximo Foco Imediato:
-* **PARTE 8: Rastreamento de Movimento & Face Tracking (Motion Tracking)**
-  - Aproveitar os motores nativos `FaceLandmarker.cpp`, `FaceMesh.cpp` e `ObjectDetector.cpp` para vincular textos, stickers e efeitos de desfoque/censura a rostos ou objetos em movimento na cena.
-
-### Frentes Complementares Mapeadas:
-* **Parte 9**: Presets de Redes Sociais & Guias de Zonas Seguras 9:16 (TikTok/Reels/Shorts).
+* **PARTE 9: Presets de Redes Sociais & Guias de Zonas Seguras 9:16 (TikTok, Reels, Shorts)**
+  - Guias de Zona Segura (*Safe Zone Overlays*) no monitor de visualização para prevenir textos e elementos sob os botões nativos das redes sociais (like, comentários, perfil, descrição).
+  - Presets de exportação com bitrate calibrado para cada plataforma.
 
 ---
 
 ## 📂 Arquivos Chave Recentes no Repositório
-* `src/models/AppController.h` / `AppController.cpp`: Métodos `detectAndMarkBeats`, `toggleBeatSnap`, `splitClipAtBeats`, `convertBeatsToBookmarks` e propriedades de Auto-Beats.
-* `src/qml/components/timeline/TimelineToolbar.qml`: Botão de Auto-Beats com menu de contexto e indicador visual de estado.
-* `src/qml/TimelinePanel.qml`: Camada de marcadores de batida rítmica `beatMarkerRow` na régua da timeline.
-* `src/qml/components/properties/AudioInspector.qml`: Card de Sincronização Rítmica & Auto-Beats com badge de BPM e ações de 1 clique.
+* `effects/face_mosaic_censor/`: Novo pacote de efeito GLSL com censura dinâmica por mosaico, desfoque e tarja nos olhos.
+* `src/models/AppController.h` / `AppController.cpp`: Métodos `attachClipToFaceTrack`, `applyFaceCensorEffect` e `hasFaceTrack`.
+* `src/qml/components/properties/TransformInspector.qml`: Card de Motion Tracking & Censura Facial integrado ao painel de transformações.
 * `PROXIMOS_PASSOS.md`: Roteiro estratégico detalhado de todas as 9 partes.

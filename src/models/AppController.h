@@ -1023,6 +1023,14 @@ public:
     Q_INVOKABLE void cancelFaceDetection();
     Q_INVOKABLE void clearFaceTrack(int trackIndex, int clipIndex);
     Q_INVOKABLE bool faceDetectionAvailable();
+    Q_INVOKABLE bool attachClipToFaceTrack(int targetTrackIndex, int targetClipIndex,
+                                           int sourceTrackIndex, int sourceClipIndex,
+                                           const QString &anchorPoint = QStringLiteral("head"),
+                                           double offsetX = 0.0, double offsetY = 0.0,
+                                           bool trackScale = true, bool trackRotation = true);
+    Q_INVOKABLE void applyFaceCensorEffect(int trackIndex, int clipIndex, int mode = 0,
+                                           double pixelSize = 16.0, double radius = 1.25);
+    Q_INVOKABLE bool hasFaceTrack(int trackIndex, int clipIndex) const;
 
     // Finds the shot boundaries in a clip's source range. Runs off the GUI thread; the
     // result lands in `scenes` and in the on-disk cache, never in the project. A cached

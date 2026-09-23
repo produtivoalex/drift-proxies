@@ -129,12 +129,14 @@ Para além das 4 partes originais, um editor para criadores no topo absoluto da 
 
 ---
 
-### 🎯 PARTE 8: Rastreamento de Movimento & Face Tracking (Motion Tracking)
+### 🎯 PARTE 8: Rastreamento de Movimento & Face Tracking (Motion Tracking) (100% CONCLUÍDA)
 * **O que é:** Fixar um sticker, texto, seta indicativa ou mosaico de desfoque (para censurar placas ou rostos) que acompanha o objeto ou pessoa em movimento.
 * **Como funciona no Drift:**
-  - Os motores nativos `FaceLandmarker.cpp`, `FaceMesh.cpp` e `ObjectDetector.cpp` calculam os vetores de movimento e atualizam os keyframes de posição X/Y, escala e rotação automaticamente.
-* **Dificuldade:** Média a Alta.
-* **Impacto:** Recurso profissional avançado.
+  - Os motores nativos `FaceLandmarker.cpp` e `FaceTrack.cpp` calculam os vetores de movimento e atualizam os keyframes de posição X/Y, escala e rotação automaticamente via `attachClipToFaceTrack`.
+  - Suporte a múltiplos pontos de âncora: Cabeça (`head`), Olhos (`eyes`), Centro do Rosto (`faceCenter`), Boca (`mouth`) e Queixo (`chin`).
+  - Efeito nativo GLSL `effects/face_mosaic_censor/` para censura automática em 1 clique com Mosaico (Pixelate), Desfoque Gaussiano ou Tarja Preta nos Olhos (*Eyes Bar*).
+  - Card integrado em `TransformInspector.qml` com monitor de progresso e ações rápidas.
+* **Status:** ✅ **100% Concluído**
 
 ---
 
@@ -159,8 +161,8 @@ Para além das 4 partes originais, um editor para criadores no topo absoluto da 
 | **Parte 5: Legendas Dinâmicas (Hormozi/MrBeast)** | Pago (Pro) | **Transcrição Whisper Local + Animação** | ✅ **100% Concluído** |
 | **Parte 6: Auto Cutout (Recorte de Fundo de Pessoa)** | Pago (Pro) | **RVM/SAM2 ONNX Nativo Local** | ✅ **100% Concluído** |
 | **Parte 7: Auto-Beats (Detecção Rítmica na Timeline)** | Suportado | **Engine `AudioOnsets` C++ + Snap Magnético** | ✅ **100% Concluído** |
-| **Parte 8: Rastreamento de Movimento (Motion Tracking)** | Pago (Pro) | **Motores Face/Object Tracker Nativos** | ⏳ *Próxima Etapa (Planejado)* |
-| **Parte 9: Zonas Seguras de Redes Sociais (9:16 Safe Zones)** | Suportado | **Canvas 9:16 com Guias Visuais** | ⏳ *Planejado* |
+| **Parte 8: Rastreamento de Movimento (Motion Tracking)** | Pago (Pro) | **FaceTrack C++ + Censura Mosaico/Blur** | ✅ **100% Concluído** |
+| **Parte 9: Zonas Seguras de Redes Sociais (9:16 Safe Zones)** | Suportado | **Canvas 9:16 com Guias Visuais** | ⏳ *Próxima Etapa (Planejado)* |
 
 ---
 

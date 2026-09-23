@@ -10630,6 +10630,186 @@ void AppController::detectFacesForClip(int trackIndex, int clipIndex)
     });
 }
 
+bool AppController::hasFaceTrack(int trackIndex, int clipIndex) const
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    const drift::Track &track = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+    return !track.clips.at(clipIndex).faceTrackPath.isEmpty();
+}
+
+void AppController::applyFaceCensorEffect(int trackIndex, int clipIndex, int mode,
+                                          double pixelSize, double radius)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+    const drift::Track &track = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return;
+
+    const drift::Clip &clip = track.clips.at(clipIndex);
+    if (clip.faceTrackPath.isEmpty() && faceDetectionAvailable()) {
+        detectFacesForClip(trackIndex, clipIndex);
+    }
+
+    addEffect(trackIndex, clipIndex, QStringLiteral("face_mosaic_censor"));
+
+    int hostTrack = trackIndex;
+    int hostClip = clipIndex;
+    redirectToEffectHost(&hostTrack, &hostClip, drift::AdjustmentKind::VideoEffects, false);
+    if (hostTrack >= 0 && hostTrack < m_project.tracks().size()) {
+        const drift::Track &ht = m_project.tracks().at(hostTrack);
+        if (hostClip >= 0 && hostClip < ht.clips.size()) {
+            const int effIdx = ht.clips.at(hostClip).effects.size() - 1;
+            if (effIdx >= 0) {
+                setEffectParam(hostTrack, hostClip, effIdx, QStringLiteral("mode"), static_cast<double>(mode));
+                setEffectParam(hostTrack, hostClip, effIdx, QStringLiteral("pixelSize"), pixelSize);
+                setEffectParam(hostTrack, hostClip, effIdx, QStringLiteral("radius"), radius);
+                setEffectParam(hostTrack, hostClip, effIdx, QStringLiteral("feather"), 0.15);
+            }
+        }
+    }
+}
+
+bool AppController::attachClipToFaceTrack(int targetTrackIndex, int targetClipIndex,
+                                          int sourceTrackIndex, int sourceClipIndex,
+                                          const QString &anchorPoint, double offsetX, double offsetY,
+                                          bool trackScale, bool trackRotation)
+{
+    if (targetTrackIndex < 0 || targetTrackIndex >= m_project.tracks().size() ||
+        sourceTrackIndex < 0 || sourceTrackIndex >= m_project.tracks().size())
+        return false;
+
+    drift::Track &targetTrack = m_project.tracks()[targetTrackIndex];
+    if (targetClipIndex < 0 || targetClipIndex >= targetTrack.clips.size())
+        return false;
+
+    const drift::Track &sourceTrack = m_project.tracks()[sourceTrackIndex];
+    if (sourceClipIndex < 0 || sourceClipIndex >= sourceTrack.clips.size())
+        return false;
+
+    const drift::Clip &sourceClip = sourceTrack.clips.at(sourceClipIndex);
+    drift::Clip &targetClip = targetTrack.clips[targetClipIndex];
+
+    std::shared_ptr<const drift::FaceTrack> faceTrack;
+    if (!sourceClip.faceTrackPath.isEmpty()) {
+        faceTrack = drift::loadFaceTrackCached(sourceClip.faceTrackPath);
+    }
+
+    if (!faceTrack || faceTrack->isEmpty() || faceTrack->fps <= 0) {
+        if (faceDetectionAvailable()) {
+            detectFacesForClip(sourceTrackIndex, sourceClipIndex);
+            setLastMessage(tr("Rastreando rostos no vídeo... Tente vincular novamente ao concluir."));
+        } else {
+            setLastMessage(tr("Modelo de rastreamento facial não disponível."), QStringLiteral("warning"));
+        }
+        return false;
+    }
+
+    const drift::Project before = m_project;
+    const double canvasW = m_project.width() > 0 ? m_project.width() : 1920.0;
+    const double canvasH = m_project.height() > 0 ? m_project.height() : 1080.0;
+
+    const double targetW = targetClip.transformW.keyframes().isEmpty() ? 240.0 : targetClip.transformW.evaluateAt(0);
+    const double targetH = targetClip.transformH.keyframes().isEmpty() ? 240.0 : targetClip.transformH.evaluateAt(0);
+
+    const drift::TimeUs stepUs = drift::kUsPerSecond / faceTrack->fps;
+    const drift::TimeUs targetStartUs = targetClip.timelineStart;
+    const drift::TimeUs targetDurUs = targetClip.timelineDuration;
+    const drift::TimeUs sourceStartUs = sourceClip.timelineStart;
+
+    double baseRx = 0.15;
+    bool foundBase = false;
+
+    targetClip.transformX = {};
+    targetClip.transformY = {};
+    if (trackRotation)
+        targetClip.rotation = {};
+    if (trackScale) {
+        targetClip.transformW = {};
+        targetClip.transformH = {};
+    }
+
+    int keysAdded = 0;
+    for (drift::TimeUs tUs = 0; tUs < targetDurUs; tUs += stepUs) {
+        const drift::TimeUs currentTimelineUs = targetStartUs + tUs;
+        if (currentTimelineUs < sourceStartUs || currentTimelineUs >= sourceClip.timelineEnd())
+            continue;
+
+        const drift::TimeUs relSrcUs = (currentTimelineUs - sourceStartUs) * sourceClip.effectiveSpeed();
+        const drift::FaceAnchors face = faceTrack->sample(relSrcUs, 0);
+        if (!face.valid)
+            continue;
+
+        if (!foundBase && face.faceRx > 0.02) {
+            baseRx = face.faceRx;
+            foundBase = true;
+        }
+
+        QPointF pt = face.faceCenter;
+        const QString anchor = anchorPoint.trimmed().toLower();
+        if (anchor == QLatin1String("forehead") || anchor == QLatin1String("head")) {
+            pt = QPointF(face.forehead.x(), face.forehead.y() - 0.04);
+        } else if (anchor == QLatin1String("eyes") || anchor == QLatin1String("glasses")) {
+            pt = 0.5 * (face.leftEye + face.rightEye);
+        } else if (anchor == QLatin1String("mouth")) {
+            pt = face.mouthCenter;
+        } else if (anchor == QLatin1String("chin")) {
+            pt = face.chin;
+        }
+
+        const double srcClipX = sourceClip.transformX.isEmpty() ? 0.0 : sourceClip.transformX.evaluateAt(tUs);
+        const double srcClipY = sourceClip.transformY.isEmpty() ? 0.0 : sourceClip.transformY.evaluateAt(tUs);
+        const double srcClipW = sourceClip.transformW.isEmpty() ? canvasW : sourceClip.transformW.evaluateAt(tUs);
+        const double srcClipH = sourceClip.transformH.isEmpty() ? canvasH : sourceClip.transformH.evaluateAt(tUs);
+
+        double curTargetW = targetW;
+        double curTargetH = targetH;
+        if (trackScale && baseRx > 0.01 && face.faceRx > 0.01) {
+            const double scaleRatio = qBound(0.2, face.faceRx / baseRx, 5.0);
+            curTargetW = targetW * scaleRatio;
+            curTargetH = targetH * scaleRatio;
+            targetClip.transformW.setKeyframe(tUs, curTargetW);
+            targetClip.transformH.setKeyframe(tUs, curTargetH);
+        }
+
+        const double anchorCanvasX = srcClipX + pt.x() * srcClipW + offsetX;
+        const double anchorCanvasY = srcClipY + pt.y() * srcClipH + offsetY;
+
+        const double posX = anchorCanvasX - curTargetW * 0.5;
+        const double posY = anchorCanvasY - curTargetH * 0.5;
+
+        targetClip.transformX.setKeyframe(tUs, posX);
+        targetClip.transformY.setKeyframe(tUs, posY);
+
+        if (trackRotation) {
+            const double deg = qRadiansToDegrees(face.angle);
+            targetClip.rotation.setKeyframe(tUs, deg);
+        }
+
+        keysAdded++;
+    }
+
+    if (keysAdded > 0) {
+        targetClip.transformX.setEnabled(true);
+        targetClip.transformY.setEnabled(true);
+        if (trackScale) {
+            targetClip.transformW.setEnabled(true);
+            targetClip.transformH.setEnabled(true);
+        }
+        if (trackRotation)
+            targetClip.rotation.setEnabled(true);
+
+        pushProjectEdit(before, tr("Attach to face track (%1 keyframes)").arg(keysAdded));
+        finishEdit(tr("Elemento vinculado ao rastreamento com %1 keyframes!").arg(keysAdded));
+        return true;
+    }
+
+    return false;
+}
+
 void AppController::ingestFaceSwapSource(const QString &photoPath)
 {
     if (photoPath.isEmpty() || drift::faceSwapSourceReady(photoPath))

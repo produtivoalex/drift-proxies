@@ -243,6 +243,256 @@ Item {
                 }
             }
 
+            // Rastreamento de Movimento & Face Tracking (Motion Tracking)
+            Rectangle {
+                id: motionTrackingCard
+                width: parent.width
+                radius: Theme.radiusMd
+                color: Theme.panelBackground
+                border.width: 1
+                border.color: Theme.panelBorder
+                height: trackingCol.height + 24
+
+                property string selectedAnchor: "head"
+                property bool trackScale: true
+                property bool trackRotation: true
+
+                Column {
+                    id: trackingCol
+                    x: 12
+                    y: 12
+                    width: parent.width - 24
+                    spacing: 10
+
+                    Row {
+                        width: parent.width
+                        spacing: 8
+                        IconGlyph {
+                            glyph: Theme.icons.locateFixed
+                            iconSize: 18
+                            iconColor: Theme.primary
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: qsTr("Rastreamento de Movimento (Motion Tracking)")
+                            color: Theme.foreground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSm
+                            font.bold: true
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Rectangle {
+                            width: 26
+                            height: 16
+                            radius: 4
+                            color: Theme.primary
+                            anchors.verticalCenter: parent.verticalCenter
+                            Text {
+                                anchors.centerIn: parent
+                                text: qsTr("IA")
+                                color: Theme.primaryForeground
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+                        }
+                    }
+
+                    Text {
+                        width: parent.width
+                        wrapMode: Text.WordWrap
+                        text: qsTr("Rastreia pessoas e rostos na cena para fixar elementos (textos, stickers) que se movem junto, ou aplicar censura dinâmica com desfoque e mosaico.")
+                        color: Theme.mutedForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                    }
+
+                    // Se for um elemento sobreposto (Texto, Sticker, Imagem, Ajuste)
+                    Column {
+                        width: parent.width
+                        spacing: 8
+                        visible: root.clipKind !== "video"
+
+                        Text {
+                            text: qsTr("Ponto de Fixação (Âncora):")
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                        }
+
+                        Row {
+                            spacing: 6
+                            ThemedButton {
+                                text: qsTr("👑 Cabeça")
+                                variant: motionTrackingCard.selectedAnchor === "head" ? "primary" : "ghost"
+                                onClicked: motionTrackingCard.selectedAnchor = "head"
+                            }
+                            ThemedButton {
+                                text: qsTr("🎯 Rosto")
+                                variant: motionTrackingCard.selectedAnchor === "faceCenter" ? "primary" : "ghost"
+                                onClicked: motionTrackingCard.selectedAnchor = "faceCenter"
+                            }
+                            ThemedButton {
+                                text: qsTr("🕶️ Olhos")
+                                variant: motionTrackingCard.selectedAnchor === "eyes" ? "primary" : "ghost"
+                                onClicked: motionTrackingCard.selectedAnchor = "eyes"
+                            }
+                            ThemedButton {
+                                text: qsTr("👄 Boca")
+                                variant: motionTrackingCard.selectedAnchor === "mouth" ? "primary" : "ghost"
+                                onClicked: motionTrackingCard.selectedAnchor = "mouth"
+                            }
+                        }
+
+                        Row {
+                            spacing: 8
+                            ThemedChip {
+                                text: qsTr("Acompanhar Escala (Zoom)")
+                                selected: motionTrackingCard.trackScale
+                                onClicked: motionTrackingCard.trackScale = !motionTrackingCard.trackScale
+                            }
+                            ThemedChip {
+                                text: qsTr("Acompanhar Rotação (Giro)")
+                                selected: motionTrackingCard.trackRotation
+                                onClicked: motionTrackingCard.trackRotation = !motionTrackingCard.trackRotation
+                            }
+                        }
+
+                        ThemedButton {
+                            width: parent.width
+                            text: qsTr("🎯 Fixar Este Elemento ao Rosto Rastreando")
+                            variant: "primary"
+                            glyph: Theme.icons.locateFixed
+                            onClicked: {
+                                const t = EditorState.selectedTrack
+                                const c = EditorState.selectedClip
+                                let srcTrack = -1
+                                let srcClip = -1
+                                for (let tr = 0; tr < EditorState.trackCount; ++tr) {
+                                    if (tr !== t) {
+                                        for (let cl = 0; cl < 20; ++cl) {
+                                            if (EditorState.hasFaceTrack(tr, cl)) {
+                                                srcTrack = tr
+                                                srcClip = cl
+                                                break
+                                            }
+                                        }
+                                    }
+                                    if (srcTrack >= 0) break
+                                }
+                                if (srcTrack < 0 && t > 0) {
+                                    srcTrack = t - 1
+                                    srcClip = 0
+                                }
+                                const ok = EditorState.attachClipToFaceTrack(
+                                    t, c, srcTrack, srcClip,
+                                    motionTrackingCard.selectedAnchor, 0, 0,
+                                    motionTrackingCard.trackScale,
+                                    motionTrackingCard.trackRotation
+                                )
+                                if (ok) {
+                                    Toasts.success(qsTr("Elemento fixado ao movimento do rosto com sucesso!"))
+                                } else {
+                                    Toasts.info(qsTr("Certifique-se de que a faixa de vídeo possui rostos rastreados."))
+                                }
+                            }
+                        }
+                    }
+
+                    // Se for um clipe de Vídeo
+                    Column {
+                        width: parent.width
+                        spacing: 8
+                        visible: root.clipKind === "video"
+
+                        Row {
+                            width: parent.width
+                            spacing: 8
+
+                            ThemedButton {
+                                text: EditorState.faceDetecting
+                                      ? qsTr("Rastreando...")
+                                      : (EditorState.hasFaceTrack(EditorState.selectedTrack, EditorState.selectedClip)
+                                         ? qsTr("✅ Rosto Rastreado (Reescanear)")
+                                         : qsTr("🎯 Rastrear Rostos no Clipe"))
+                                variant: EditorState.hasFaceTrack(EditorState.selectedTrack, EditorState.selectedClip)
+                                         ? "secondary" : "primary"
+                                glyph: Theme.icons.locateFixed
+                                enabled: !EditorState.faceDetecting
+                                onClicked: {
+                                    EditorState.detectFacesForClip(EditorState.selectedTrack, EditorState.selectedClip)
+                                }
+                            }
+
+                            ThemedButton {
+                                text: qsTr("Cancelar")
+                                variant: "ghost"
+                                visible: EditorState.faceDetecting
+                                onClicked: EditorState.cancelFaceDetection()
+                            }
+                        }
+
+                        ThemedProgressBar {
+                            visible: EditorState.faceDetecting
+                            width: parent.width
+                            value: EditorState.faceDetectProgress
+                        }
+
+                        Text {
+                            visible: EditorState.faceDetecting
+                            text: EditorState.faceDetectStatus
+                            color: Theme.mutedForeground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 10
+                        }
+
+                        Rectangle {
+                            width: parent.width
+                            height: 1
+                            color: Theme.panelBorder
+                        }
+
+                        Text {
+                            text: qsTr("Censura Automática com Rastreamento:")
+                            color: Theme.foreground
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeXs
+                            font.bold: true
+                        }
+
+                        Row {
+                            spacing: 6
+                            ThemedButton {
+                                text: qsTr("🕶️ Mosaico")
+                                variant: "ghost"
+                                tooltip: qsTr("Aplica censura por mosaico pixelado que acompanha o rosto")
+                                onClicked: {
+                                    EditorState.applyFaceCensorEffect(EditorState.selectedTrack, EditorState.selectedClip, 0, 16.0, 1.25)
+                                    Toasts.success(qsTr("Censura com Mosaico aplicada!"))
+                                }
+                            }
+                            ThemedButton {
+                                text: qsTr("🌫️ Desfoque")
+                                variant: "ghost"
+                                tooltip: qsTr("Aplica censura por desfoque Gaussiano que acompanha o rosto")
+                                onClicked: {
+                                    EditorState.applyFaceCensorEffect(EditorState.selectedTrack, EditorState.selectedClip, 1, 22.0, 1.25)
+                                    Toasts.success(qsTr("Censura com Desfoque aplicada!"))
+                                }
+                            }
+                            ThemedButton {
+                                text: qsTr("👁️ Tarja nos Olhos")
+                                variant: "ghost"
+                                tooltip: qsTr("Aplica tarja preta clássica nos olhos acompanhando a rotação")
+                                onClicked: {
+                                    EditorState.applyFaceCensorEffect(EditorState.selectedTrack, EditorState.selectedClip, 2, 16.0, 1.1)
+                                    Toasts.success(qsTr("Tarja nos olhos aplicada!"))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             ThemedChip {
                 text: qsTr("Auto keyframes")
                 selected: EditorState.autoKeyEnabled

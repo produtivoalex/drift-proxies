@@ -1,0 +1,61 @@
+{
+  "id": "face_mosaic_censor",
+  "displayName": "Censura Facial (Mosaico & Blur)",
+  "category": "face",
+  "order": 550,
+  "requires": "face",
+  "parameters": [
+    {
+      "identifier": "mode",
+      "displayName": "Tipo de Censura",
+      "type": "float",
+      "minValue": 0,
+      "maxValue": 2,
+      "defaultValue": 0
+    },
+    {
+      "identifier": "pixelSize",
+      "displayName": "Tamanho do Bloco / Blur",
+      "type": "float",
+      "minValue": 4,
+      "maxValue": 64,
+      "defaultValue": 16
+    },
+    {
+      "identifier": "radius",
+      "displayName": "Tamanho da Área",
+      "type": "float",
+      "minValue": 0.6,
+      "maxValue": 2.5,
+      "defaultValue": 1.25
+    },
+    {
+      "identifier": "feather",
+      "displayName": "Suavização das Bordas",
+      "type": "float",
+      "minValue": 0.02,
+      "maxValue": 0.5,
+      "defaultValue": 0.15
+    },
+    {
+      "identifier": "faceIndex",
+      "displayName": "Índice do Rosto",
+      "type": "float",
+      "minValue": 0,
+      "maxValue": 3,
+      "defaultValue": 0
+    }
+  ],
+  "backend": "gpu",
+  "pipeline": {
+    "intermediateBuffers": [],
+    "passes": [
+      {
+        "passIndex": 0,
+        "fragmentShader": "main.frag",
+        "inputs": [{ "type": "source_texture" }],
+        "output": { "type": "canvas" }
+      }
+    ]
+  }
+}
