@@ -1,0 +1,63 @@
+{
+  "id": "lens_flare_flash",
+  "displayName": "Lens Flare Flash",
+  "category": "cinematic",
+  "order": 6,
+  "soundFx": "whoosh_fast",
+  "parameters": [
+    {
+      "identifier": "flashBrightness",
+      "displayName": "Brilho do Flash",
+      "type": "float",
+      "minValue": 0.5,
+      "maxValue": 3.0,
+      "defaultValue": 1.8
+    },
+    {
+      "identifier": "streakWidth",
+      "displayName": "Feixe Anamórfico",
+      "type": "float",
+      "minValue": 0.2,
+      "maxValue": 2.5,
+      "defaultValue": 1.2
+    },
+    {
+      "identifier": "flareColorWarmth",
+      "displayName": "Tom do Flare (0:Azul, 1:Ouro)",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.2
+    },
+    {
+      "identifier": "aberration",
+      "displayName": "Dispersão Prismática",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 2.0,
+      "defaultValue": 0.8
+    }
+  ],
+  "pipeline": {
+    "intermediateBuffers": [],
+    "passes": [
+      {
+        "passIndex": 0,
+        "fragmentShader": "main.frag",
+        "inputs": [
+          {
+            "type": "source_texture",
+            "index": 0
+          },
+          {
+            "type": "source_texture",
+            "index": 1
+          }
+        ],
+        "output": {
+          "type": "canvas"
+        }
+      }
+    ]
+  }
+}

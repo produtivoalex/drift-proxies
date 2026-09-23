@@ -1,0 +1,63 @@
+{
+  "id": "film_roll_burn",
+  "displayName": "Film Roll & Burn",
+  "category": "cinematic",
+  "order": 5,
+  "soundFx": "whoosh_deep",
+  "parameters": [
+    {
+      "identifier": "burnIntensity",
+      "displayName": "Intensidade da Queima",
+      "type": "float",
+      "minValue": 0.2,
+      "maxValue": 3.0,
+      "defaultValue": 1.5
+    },
+    {
+      "identifier": "rollSpeed",
+      "displayName": "Rolagem de Película",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 4.0,
+      "defaultValue": 1.5
+    },
+    {
+      "identifier": "lightLeakWarmth",
+      "displayName": "Vazamento de Luz Quente",
+      "type": "float",
+      "minValue": 0.5,
+      "maxValue": 2.0,
+      "defaultValue": 1.2
+    },
+    {
+      "identifier": "grainAmount",
+      "displayName": "Granulação 35mm",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 1.0,
+      "defaultValue": 0.35
+    }
+  ],
+  "pipeline": {
+    "intermediateBuffers": [],
+    "passes": [
+      {
+        "passIndex": 0,
+        "fragmentShader": "main.frag",
+        "inputs": [
+          {
+            "type": "source_texture",
+            "index": 0
+          },
+          {
+            "type": "source_texture",
+            "index": 1
+          }
+        ],
+        "output": {
+          "type": "canvas"
+        }
+      }
+    ]
+  }
+}
