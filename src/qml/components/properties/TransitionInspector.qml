@@ -375,9 +375,14 @@ Item {
                         }
 
                         Text {
-                            text: root.activeTransition.soundFx
-                                  ? qsTr("• %1 sugerido").arg(root.activeTransition.soundFx === "whoosh_deep" ? "Whoosh Profundo" : "Whoosh Rápido")
-                                  : ""
+                            text: {
+                                const s = root.activeTransition.soundFx
+                                if (!s) return ""
+                                if (s === "whoosh_deep") return qsTr("• Whoosh Profundo sugerido")
+                                if (s === "glitch_rise") return qsTr("• Glitch Rise sugerido")
+                                if (s === "paper_rip") return qsTr("• Rasgo de Papel sugerido")
+                                return qsTr("• Whoosh Rápido sugerido")
+                            }
                             color: Theme.panelSecondaryForeground
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeXs
@@ -404,6 +409,7 @@ Item {
                                 const s = root.activeTransition.soundFx || "whoosh_fast"
                                 if (s === "whoosh_deep") return qsTr("Sincronizar Whoosh Profundo")
                                 if (s === "glitch_rise") return qsTr("Sincronizar Som de Glitch")
+                                if (s === "paper_rip") return qsTr("Sincronizar Rasgo de Papel")
                                 return qsTr("Sincronizar Whoosh Rápido")
                             }
                             variant: "primary"

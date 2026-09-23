@@ -23,6 +23,7 @@ const QList<SfxItem> kCatalog = {
     {QStringLiteral("whoosh_fast"), QStringLiteral("Whoosh Rápido"), QStringLiteral("transicoes"), 0.35, QStringLiteral("chevronsRight")},
     {QStringLiteral("whoosh_deep"), QStringLiteral("Whoosh Profundo"), QStringLiteral("transicoes"), 0.50, QStringLiteral("chevronsRight")},
     {QStringLiteral("glitch_rise"), QStringLiteral("Glitch Transição"), QStringLiteral("transicoes"), 0.28, QStringLiteral("sparkles")},
+    {QStringLiteral("paper_rip"), QStringLiteral("Rasgo de Papel"), QStringLiteral("transicoes"), 0.38, QStringLiteral("scissors")},
 
     {QStringLiteral("boom_bass"), QStringLiteral("Bass Drop / Boom"), QStringLiteral("impacto"), 0.85, QStringLiteral("volumeHigh")},
     {QStringLiteral("thud_punch"), QStringLiteral("Pancada Seca"), QStringLiteral("impacto"), 0.40, QStringLiteral("box")},
@@ -234,6 +235,37 @@ QVector<int16_t> synthesize(const QString &id)
             const double mod = std::sin(2.0 * pi * 80.0 * t) > 0.0 ? 1.0 : -0.5;
             const double sample = env * mod * dist(rng);
             out[i] = static_cast<int16_t>(std::clamp(sample * 26000.0, -32767.0, 32767.0));
+        }
+        return out;
+    }
+
+    if (id == QLatin1String("paper_rip")) {
+        const double dur = 0.38;
+        const int n = static_cast<int>(dur * sr);
+        QVector<int16_t> out(n);
+        std::mt19937 rng(999);
+        std::uniform_real_distribution<double> dist(-1.0, 1.0);
+        double filterState1 = 0.0;
+        double filterState2 = 0.0;
+
+        for (int i = 0; i < n; ++i) {
+            const double t = static_cast<double>(i) / n;
+            const double env = std::pow(std::sin(pi * std::pow(t, 0.7)), 1.8);
+            const double freq = 3400.0 * (1.0 - t * 0.6) + 1200.0;
+            const double alpha = std::min(1.0, 2.0 * pi * freq / sr);
+            const double noise = dist(rng);
+
+            filterState1 += alpha * (noise - filterState1);
+            filterState2 += alpha * (filterState1 - filterState2);
+            const double friction = filterState1 - filterState2;
+
+            double crackle = 0.0;
+            if (dist(rng) > 0.88) {
+                crackle = dist(rng) * 1.6;
+            }
+
+            const double sample = env * (0.65 * friction + 0.35 * crackle);
+            out[i] = static_cast<int16_t>(std::clamp(sample * 29000.0, -32767.0, 32767.0));
         }
         return out;
     }

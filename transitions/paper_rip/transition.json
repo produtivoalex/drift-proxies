@@ -1,0 +1,71 @@
+{
+  "id": "paper_rip",
+  "displayName": "Rasgo de Papel (Paper Rip)",
+  "category": "texture",
+  "order": 4,
+  "soundFx": "paper_rip",
+  "parameters": [
+    {
+      "identifier": "tearDirection",
+      "displayName": "Direção (0:Horizontal, 1:Diagonal, 2:Vertical)",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 2.0,
+      "defaultValue": 1.0
+    },
+    {
+      "identifier": "fiberWidth",
+      "displayName": "Largura da Borda Rasgada",
+      "type": "float",
+      "minValue": 0.005,
+      "maxValue": 0.06,
+      "defaultValue": 0.025
+    },
+    {
+      "identifier": "roughness",
+      "displayName": "Rugosidade da Fibra",
+      "type": "float",
+      "minValue": 0.5,
+      "maxValue": 3.0,
+      "defaultValue": 1.5
+    },
+    {
+      "identifier": "shadowDepth",
+      "displayName": "Sombra Projetada (Profundidade)",
+      "type": "float",
+      "minValue": 0.0,
+      "maxValue": 2.0,
+      "defaultValue": 1.0
+    },
+    {
+      "identifier": "paperAngle",
+      "displayName": "Ângulo do Rasgo (Graus)",
+      "type": "float",
+      "minValue": -45.0,
+      "maxValue": 45.0,
+      "defaultValue": 18.0
+    }
+  ],
+  "pipeline": {
+    "intermediateBuffers": [],
+    "passes": [
+      {
+        "passIndex": 0,
+        "fragmentShader": "main.frag",
+        "inputs": [
+          {
+            "type": "source_texture",
+            "index": 0
+          },
+          {
+            "type": "source_texture",
+            "index": 1
+          }
+        ],
+        "output": {
+          "type": "canvas"
+        }
+      }
+    ]
+  }
+}
