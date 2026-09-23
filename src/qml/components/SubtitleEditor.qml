@@ -274,45 +274,50 @@ Item {
 
         Item {
             width: parent.width
-            height: titleText.implicitHeight
+            height: Math.max(titleText.implicitHeight, studioBtn.implicitHeight)
 
-            Text {
-                id: titleText
+            Row {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("Subtitles")
-                color: Theme.panelForeground
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSizeSm
-                font.weight: Font.Medium
+                spacing: 6
+
+                Text {
+                    id: titleText
+                    text: qsTr("Subtitles")
+                    color: Theme.panelForeground
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeSm
+                    font.weight: Font.Medium
+                }
+
+                Text {
+                    text: qsTr("%1 captions").arg(root.cues.length)
+                    color: Theme.mutedForeground
+                    font.family: Theme.monoFontFamily
+                    font.pixelSize: Theme.fontSizeXs
+                    anchors.verticalCenter: parent.verticalCenter
+                }
             }
 
-            Text {
+            ThemedButton {
+                id: studioBtn
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                text: qsTr("%1 captions").arg(root.cues.length)
-                color: Theme.mutedForeground
-                font.family: Theme.monoFontFamily
-                font.pixelSize: Theme.fontSizeXs
+                text: EditorState.subtitleStudioMode ? qsTr("Modo Padrão") : qsTr("Modo Estúdio")
+                variant: EditorState.subtitleStudioMode ? "primary" : "secondary"
+                glyph: EditorState.subtitleStudioMode ? Theme.icons.minimize : Theme.icons.maximize
+                tooltip: qsTr("Layout de altura total otimizado para leitura e edição de legendas")
+                onClicked: EditorState.subtitleStudioMode = !EditorState.subtitleStudioMode
             }
         }
 
-        Text {
-            width: parent.width
-            wrapMode: Text.WordWrap
-            text: qsTr("Play the timeline — the line on screen lights up. Click any line to jump to it and edit it below.")
-            color: Theme.mutedForeground
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeXs
-            opacity: 0.8
-        }
-
+        // Quick Tools Row: Import/Export + Find & Replace toggle
         Row {
             width: parent.width
             spacing: 6
 
             ThemedButton {
-                width: (parent.width - parent.spacing) / 2
+                width: (parent.width - 12) / 3
                 text: qsTr("Import")
                 variant: "secondary"
                 glyph: Theme.icons.upload
@@ -328,7 +333,7 @@ Item {
             }
 
             ThemedButton {
-                width: (parent.width - parent.spacing) / 2
+                width: (parent.width - 12) / 3
                 text: qsTr("Export")
                 variant: "secondary"
                 glyph: Theme.icons.save
@@ -344,6 +349,147 @@ Item {
                         EditorState.exportSubtitleFile(
                             root.trackIndex, root.clipIndex, url)
                 }
+            }
+
+            ThemedButton {
+                id: searchToggleBtn
+                width: (parent.width - 12) / 3
+                text: qsTr("Buscar")
+                variant: searchCol.visible ? "primary" : "secondary"
+                glyph: Theme.icons.search
+                tooltip: qsTr("Localizar e Substituir texto em todas as legendas")
+                onClicked: searchCol.visible = !searchCol.visible
+            }
+        }
+
+        // Find & Replace expandable section
+        Column {
+            id: searchCol
+            width: parent.width
+            spacing: 6
+            visible: false
+
+            Rectangle {
+                width: parent.width
+                height: searchInnerCol.implicitHeight + 16
+                radius: Theme.radiusMd
+                color: Theme.panelAccent
+                border.width: 1
+                border.color: Theme.panelBorder
+
+                Column {
+                    id: searchInnerCol
+                    x: 8
+                    y: 8
+                    width: parent.width - 16
+                    spacing: 6
+
+                    Text {
+                        text: qsTr("Localizar e Substituir em Massa")
+                        color: Theme.panelForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                        font.weight: Font.Medium
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 6
+
+                        ThemedTextField {
+                            id: searchInput
+                            width: (parent.width - 6) / 2
+                            placeholderText: qsTr("Localizar…")
+                        }
+
+                        ThemedTextField {
+                            id: replaceInput
+                            width: (parent.width - 6) / 2
+                            placeholderText: qsTr("Substituir por…")
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 6
+
+                        ThemedButton {
+                            width: parent.width
+                            text: qsTr("Substituir Tudo")
+                            variant: "primary"
+                            glyph: Theme.icons.check
+                            enabled: searchInput.text.trim().length > 0
+                            onClicked: {
+                                const count = EditorState.replaceSubtitleTextInClip(
+                                    root.trackIndex, root.clipIndex, searchInput.text.trim(), replaceInput.text, false)
+                                Toasts.info(qsTr("%1 ocorrência(s) substituída(s)").arg(count))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 1-Click Capitalization Batch Changer
+        ThemedComboBox {
+            id: caseTransformBox
+            width: parent.width
+            textRole: "label"
+            valueRole: "mode"
+            model: [
+                { label: qsTr("🔤 Mudar Caixa de Todas as Legendas…"), mode: -1 },
+                { label: qsTr("Aa Frase: Início de cada frase maiúsculo"), mode: 1 },
+                { label: qsTr("Aa Palavra: Início De Cada Palavra"), mode: 2 },
+                { label: qsTr("AA TUDO MAIÚSCULO"), mode: 3 },
+                { label: qsTr("aa tudo minúsculo"), mode: 4 }
+            ]
+            onActivated: function(index) {
+                if (index > 0 && currentValue >= 0) {
+                    EditorState.transformSubtitleCase(root.trackIndex, root.clipIndex, currentValue)
+                    currentIndex = 0
+                }
+            }
+        }
+
+        // Quick Visual Style Presets
+        Row {
+            width: parent.width
+            spacing: 4
+
+            Text {
+                text: qsTr("Estilos:")
+                color: Theme.mutedForeground
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSizeXs
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            ThemedButton {
+                text: "TikTok Amarelo"
+                variant: "ghost"
+                tooltip: qsTr("Amarelo vibrante com contorno preto e karaoke")
+                onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "tiktok-viral-yellow")
+            }
+
+            ThemedButton {
+                text: "Hormozi"
+                variant: "ghost"
+                tooltip: qsTr("Branco/Verde virais em destaque")
+                onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "hormozi-beast")
+            }
+
+            ThemedButton {
+                text: "Neon"
+                variant: "ghost"
+                tooltip: qsTr("Ciano brilhante com glow")
+                onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "tiktok-cyan-glow")
+            }
+
+            ThemedButton {
+                text: "Padrão"
+                variant: "ghost"
+                tooltip: qsTr("Estilo clássico limpo")
+                onClicked: EditorState.setSubtitleClipVisuals(root.trackIndex, root.clipIndex, "", 0, "", "", "", -1, false, "", "subtitle")
             }
         }
     }
@@ -673,7 +819,35 @@ Item {
                         }
                     }
 
+                    // Split and Merge Row
+                    Row {
+                        width: parent.width
+                        spacing: 6
+
+                        ThemedButton {
+                            width: (parent.width - 6) / 2
+                            text: qsTr("Dividir na Agulha")
+                            variant: "secondary"
+                            glyph: Theme.icons.split
+                            tooltip: qsTr("Divide esta legenda na posição atual da agulha")
+                            enabled: root.localPlayhead > (root.selectedCue ? root.selectedCue.start + 0.1 : 0)
+                                     && root.localPlayhead < (root.selectedCue ? root.selectedCue.end - 0.1 : 0)
+                            onClicked: EditorState.splitSubtitleCueAtPlayhead(root.trackIndex, root.clipIndex, root.selectedCueIndex)
+                        }
+
+                        ThemedButton {
+                            width: (parent.width - 6) / 2
+                            text: qsTr("Unir com Próxima")
+                            variant: "secondary"
+                            glyph: Theme.icons.merge
+                            tooltip: qsTr("Junta o texto e duração desta legenda com a seguinte")
+                            enabled: root.selectedCueIndex >= 0 && root.selectedCueIndex < root.cues.length - 1
+                            onClicked: EditorState.mergeSubtitleCueWithNext(root.trackIndex, root.clipIndex, root.selectedCueIndex)
+                        }
+                    }
+
                     ThemedButton {
+                        width: parent.width
                         text: qsTr("Delete caption")
                         variant: "destructive"
                         glyph: Theme.icons.trash

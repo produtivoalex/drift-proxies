@@ -163,13 +163,85 @@ Item {
             }
 
             Text {
-                visible: root.whisperReady && captionWordsBox.currentValue > 0
+                visible: root.whisperReady
                 width: subtitleColumn.contentWidth
                 wrapMode: Text.WordWrap
-                text: qsTr("Shorter captions are timed by splitting each phrase evenly, so they can drift slightly out of sync with the speech.")
-                color: Theme.mutedForeground
+                text: captionWordsBox.currentValue === 1
+                      ? qsTr("⚡ Modo Dinâmico: Cada palavra surge e pisca na tela exatamente quando é falada (estilo Hormozi/Shorts).")
+                      : (captionWordsBox.currentValue > 0
+                         ? qsTr("Frases mais curtas têm timing sincronizado por interpolação de palavras.")
+                         : qsTr("Frases completas geradas pelo Whisper."))
+                color: captionWordsBox.currentValue === 1 ? Theme.primary : Theme.mutedForeground
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeXs
+                font.weight: captionWordsBox.currentValue === 1 ? Font.Medium : Font.Normal
+            }
+
+            // Slider de limite de caracteres por linha
+            Column {
+                visible: root.whisperReady
+                width: subtitleColumn.contentWidth
+                spacing: 4
+
+                Row {
+                    width: parent.width
+                    Text {
+                        text: qsTr("Máximo de letras por linha:")
+                        color: Theme.mutedForeground
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                    Item { width: Theme.spacingSm; height: 1 }
+                    Text {
+                        text: qsTr("%1 caracteres").arg(charsSlider.value)
+                        color: Theme.panelForeground
+                        font.family: Theme.monoFontFamily
+                        font.pixelSize: Theme.fontSizeXs
+                        font.weight: Font.Bold
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+
+                ThemedSlider {
+                    id: charsSlider
+                    width: parent.width
+                    from: 14
+                    to: 50
+                    stepSize: 1
+                    value: 42
+                    enabled: root.captionTargetReady && !EditorState.subtitleGenerating
+                }
+            }
+
+            // Seletor de Formatação de Texto (Capitalização)
+            Column {
+                visible: root.whisperReady
+                width: subtitleColumn.contentWidth
+                spacing: 4
+
+                Text {
+                    text: qsTr("Formatação de Caixa de Texto:")
+                    color: Theme.mutedForeground
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeXs
+                }
+
+                ThemedComboBox {
+                    id: captionCapitalizationBox
+                    width: parent.width
+                    enabled: root.captionTargetReady && !EditorState.subtitleGenerating
+                    textRole: "label"
+                    valueRole: "mode"
+                    model: [
+                        { label: qsTr("Aa Frase: 1ª letra maiúscula de cada frase"), mode: 1 },
+                        { label: qsTr("Aa Palavra: 1ª Letra Maiúscula De Cada Palavra"), mode: 2 },
+                        { label: qsTr("AA TUDO MAIÚSCULO (Estilo Reels / Viral)"), mode: 3 },
+                        { label: qsTr("aa tudo minúsculo (Estilo minimalista)"), mode: 4 },
+                        { label: qsTr("Original / Como Falado pelo Whisper"), mode: 0 }
+                    ]
+                    Component.onCompleted: currentIndex = 0
+                }
             }
 
             ThemedComboBox {
@@ -181,14 +253,6 @@ Item {
                 valueRole: "id"
                 model: root.captionStyleOptions
                 Component.onCompleted: currentIndex = 0
-            }
-
-            ThemedCheckBox {
-                id: captionAllCapsCheck
-                visible: root.whisperReady
-                text: qsTr("Texto em MAIÚSCULAS (Estilo Reels/TikTok)")
-                checked: true
-                enabled: root.captionTargetReady && !EditorState.subtitleGenerating
             }
 
             ThemedButton {
@@ -208,9 +272,15 @@ Item {
                     const style = captionStyleBox.currentValue !== undefined
                                   ? captionStyleBox.currentValue
                                   : "tiktok-viral-yellow"
+                    const capMode = captionCapitalizationBox.currentValue !== undefined
+                                    ? captionCapitalizationBox.currentValue
+                                    : 1
+                    const charsPerLine = Math.round(charsSlider.value)
+                    const isAllCaps = capMode === 3
+
                     EditorState.generateSubtitlesForClip(
                         EditorState.selectedTrack, EditorState.selectedClip, lang,
-                        captionWordsBox.currentValue, style, captionAllCapsCheck.checked)
+                        captionWordsBox.currentValue, style, isAllCaps, capMode, charsPerLine)
                 }
             }
 
@@ -274,13 +344,16 @@ Item {
 
     // "Recommended" packs by display width like openai-whisper does; the numbered entries cap
     // words per caption on top of that.
-    readonly property var captionLengthOptions: {
-        const options = [{ label: qsTr("Recommended caption length"), words: 0 }]
-        options.push({ label: qsTr("1 word per caption"), words: 1 })
-        for (let n = 2; n <= 8; ++n)
-            options.push({ label: qsTr("%1 words per caption").arg(n), words: n })
-        return options
-    }
+    readonly property var captionLengthOptions: [
+        { label: qsTr("⚡ 1 Palavra por vez (Dinâmico / Hormozi)"), words: 1 },
+        { label: qsTr("🔥 2 a 3 Palavras (Impacto / Shorts)"), words: 3 },
+        { label: qsTr("💬 4 a 6 Palavras (Balanceado)"), words: 5 },
+        { label: qsTr("📄 Frase Completa (Recomendado Whisper)"), words: 0 },
+        { label: qsTr("2 palavras por legenda"), words: 2 },
+        { label: qsTr("4 palavras por legenda"), words: 4 },
+        { label: qsTr("6 palavras por legenda"), words: 6 },
+        { label: qsTr("8 palavras por legenda"), words: 8 }
+    ]
 
     readonly property var captionStyleOptions: [
         { label: qsTr("TikTok Amarelo Viral (Recomendado)"), id: "tiktok-viral-yellow" },

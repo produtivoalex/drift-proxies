@@ -37,6 +37,16 @@ QString subtitleClipName(const QList<SubtitleCue> &cues);
 // composes with maxLineWidth — whichever limit is reached first ends the cue — so a small cap
 // yields short cues whose boundaries are interpolated rather than measured, drifting slightly
 // from the speech in between Whisper's own segment boundaries.
+enum class SubtitleCapitalization {
+    Original = 0,
+    SentenceCase = 1,
+    TitleCase = 2,
+    AllCaps = 3,
+    Lowercase = 4
+};
+
+QString formatSubtitleText(const QString &text, SubtitleCapitalization cap);
+
 QList<SubtitleCue> packSubtitleCues(const QList<SubtitleCue> &cues, int maxLineWidth = 42,
                                     int maxLineCount = 1, int maxWordsPerCue = 0);
 

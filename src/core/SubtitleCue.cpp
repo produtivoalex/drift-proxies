@@ -166,8 +166,20 @@ QList<SubtitleCue> packSubtitleCues(const QList<SubtitleCue> &cues, int maxLineW
         cue.startUs = subtitle.first().startUs;
         cue.endUs = subtitle.last().endUs;
         QString text;
-        for (const TimedWord &w : subtitle)
-            text += w.word;
+        for (const TimedWord &w : subtitle) {
+            const QString item = w.word;
+            if (item.isEmpty())
+                continue;
+            if (!text.isEmpty() && !text.endsWith(QLatin1Char(' ')) && !text.endsWith(QLatin1Char('\n'))
+                && !item.startsWith(QLatin1Char(' ')) && !item.startsWith(QLatin1Char('\n'))
+                && !item.startsWith(QLatin1Char('.')) && !item.startsWith(QLatin1Char(','))
+                && !item.startsWith(QLatin1Char('!')) && !item.startsWith(QLatin1Char('?'))
+                && !item.startsWith(QLatin1Char(':')) && !item.startsWith(QLatin1Char(';'))
+                && !item.startsWith(QLatin1Char(')')) && !item.startsWith(QLatin1Char(']'))) {
+                text += QLatin1Char(' ');
+            }
+            text += item;
+        }
         cue.text = text.trimmed().replace(QLatin1Char('\n'), QLatin1Char(' '));
         if (!cue.text.isEmpty() && cue.endUs > cue.startUs)
             packed.append(cue);
@@ -204,6 +216,50 @@ QList<SubtitleCue> packSubtitleCues(const QList<SubtitleCue> &cues, int maxLineW
 
     sortSubtitleCues(packed);
     return packed;
+}
+
+QString formatSubtitleText(const QString &text, SubtitleCapitalization cap)
+{
+    if (text.isEmpty())
+        return text;
+
+    switch (cap) {
+    case SubtitleCapitalization::Original:
+        return text;
+    case SubtitleCapitalization::AllCaps:
+        return text.toUpper();
+    case SubtitleCapitalization::Lowercase:
+        return text.toLower();
+    case SubtitleCapitalization::SentenceCase: {
+        QString lower = text.toLower();
+        bool newSentence = true;
+        for (int i = 0; i < lower.size(); ++i) {
+            const QChar c = lower.at(i);
+            if (newSentence && c.isLetter()) {
+                lower[i] = c.toUpper();
+                newSentence = false;
+            } else if (c == QLatin1Char('.') || c == QLatin1Char('!') || c == QLatin1Char('?') || c == QLatin1Char('\n')) {
+                newSentence = true;
+            }
+        }
+        return lower;
+    }
+    case SubtitleCapitalization::TitleCase: {
+        QString lower = text.toLower();
+        bool newWord = true;
+        for (int i = 0; i < lower.size(); ++i) {
+            const QChar c = lower.at(i);
+            if (newWord && c.isLetter()) {
+                lower[i] = c.toUpper();
+                newWord = false;
+            } else if (!c.isLetter() && !c.isDigit()) {
+                newWord = true;
+            }
+        }
+        return lower;
+    }
+    }
+    return text;
 }
 
 } // namespace drift

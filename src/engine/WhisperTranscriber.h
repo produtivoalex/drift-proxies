@@ -49,7 +49,8 @@ public:
     // maxWordsPerCue: cap on words per subtitle cue; 0 leaves the default packing alone.
     WhisperResult transcribe(const std::vector<float> &pcm,
                              const std::function<bool(double, const QString &)> &progress,
-                             const QString &languageCode = QString(), int maxWordsPerCue = 0);
+                             const QString &languageCode = QString(), int maxWordsPerCue = 0,
+                             int maxLineWidth = 42);
 
     WhisperTranscriber(const WhisperTranscriber &) = delete;
     WhisperTranscriber &operator=(const WhisperTranscriber &) = delete;

@@ -7623,7 +7623,7 @@ QVariantList AppController::whisperLanguages()
 
 void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, const QString &language,
                                              int maxWordsPerCue, const QString &stylePreset,
-                                             bool allCaps)
+                                             bool allCaps, int capitalizationMode, int maxCharsPerLine)
 {
     if (m_subtitleGenerating) {
         setLastMessage(tr("Subtitle generation already in progress"), QStringLiteral("warning"));
@@ -7665,9 +7665,10 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
     const bool reverse = clip.reverse;
     const QString languageCode = language.trimmed().toLower();
     const int wordsPerCue = std::max(0, maxWordsPerCue);
+    const int charsPerLine = maxCharsPerLine > 0 ? maxCharsPerLine : 42;
 
     (void)QtConcurrent::run([this, path, srcIn, srcOut, timelineStart, timelineDuration, speed,
-                             reverse, languageCode, wordsPerCue, stylePreset, allCaps]() {
+                             reverse, languageCode, wordsPerCue, charsPerLine, stylePreset, allCaps, capitalizationMode]() {
         auto setProgress = [this](double fraction, const QString &status) {
             QMetaObject::invokeMethod(
                 this,
@@ -7682,11 +7683,11 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
                 Qt::QueuedConnection);
         };
 
-        auto finish = [this, timelineStart, timelineDuration, stylePreset, allCaps](bool ok, const QString &message,
+        auto finish = [this, timelineStart, timelineDuration, stylePreset, allCaps, capitalizationMode](bool ok, const QString &message,
                                                               const QList<drift::SubtitleCue> &cues) {
             QMetaObject::invokeMethod(
                 this,
-                [this, ok, message, cues, timelineStart, timelineDuration, stylePreset, allCaps]() {
+                [this, ok, message, cues, timelineStart, timelineDuration, stylePreset, allCaps, capitalizationMode]() {
                     m_subtitleGenerating = false;
                     emit subtitleGeneratingChanged();
                     m_subtitleGenProgress = ok ? 1.0 : 0.0;
@@ -7698,7 +7699,7 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
                         emit subtitleGenerationFinished(false, message);
                         return;
                     }
-                    finalizeGeneratedSubtitles(timelineStart, timelineDuration, cues, stylePreset, allCaps);
+                    finalizeGeneratedSubtitles(timelineStart, timelineDuration, cues, stylePreset, allCaps, capitalizationMode);
                 },
                 Qt::QueuedConnection);
         };
@@ -7766,7 +7767,7 @@ void AppController::generateSubtitlesForClip(int trackIndex, int clipIndex, cons
                 setProgress(0.15 + 0.80 * fraction, status);
                 return m_subtitleGenCancel.loadRelaxed() == 0;
             },
-            languageCode, wordsPerCue);
+            languageCode, wordsPerCue, charsPerLine);
 
         qWarning() << "[subtitles] transcribe done. ok:" << res.ok << "cancelled:" << res.cancelled
                    << "cues:" << res.cues.size() << "error:" << res.error;
@@ -11250,12 +11251,14 @@ void AppController::finalizeGeneratedSubtitles(drift::TimeUs timelineStart,
                                                drift::TimeUs timelineDuration,
                                                const QList<drift::SubtitleCue> &cues,
                                                const QString &stylePreset,
-                                               bool allCaps)
+                                               bool allCaps,
+                                               int capitalizationMode)
 {
     const drift::Project before = m_project;
     const int trackIndex = drift::ensureTrackForClipType(m_project, drift::ClipType::Subtitle, true);
     qWarning() << "[subtitles] finalize: trackIndex" << trackIndex << "cues" << cues.size()
-               << "start" << timelineStart << "dur" << timelineDuration << "preset" << stylePreset << "allCaps" << allCaps;
+               << "start" << timelineStart << "dur" << timelineDuration << "preset" << stylePreset << "allCaps" << allCaps
+               << "capitalizationMode" << capitalizationMode;
     if (trackIndex < 0)
         return;
 
@@ -11287,7 +11290,13 @@ void AppController::finalizeGeneratedSubtitles(drift::TimeUs timelineStart,
     }
 
     QList<drift::SubtitleCue> processedCues = cues;
-    if (allCaps) {
+    if (capitalizationMode >= 0) {
+        const drift::SubtitleCapitalization cap = static_cast<drift::SubtitleCapitalization>(
+            qBound(0, capitalizationMode, static_cast<int>(drift::SubtitleCapitalization::Lowercase)));
+        for (drift::SubtitleCue &cue : processedCues) {
+            cue.text = drift::formatSubtitleText(cue.text, cap);
+        }
+    } else if (allCaps) {
         for (drift::SubtitleCue &cue : processedCues) {
             cue.text = cue.text.toUpper();
         }
@@ -13022,6 +13031,194 @@ void AppController::seekToSubtitleCue(int trackIndex, int clipIndex, int cueInde
         return;
 
     setPlayheadSeconds(drift::usToSeconds(clip.timelineStart + clip.subtitleCues.at(cueIndex).startUs));
+}
+
+void AppController::setSubtitleStudioMode(bool enabled)
+{
+    if (m_subtitleStudioMode == enabled)
+        return;
+    m_subtitleStudioMode = enabled;
+    emit subtitleStudioModeChanged();
+}
+
+bool AppController::transformSubtitleCase(int trackIndex, int clipIndex, int mode)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle || clip.subtitleCues.isEmpty())
+        return false;
+
+    const drift::Project before = m_project;
+    const drift::SubtitleCapitalization cap = static_cast<drift::SubtitleCapitalization>(
+        qBound(0, mode, static_cast<int>(drift::SubtitleCapitalization::Lowercase)));
+
+    for (drift::SubtitleCue &cue : clip.subtitleCues) {
+        cue.text = drift::formatSubtitleText(cue.text, cap);
+    }
+    clip.name = drift::subtitleClipName(clip.subtitleCues);
+    pushProjectEdit(before, tr("Change subtitle capitalization"));
+    finishEdit(tr("Change subtitle capitalization"));
+    return true;
+}
+
+int AppController::replaceSubtitleTextInClip(int trackIndex, int clipIndex, const QString &search,
+                                             const QString &replace, bool matchCase)
+{
+    if (search.isEmpty() || trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return 0;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return 0;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle || clip.subtitleCues.isEmpty())
+        return 0;
+
+    const drift::Project before = m_project;
+    const Qt::CaseSensitivity cs = matchCase ? Qt::CaseSensitive : Qt::CaseInsensitive;
+    int replacements = 0;
+
+    for (drift::SubtitleCue &cue : clip.subtitleCues) {
+        if (cue.text.contains(search, cs)) {
+            cue.text.replace(search, replace, cs);
+            ++replacements;
+        }
+    }
+
+    if (replacements > 0) {
+        clip.name = drift::subtitleClipName(clip.subtitleCues);
+        pushProjectEdit(before, tr("Replace subtitle text (%1 matches)").arg(replacements));
+        finishEdit(tr("Replace subtitle text"));
+    }
+    return replacements;
+}
+
+bool AppController::setSubtitleClipVisuals(int trackIndex, int clipIndex, const QString &fontFamily,
+                                           double fontSize, const QString &fillColor,
+                                           const QString &highlightColor, const QString &strokeColor,
+                                           double strokeWidth, bool shadow, const QString &shadowColor,
+                                           const QString &presetId)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle && clip.type != drift::ClipType::Text)
+        return false;
+
+    const drift::Project before = m_project;
+
+    if (!presetId.trimmed().isEmpty()) {
+        if (const std::optional<drift::TextStyle> preset = drift::textStyleForPresetId(presetId)) {
+            clip.textStyle = *preset;
+        }
+    }
+
+    if (!fontFamily.isEmpty())
+        clip.textStyle.fontFamily = fontFamily;
+    if (fontSize > 0.0)
+        clip.textStyle.fontSize = fontSize;
+    if (!fillColor.isEmpty())
+        clip.textStyle.fillColor = fillColor;
+    if (!highlightColor.isEmpty())
+        clip.textStyle.highlightColor = highlightColor;
+    if (!strokeColor.isEmpty())
+        clip.textStyle.strokeColor = strokeColor;
+    if (strokeWidth >= 0.0)
+        clip.textStyle.strokeWidth = strokeWidth;
+    clip.textStyle.shadow = shadow;
+    if (!shadowColor.isEmpty())
+        clip.textStyle.shadowColor = shadowColor;
+
+    pushProjectEdit(before, tr("Update subtitle style"));
+    finishEdit(tr("Update subtitle style"));
+    return true;
+}
+
+bool AppController::splitSubtitleCueAtPlayhead(int trackIndex, int clipIndex, int cueIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle || cueIndex < 0 || cueIndex >= clip.subtitleCues.size())
+        return false;
+
+    const drift::SubtitleCue orig = clip.subtitleCues.at(cueIndex);
+    const drift::TimeUs localPlayheadUs = m_playheadUs - clip.timelineStart;
+    if (localPlayheadUs <= orig.startUs + 100000 || localPlayheadUs >= orig.endUs - 100000)
+        return false;
+
+    const drift::Project before = m_project;
+    const QStringList words = orig.text.split(QLatin1Char(' '), Qt::SkipEmptyParts);
+    if (words.size() <= 1) {
+        const int mid = orig.text.size() / 2;
+        drift::SubtitleCue first = orig;
+        first.endUs = localPlayheadUs;
+        first.text = orig.text.left(mid).trimmed();
+
+        drift::SubtitleCue second = orig;
+        second.startUs = localPlayheadUs;
+        second.text = orig.text.mid(mid).trimmed();
+
+        clip.subtitleCues[cueIndex] = first;
+        clip.subtitleCues.insert(cueIndex + 1, second);
+    } else {
+        const double progress = static_cast<double>(localPlayheadUs - orig.startUs) / (orig.endUs - orig.startUs);
+        const int splitWordIdx = qBound(1, static_cast<int>(std::round(progress * words.size())), words.size() - 1);
+
+        QStringList w1 = words.mid(0, splitWordIdx);
+        QStringList w2 = words.mid(splitWordIdx);
+
+        drift::SubtitleCue first = orig;
+        first.endUs = localPlayheadUs;
+        first.text = w1.join(QLatin1Char(' '));
+
+        drift::SubtitleCue second = orig;
+        second.startUs = localPlayheadUs;
+        second.text = w2.join(QLatin1Char(' '));
+
+        clip.subtitleCues[cueIndex] = first;
+        clip.subtitleCues.insert(cueIndex + 1, second);
+    }
+
+    drift::sortSubtitleCues(clip.subtitleCues);
+    clip.name = drift::subtitleClipName(clip.subtitleCues);
+    pushProjectEdit(before, tr("Split subtitle"));
+    finishEdit(tr("Split subtitle"));
+    return true;
+}
+
+bool AppController::mergeSubtitleCueWithNext(int trackIndex, int clipIndex, int cueIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return false;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle || cueIndex < 0 || cueIndex >= clip.subtitleCues.size() - 1)
+        return false;
+
+    const drift::Project before = m_project;
+    drift::SubtitleCue &current = clip.subtitleCues[cueIndex];
+    const drift::SubtitleCue next = clip.subtitleCues.at(cueIndex + 1);
+
+    current.endUs = qMax(current.endUs, next.endUs);
+    current.text = (current.text.trimmed() + QLatin1Char(' ') + next.text.trimmed()).trimmed();
+
+    clip.subtitleCues.removeAt(cueIndex + 1);
+    clip.name = drift::subtitleClipName(clip.subtitleCues);
+    pushProjectEdit(before, tr("Merge subtitles"));
+    finishEdit(tr("Merge subtitles"));
+    return true;
 }
 
 void AppController::setTextStyle(int trackIndex, int clipIndex, const QVariantMap &m)

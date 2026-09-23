@@ -1033,11 +1033,47 @@ ApplicationWindow {
                         innerSplit.insertItem(1, previewPanel)
                 }
 
+                function relocatePropertiesForStudio() {
+                    const wantStudio = EditorState.subtitleStudioMode && !window.portraitWorkspace && !window.previewFullscreen
+                    const isInRoot = propertiesPanel.SplitView.view === rootSplit
+                    if (wantStudio === isInRoot)
+                        return
+
+                    if (wantStudio) {
+                        for (let i = 0; i < innerSplit.count; ++i) {
+                            if (innerSplit.itemAt(i) === propertiesPanel) {
+                                innerSplit.takeItem(i)
+                                break
+                            }
+                        }
+                        rootSplit.insertItem(rootSplit.count, propertiesPanel)
+                    } else {
+                        for (let i = 0; i < rootSplit.count; ++i) {
+                            if (rootSplit.itemAt(i) === propertiesPanel) {
+                                rootSplit.takeItem(i)
+                                break
+                            }
+                        }
+                        innerSplit.insertItem(innerSplit.count, propertiesPanel)
+                    }
+                    window.schedulePanelCapture()
+                }
+
+                Connections {
+                    target: EditorState
+                    function onSubtitleStudioModeChanged() {
+                        relocatePropertiesForStudio()
+                    }
+                }
+
                 // The preview is declared in its landscape slot below, so a session
                 // that starts portrait needs one move once the tree exists. Also
                 // covers a layout flip that lands before this point during startup —
                 // relocatePreview() is a no-op when nothing has to move.
-                Component.onCompleted: relocatePreview()
+                Component.onCompleted: {
+                    relocatePreview()
+                    relocatePropertiesForStudio()
+                }
 
                 // The stored panel sizes need real extents to be fractions of, and
                 // these are 0 until the first layout pass lands.
@@ -1138,8 +1174,10 @@ ApplicationWindow {
                         PropertiesPanel {
                             id: propertiesPanel
                             visible: !window.previewFullscreen
-                            SplitView.preferredWidth: Math.max(0, innerSplit.width * 0.25)
-                            SplitView.minimumWidth: Math.min(240, Math.max(0, innerSplit.width * 0.2))
+                            SplitView.preferredWidth: EditorState.subtitleStudioMode
+                                                      ? Math.max(320, rootSplit.width * 0.32)
+                                                      : Math.max(0, innerSplit.width * 0.25)
+                            SplitView.minimumWidth: Math.min(240, Math.max(0, (EditorState.subtitleStudioMode ? rootSplit.width : innerSplit.width) * 0.2))
                             // Empty-state browse CTAs jump the assets panel to the
                             // matching library tab.
                             onWidthChanged: window.schedulePanelCapture()

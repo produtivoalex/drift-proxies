@@ -135,6 +135,8 @@ class AppController : public QObject
     Q_PROPERTY(bool strictOfflineMode READ strictOfflineMode WRITE setStrictOfflineMode NOTIFY strictOfflineModeChanged)
     // Custom folder on disk / USB containing offline ONNX models (Whisper, Denoise, RVM, SAM2).
     Q_PROPERTY(QString customAiModelPath READ customAiModelPath WRITE setCustomAiModelPath NOTIFY customAiModelPathChanged)
+    // Full-height subtitle studio layout (expands subtitle editor vertically, timeline anchored to bottom-left)
+    Q_PROPERTY(bool subtitleStudioMode READ subtitleStudioMode WRITE setSubtitleStudioMode NOTIFY subtitleStudioModeChanged)
     // Preview zero-copy import: VAAPI dma-buf on Linux, D3D11 interop on Windows. Takes effect
     // after restart; hidden when this machine has no decode backend for either.
     Q_PROPERTY(bool vaapiZeroCopy READ vaapiZeroCopy WRITE setVaapiZeroCopy NOTIFY vaapiZeroCopyChanged)
@@ -468,6 +470,8 @@ public:
     QStringList keyframeGraphHiddenProperties() const { return m_keyframeGraphHiddenProperties; }
     bool subtitleEditing() const { return m_subtitleEditing; }
     int selectedSubtitleCue() const { return m_selectedSubtitleCue; }
+    bool subtitleStudioMode() const { return m_subtitleStudioMode; }
+    void setSubtitleStudioMode(bool enabled);
     bool undoAvailable() const { return m_undoStack.canUndo(); }
     bool redoAvailable() const { return m_undoStack.canRedo(); }
     bool exportInProgress() const { return m_exportInProgress; }
@@ -832,7 +836,24 @@ public:
                                               const QString &language = QString(),
                                               int maxWordsPerCue = 0,
                                               const QString &stylePreset = QStringLiteral("tiktok-viral-yellow"),
-                                              bool allCaps = true);
+                                              bool allCaps = true,
+                                              int capitalizationMode = -1,
+                                              int maxCharsPerLine = 42);
+    // Transform capitalization of all cues in a subtitle clip (0=Original, 1=Sentence, 2=Title, 3=AllCaps, 4=Lower)
+    Q_INVOKABLE bool transformSubtitleCase(int trackIndex, int clipIndex, int mode);
+    // Find and replace text across all cues in a subtitle clip
+    Q_INVOKABLE int replaceSubtitleTextInClip(int trackIndex, int clipIndex, const QString &search,
+                                              const QString &replace, bool matchCase = false);
+    // Direct styling of a subtitle clip (font family, size, fill, karaoke highlight, stroke, shadow, preset)
+    Q_INVOKABLE bool setSubtitleClipVisuals(int trackIndex, int clipIndex, const QString &fontFamily,
+                                            double fontSize, const QString &fillColor,
+                                            const QString &highlightColor, const QString &strokeColor,
+                                            double strokeWidth, bool shadow, const QString &shadowColor,
+                                            const QString &presetId = QString());
+    // Split cue at playhead position
+    Q_INVOKABLE bool splitSubtitleCueAtPlayhead(int trackIndex, int clipIndex, int cueIndex);
+    // Merge cue with the next cue
+    Q_INVOKABLE bool mergeSubtitleCueWithNext(int trackIndex, int clipIndex, int cueIndex);
     Q_INVOKABLE void cancelSubtitleGeneration();
     Q_INVOKABLE QVariantList whisperLanguages();
     // points: [{x, y, include}] with x/y normalized to the source frame.
@@ -1758,6 +1779,7 @@ signals:
     void keyframeGraphVisibilityChanged();
     void subtitleEditingChanged();
     void selectedSubtitleCueChanged();
+    void subtitleStudioModeChanged();
     void undoStackChanged();
     void exportInProgressChanged();
     void exportProgressChanged();
@@ -2018,7 +2040,8 @@ protected:
     void finalizeGeneratedSubtitles(drift::TimeUs timelineStart, drift::TimeUs timelineDuration,
                                     const QList<drift::SubtitleCue> &cues,
                                     const QString &stylePreset = QStringLiteral("tiktok-viral-yellow"),
-                                    bool allCaps = true);
+                                    bool allCaps = true,
+                                    int capitalizationMode = -1);
     void finalizeDenoise(const QString &clipId, const QString &audioPath);
     void watchStabilizeProgress(QProcess *process, const QString &clipId, qint64 durationUs,
                                 double rangeFrom, double rangeTo);
@@ -2276,6 +2299,7 @@ protected:
     QStringList m_keyframeGraphHiddenProperties;
     bool m_subtitleEditing = false;
     int m_selectedSubtitleCue = -1;
+    bool m_subtitleStudioMode = false;
     bool m_exportInProgress = false;
     double m_exportProgress = 0.0;
     QAtomicInt m_exportCancel = 0;
