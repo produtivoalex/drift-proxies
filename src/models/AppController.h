@@ -854,6 +854,12 @@ public:
     Q_INVOKABLE bool splitSubtitleCueAtPlayhead(int trackIndex, int clipIndex, int cueIndex);
     // Merge cue with the next cue
     Q_INVOKABLE bool mergeSubtitleCueWithNext(int trackIndex, int clipIndex, int cueIndex);
+    // Smart split at playhead: splits selected clip if under playhead, or all active clips under playhead
+    Q_INVOKABLE void splitAtPlayheadSmart();
+    // Ripple delete an arbitrary timeline time range [startSeconds, endSeconds] across media clips and shift followers
+    Q_INVOKABLE bool rippleDeleteTimeRange(double startSeconds, double endSeconds, int targetTrackIndex = -1);
+    // Remove pauses/silences between speech segments in a clip with ripple delete (One-click jump cut)
+    Q_INVOKABLE int removeSpeechPauses(int trackIndex, int clipIndex, double minPauseDurationSeconds = 0.6);
     Q_INVOKABLE void cancelSubtitleGeneration();
     Q_INVOKABLE QVariantList whisperLanguages();
     // points: [{x, y, include}] with x/y normalized to the source frame.

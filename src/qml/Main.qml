@@ -914,7 +914,7 @@ ApplicationWindow {
                         return
                     }
                     if (modelData.id === "bladeTool") {
-                        timelinePanel.timelineTool = "split"
+                        EditorState.splitAtPlayheadSmart()
                         return
                     }
                     // Timeline zoom is QML state as well, and the 1.5 step matches the

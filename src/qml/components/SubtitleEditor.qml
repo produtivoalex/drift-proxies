@@ -14,6 +14,7 @@ Item {
     property var formatSeconds: (function (v) { return Number(v || 0).toFixed(2) })
     property int trackIndex: EditorState.selectedTrack
     property int clipIndex: EditorState.selectedClip
+    property bool textEditMode: false
 
     readonly property double defaultCueDuration: 3.0
 
@@ -311,6 +312,70 @@ Item {
             }
         }
 
+        // Mode Switcher: Standard Subtitles vs Text-Based Video Editing
+        Row {
+            width: parent.width
+            spacing: 6
+
+            ThemedButton {
+                width: (parent.width - 6) / 2
+                text: qsTr("📋 Cartões de Legenda")
+                variant: !root.textEditMode ? "primary" : "secondary"
+                glyph: Theme.icons.captions
+                onClicked: root.textEditMode = false
+            }
+
+            ThemedButton {
+                width: (parent.width - 6) / 2
+                text: qsTr("📝 Edição por Texto")
+                variant: root.textEditMode ? "primary" : "secondary"
+                glyph: Theme.icons.type
+                tooltip: qsTr("Edite e corte o vídeo diretamente pela transcrição de fala")
+                onClicked: root.textEditMode = true
+            }
+        }
+
+        // Text-Based Editing Silence Cut Banner
+        Rectangle {
+            visible: root.textEditMode
+            width: parent.width
+            height: jumpCutCol.implicitHeight + 16
+            radius: Theme.radiusMd
+            color: Theme.darkMode ? "#181d2a" : "#eef2ff"
+            border.width: 1
+            border.color: Theme.darkMode ? "#2e3b56" : "#c7d2fe"
+
+            Column {
+                id: jumpCutCol
+                x: 8
+                y: 8
+                width: parent.width - 16
+                spacing: 6
+
+                Text {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    text: qsTr("💡 Modo Edição de Vídeo por Texto: Clique em qualquer trecho para navegar. Clique no ícone de tesoura ✂ ao lado da fala para removê-la do vídeo com Ripple!")
+                    color: Theme.darkMode ? "#93c5fd" : "#1e40af"
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeXs
+                }
+
+                ThemedButton {
+                    width: parent.width
+                    text: qsTr("⚡ Cortar Pausas e Silêncios (> 0.6s)")
+                    variant: "primary"
+                    glyph: Theme.icons.wand
+                    tooltip: qsTr("Remove pausas longas entre falas, compactando o vídeo automaticamente")
+                    onClicked: {
+                        const count = EditorState.removeSpeechPauses(root.trackIndex, root.clipIndex, 0.6)
+                        if (count > 0)
+                            Toasts.success(qsTr("%1 pausas e silêncios eliminados!").arg(count))
+                    }
+                }
+            }
+        }
+
         // Quick Tools Row: Import/Export + Find & Replace toggle
         Row {
             width: parent.width
@@ -553,9 +618,8 @@ Item {
                     id: lineCol
                     x: 12
                     y: 7
-                    // The bin's slot is reserved even while it is hidden, so the wrapped
-                    // caption text doesn't reflow as the pointer moves down the list.
-                    width: parent.width - 24 - deleteButton.width
+                    // The action row slot is reserved even while buttons are hidden
+                    width: parent.width - 24 - actionRow.width
                     spacing: 2
 
                     Text {
@@ -585,20 +649,40 @@ Item {
                     }
                 }
 
-                IconButton {
-                    id: deleteButton
+                Row {
+                    id: actionRow
                     anchors.right: parent.right
                     anchors.rightMargin: 6
                     anchors.verticalCenter: parent.verticalCenter
-                    glyph: Theme.icons.trash
-                    variant: "ghost"
-                    iconSize: Theme.iconSizeSm
-                    tooltip: qsTr("Delete this subtitle")
-                    opacity: (rowHover.containsMouse || cueDelegate.isSelected || visualFocus) ? 1 : 0
-                    enabled: opacity > 0
-                    onClicked: root.removeCue(cueDelegate.index)
+                    spacing: 4
 
-                    Behavior on opacity { NumberAnimation { duration: Theme.durationFast } }
+                    IconButton {
+                        id: cutVideoBtn
+                        visible: root.textEditMode
+                        glyph: Theme.icons.scissors
+                        variant: "ghost"
+                        iconSize: Theme.iconSizeSm
+                        tooltip: qsTr("Recortar este trecho do vídeo na timeline (Ripple Cut)")
+                        onClicked: {
+                            const clipStart = (root.clip && root.clip.start) ? root.clip.start : 0
+                            const s = clipStart + cueDelegate.modelData.start
+                            const e = clipStart + cueDelegate.modelData.end
+                            EditorState.rippleDeleteTimeRange(s, e)
+                        }
+                    }
+
+                    IconButton {
+                        id: deleteButton
+                        glyph: Theme.icons.trash
+                        variant: "ghost"
+                        iconSize: Theme.iconSizeSm
+                        tooltip: qsTr("Delete this subtitle")
+                        opacity: (rowHover.containsMouse || cueDelegate.isSelected || visualFocus) ? 1 : 0
+                        enabled: opacity > 0
+                        onClicked: root.removeCue(cueDelegate.index)
+
+                        Behavior on opacity { NumberAnimation { duration: Theme.durationFast } }
+                    }
                 }
             }
 

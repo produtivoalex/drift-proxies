@@ -7203,12 +7203,58 @@ void AppController::alignSelectedClipRight()
 // while the identical context-menu path honoured it.
 void AppController::splitSelectedClipLeft()
 {
-    splitClipLeftAt(m_selectedTrack, m_selectedClip, playheadSeconds());
+    int trackIdx = m_selectedTrack;
+    int clipIdx = m_selectedClip;
+    if (!isValidClipIndex(trackIdx, clipIdx)) {
+        for (int t = 0; t < m_project.tracks().size(); ++t) {
+            const drift::Track &track = m_project.tracks().at(t);
+            for (int c = 0; c < track.clips.size(); ++c) {
+                if (track.clips.at(c).containsTime(m_playheadUs)) {
+                    trackIdx = t;
+                    clipIdx = c;
+                    break;
+                }
+            }
+            if (trackIdx >= 0)
+                break;
+        }
+    }
+    if (isValidClipIndex(trackIdx, clipIdx))
+        splitClipLeftAt(trackIdx, clipIdx, playheadSeconds());
 }
 
 void AppController::splitSelectedClipRight()
 {
-    splitClipRightAt(m_selectedTrack, m_selectedClip, playheadSeconds());
+    int trackIdx = m_selectedTrack;
+    int clipIdx = m_selectedClip;
+    if (!isValidClipIndex(trackIdx, clipIdx)) {
+        for (int t = 0; t < m_project.tracks().size(); ++t) {
+            const drift::Track &track = m_project.tracks().at(t);
+            for (int c = 0; c < track.clips.size(); ++c) {
+                if (track.clips.at(c).containsTime(m_playheadUs)) {
+                    trackIdx = t;
+                    clipIdx = c;
+                    break;
+                }
+            }
+            if (trackIdx >= 0)
+                break;
+        }
+    }
+    if (isValidClipIndex(trackIdx, clipIdx))
+        splitClipRightAt(trackIdx, clipIdx, playheadSeconds());
+}
+
+void AppController::splitAtPlayheadSmart()
+{
+    if (isValidClipIndex(m_selectedTrack, m_selectedClip)) {
+        const drift::Clip &selected = m_project.tracks().at(m_selectedTrack).clips.at(m_selectedClip);
+        if (selected.containsTime(m_playheadUs) && m_playheadUs > selected.timelineStart) {
+            splitClipAt(m_selectedTrack, m_selectedClip, playheadSeconds());
+            return;
+        }
+    }
+    splitAtPlayhead();
 }
 
 void AppController::moveClipToTrack(int trackIndex, int clipIndex, int newTrackIndex, double newStart)
@@ -13219,6 +13265,172 @@ bool AppController::mergeSubtitleCueWithNext(int trackIndex, int clipIndex, int 
     pushProjectEdit(before, tr("Merge subtitles"));
     finishEdit(tr("Merge subtitles"));
     return true;
+}
+
+bool AppController::rippleDeleteTimeRange(double startSeconds, double endSeconds, int targetTrackIndex)
+{
+    if (endSeconds <= startSeconds)
+        return false;
+
+    const drift::TimeUs startUs = drift::secondsToUs(startSeconds);
+    const drift::TimeUs endUs = drift::secondsToUs(endSeconds);
+    const drift::TimeUs cutDurUs = endUs - startUs;
+    if (cutDurUs <= 0)
+        return false;
+
+    const drift::Project before = m_project;
+    bool anyCut = false;
+
+    const int trackStart = (targetTrackIndex >= 0 && targetTrackIndex < m_project.tracks().size())
+                               ? targetTrackIndex
+                               : 0;
+    const int trackEnd = (targetTrackIndex >= 0 && targetTrackIndex < m_project.tracks().size())
+                             ? targetTrackIndex + 1
+                             : m_project.tracks().size();
+
+    for (int t = trackStart; t < trackEnd; ++t) {
+        drift::Track &track = m_project.tracks()[t];
+
+        // Process clips backwards
+        for (int c = track.clips.size() - 1; c >= 0; --c) {
+            drift::Clip &clip = track.clips[c];
+
+            // 1. Clip is completely inside the cut range [startUs, endUs] -> Remove it
+            if (clip.timelineStart >= startUs && clip.timelineEnd() <= endUs) {
+                track.clips.removeAt(c);
+                anyCut = true;
+                continue;
+            }
+
+            // 2. Clip spans across the whole cut range [startUs, endUs] -> Split into two and remove middle
+            if (clip.timelineStart < startUs && clip.timelineEnd() > endUs) {
+                const drift::TimeUs offset1 = startUs - clip.timelineStart;
+                drift::Clip rightPart;
+                if (drift::splitClipAtOffset(clip, rightPart, offset1)) {
+                    rightPart.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+                    const drift::TimeUs offset2 = endUs - startUs;
+                    drift::Clip discarded;
+                    if (drift::splitClipAtOffset(rightPart, discarded, offset2)) {
+                        discarded.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+                        discarded.timelineStart = endUs;
+                        track.clips.insert(c + 1, discarded);
+                        anyCut = true;
+                    }
+                }
+                continue;
+            }
+
+            // 3. Clip starts before startUs and ends inside [startUs, endUs] -> Trim right edge
+            if (clip.timelineStart < startUs && clip.timelineEnd() > startUs && clip.timelineEnd() <= endUs) {
+                clip.timelineDuration = startUs - clip.timelineStart;
+                clip.srcOut = clip.srcIn + static_cast<drift::TimeUs>(clip.timelineDuration * clip.speed);
+                anyCut = true;
+                continue;
+            }
+
+            // 4. Clip starts inside [startUs, endUs] and ends after endUs -> Trim left edge
+            if (clip.timelineStart >= startUs && clip.timelineStart < endUs && clip.timelineEnd() > endUs) {
+                const drift::TimeUs cutFromStart = endUs - clip.timelineStart;
+                clip.srcIn += static_cast<drift::TimeUs>(cutFromStart * clip.speed);
+                clip.timelineDuration -= cutFromStart;
+                clip.timelineStart = startUs;
+                anyCut = true;
+                continue;
+            }
+        }
+
+        // Shift follower clips left by cutDurUs
+        for (drift::Clip &clip : track.clips) {
+            if (clip.timelineStart >= endUs) {
+                clip.timelineStart = qMax<drift::TimeUs>(0, clip.timelineStart - cutDurUs);
+                anyCut = true;
+            }
+        }
+    }
+
+    if (anyCut) {
+        // Also update any subtitle cues that exist on subtitle clips
+        for (drift::Track &track : m_project.tracks()) {
+            for (drift::Clip &clip : track.clips) {
+                if (clip.type == drift::ClipType::Subtitle && !clip.subtitleCues.isEmpty()) {
+                    QList<drift::SubtitleCue> updated;
+                    for (drift::SubtitleCue cue : clip.subtitleCues) {
+                        const drift::TimeUs cueGlobalStart = clip.timelineStart + cue.startUs;
+                        const drift::TimeUs cueGlobalEnd = clip.timelineStart + cue.endUs;
+                        if (cueGlobalEnd <= startUs) {
+                            updated.append(cue);
+                        } else if (cueGlobalStart >= endUs) {
+                            cue.startUs = qMax<drift::TimeUs>(0, cue.startUs - cutDurUs);
+                            cue.endUs = qMax<drift::TimeUs>(cue.startUs + 1, cue.endUs - cutDurUs);
+                            updated.append(cue);
+                        }
+                    }
+                    clip.subtitleCues = updated;
+                    clip.name = drift::subtitleClipName(clip.subtitleCues);
+                }
+            }
+        }
+
+        pushProjectEdit(before, tr("Ripple delete speech range"));
+        finishEdit(tr("Ripple delete speech range"));
+        setPlayheadSeconds(startSeconds);
+        setLastMessage(tr("Trecho removido com sucesso"), QStringLiteral("success"));
+        return true;
+    }
+    return false;
+}
+
+int AppController::removeSpeechPauses(int trackIndex, int clipIndex, double minPauseDurationSeconds)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return 0;
+    const drift::Track &track = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return 0;
+    const drift::Clip &subClip = track.clips.at(clipIndex);
+    if (subClip.type != drift::ClipType::Subtitle || subClip.subtitleCues.size() < 2)
+        return 0;
+
+    const drift::TimeUs minPauseUs = drift::secondsToUs(minPauseDurationSeconds);
+    struct PauseRange {
+        drift::TimeUs startUs;
+        drift::TimeUs endUs;
+    };
+    QList<PauseRange> pauses;
+
+    for (int i = 0; i < subClip.subtitleCues.size() - 1; ++i) {
+        const drift::SubtitleCue &c1 = subClip.subtitleCues.at(i);
+        const drift::SubtitleCue &c2 = subClip.subtitleCues.at(i + 1);
+        if (c2.startUs > c1.endUs + minPauseUs) {
+            const drift::TimeUs marginUs = drift::secondsToUs(0.08);
+            const drift::TimeUs pauseStart = subClip.timelineStart + c1.endUs + marginUs;
+            const drift::TimeUs pauseEnd = subClip.timelineStart + c2.startUs - marginUs;
+            if (pauseEnd > pauseStart + drift::secondsToUs(0.15)) {
+                pauses.append({pauseStart, pauseEnd});
+            }
+        }
+    }
+
+    if (pauses.isEmpty()) {
+        setLastMessage(tr("Nenhuma pausa longa (> %1s) encontrada").arg(minPauseDurationSeconds), QStringLiteral("info"));
+        return 0;
+    }
+
+    std::sort(pauses.begin(), pauses.end(), [](const PauseRange &a, const PauseRange &b) {
+        return a.startUs > b.startUs;
+    });
+
+    int count = 0;
+    for (const PauseRange &p : pauses) {
+        if (rippleDeleteTimeRange(drift::usToSeconds(p.startUs), drift::usToSeconds(p.endUs))) {
+            ++count;
+        }
+    }
+
+    if (count > 0) {
+        setLastMessage(tr("%1 pausas e silêncios removidos com sucesso!").arg(count), QStringLiteral("success"));
+    }
+    return count;
 }
 
 void AppController::setTextStyle(int trackIndex, int clipIndex, const QVariantMap &m)
