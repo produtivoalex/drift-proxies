@@ -11243,7 +11243,7 @@ bool AppController::createTextBehindSubjectEffect(int trackIndex, int clipIndex,
     textClip.textStyle.letterSpacing = 2.0;
     drift::setSolidFill(textClip.textStyle, QColor(textColor.isEmpty() ? QStringLiteral("#FFFFFF") : textColor));
     textClip.textStyle.layers.prepend(drift::strokeLayer(4.5, Qt::black));
-    textClip.textStyle.layers.prepend(drift::shadowLayer(QColor(0, 0, 0, 230), 0.0, 6.0, 10.0));
+    textClip.textStyle.layers.prepend(drift::shadowLayer(QColor(0, 0, 0, 230), 0.0, 6.0, 10.0, 0.8));
 
     applyDefaultVisualLayout(textClip, m_project.width(), m_project.height());
     {
@@ -13572,7 +13572,7 @@ bool AppController::setSubtitleClipVisuals(int trackIndex, int clipIndex, const 
             sh->enabled = true;
             sh->paint.color = sc;
         } else {
-            clip.textStyle.layers.prepend(drift::shadowLayer(sc, 0.0, 5.0, 8.0));
+            clip.textStyle.layers.prepend(drift::shadowLayer(sc, 0.0, 5.0, 8.0, 0.8));
         }
     } else if (sh) {
         sh->enabled = false;
@@ -18534,7 +18534,7 @@ int AppController::vocalIsolationMode(int trackIndex, int clipIndex) const
 
     for (const drift::Effect &effect : audioHost->audioEffects) {
         if (effect.catalogId == QLatin1String("utility.vocal_isolation")) {
-            return static_cast<int>(std::round(effect.parameters.value(QStringLiteral("mode"), 0.0)));
+            return static_cast<int>(std::round(effect.parameters.value(QStringLiteral("mode"), 0.0).toDouble()));
         }
     }
     return 0;
@@ -18606,7 +18606,7 @@ bool AppController::splitVocalAndMusicTracks(int trackIndex, int clipIndex)
         }
     }
     if (targetTrackIndex < 0) {
-        addTrack(drift::TrackType::Audio);
+        addTrack(QStringLiteral("audio"));
         targetTrackIndex = m_project.tracks().size() - 1;
     }
 
@@ -21265,21 +21265,21 @@ bool AppController::detectAndMarkBeats(int trackIndex, int clipIndex, const QStr
         if (clipIndex >= 0 && clipIndex < track.clips.size()) {
             const drift::Clip &clip = track.clips[clipIndex];
             startSeconds = drift::usToSeconds(clip.timelineStart);
-            durSeconds = drift::usToSeconds(clip.durationUs());
+            durSeconds = drift::usToSeconds(clip.timelineDuration);
         }
     } else if (m_selectedTrack >= 0 && m_selectedTrack < m_project.tracks().size()) {
         const drift::Track &track = m_project.tracks()[m_selectedTrack];
         if (m_selectedClip >= 0 && m_selectedClip < track.clips.size()) {
             const drift::Clip &clip = track.clips[m_selectedClip];
             startSeconds = drift::usToSeconds(clip.timelineStart);
-            durSeconds = drift::usToSeconds(clip.durationUs());
+            durSeconds = drift::usToSeconds(clip.timelineDuration);
         }
     }
 
     if (durSeconds <= 0.0) {
         if (m_project.hasWorkArea()) {
             startSeconds = drift::usToSeconds(m_project.workAreaInUs());
-            durSeconds = drift::usToSeconds(m_project.workAreaDurationUs());
+            durSeconds = drift::usToSeconds(m_project.workAreaOutUs() - m_project.workAreaInUs());
         } else {
             startSeconds = 0.0;
             durSeconds = qMin(600.0, drift::usToSeconds(m_project.durationUs()));
