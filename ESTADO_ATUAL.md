@@ -76,6 +76,27 @@
   - `SpeedFadeInspector.qml`: Chips de 1 clique (*Montage*, *Hero*, *Bullet*, *Flash*) para aplicar curvas virais diretamente no painel de propriedades.
   - `SpeedCurveWindow.qml`: Botões de presets rápidos na barra de ferramentas da janela gráfica de curva de velocidade.
 
+### 5. PARTE 4: Camadas, Overlays & Modos de Mesclagem Pro (Blending Modes & Efeitos Visuais) (100% Concluída)
+* **Modos de Mesclagem Nativos (Skia 2D & GPU Shaders OpenGL)**:
+  - Expansão do enum `BlendMode` e funções de string com os modos mais requisitados da indústria:
+    - `Screen`: Elimina fundos pretos instantaneamente (fogo, faíscas, luz, fumaça, partículas).
+    - `Multiply`: Elimina fundos brancos (texturas de papel, rascunhos, poeira escura).
+    - `Overlay`: Contraste cinematográfico com preservação de tons médios.
+    - `ColorDodge`: Brilho extremo de alta energia / reflexos cibernéticos e sci-fi.
+    - `SoftLight`: Iluminação difusa elegante e suave.
+    - `Difference`: Inversão criativa e psicodélica de cores.
+  - Renderizador Skia (`SkiaShading.cpp`) atualizado para mapear todos os modos diretamente para `SkBlendMode`.
+  - Shader OpenGL (`kBlendFragShader` em `GpuCompositor.cpp`) atualizado com as equações matemáticas precisas de cada modo de mesclagem.
+  - Correção de persistência no `Project.cpp` (salvando e restaurando `blendMode` no JSON) e ponte reativa C++/QML (`clipToMap` exportando `blendMode`).
+* **Interface de Mesclagem de Alta Produtividade (`BlendingInspector.qml`)**:
+  - Chips rápidos de 1 clique (*Normal*, *Screen*, *Multiply*, *Overlay*, *Color Dodge*, *Soft Light*).
+  - Seletor completo `ThemedComboBox` com 11 modos de mesclagem.
+  - Card explicativo em tempo real detalhando o uso ideal de cada modo ativo.
+  - Slider integrado de **Opacidade / Transparência (0% a 100%)** com suporte a keyframes e percentual visual direto no painel de mesclagem.
+* **Recorte de Silhueta com Brilho Neon (Neon Glow Outline)**:
+  - Método C++ `AppController::applyNeonGlowOutline(trackIndex, clipIndex, color)` integrando o pipeline neural SAM2/RVM ao shader procedural `edge_neon` e template `neon_cutout`.
+  - Card interativo em `MasksInspector.qml` com paleta de 5 cores luminosas (*Ciano Cyberpunk*, *Magenta Neon*, *Dourado Solar*, *Verde Matrix*, *Roxo*) para aplicar o contorno brilhante com 1 clique.
+
 ---
 
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
@@ -83,12 +104,12 @@
 O documento [`PROXIMOS_PASSOS.md`](file:///C:/Users/Alex/Documents/Antigravity/drift/PROXIMOS_PASSOS.md) detalha todo o ecossistema planejado:
 
 ### O Próximo Foco Imediato:
-* **PARTE 4: Camadas, Overlays & Modos de Mesclagem Pro (Blending Modes & Efeitos Visuais)**
-  - Modos de Mesclagem Nativos Skia: *Screen* (remove fundo preto de partículas e fogo), *Multiply* (remove fundo branco), *Overlay*, *Color Dodge*.
-  - Recorte com Brilho Neon (*Glow Outline / Neon Edge*) contornando a pessoa no vídeo via SAM2/RVM.
+* **PARTE 5: Legendas Dinâmicas Estilizadas Virais (Estilo Hormozi/MrBeast palavra por palavra)**
+  - Animação e destaque ativo palavra por palavra (*Word-by-word active highlight* com cor vibrante e escala pop).
+  - Presets virais de 1 clique (Hormozi Amarelo/Verde, MrBeast Pop, Clean White).
+  - Emojis automáticos e marcações de ênfase.
 
 ### Frentes Complementares Mapeadas:
-* **Parte 5**: Legendas Dinâmicas Estilizadas Virais (Estilo Hormozi/MrBeast palavra por palavra).
 * **Parte 6**: Recorte Inteligente de Fundo em 1-Clique (*Auto Cutout* de pessoa sem tela verde).
 * **Parte 7**: Detecção de Batidas e Cortes no Ritmo (*Auto-Beats / Snap to Beat* na timeline).
 * **Parte 8**: Rastreamento de Movimento (*Motion Tracking* via OpenCV).

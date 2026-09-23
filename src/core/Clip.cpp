@@ -87,24 +87,41 @@ QString blendModeToString(BlendMode mode)
         return QStringLiteral("darken");
     case BlendMode::Lighten:
         return QStringLiteral("lighten");
+    case BlendMode::ColorDodge:
+        return QStringLiteral("colorDodge");
+    case BlendMode::ColorBurn:
+        return QStringLiteral("colorBurn");
+    case BlendMode::SoftLight:
+        return QStringLiteral("softLight");
+    case BlendMode::Difference:
+        return QStringLiteral("difference");
     }
     return QStringLiteral("normal");
 }
 
 BlendMode blendModeFromString(const QString &mode)
 {
-    if (mode == QStringLiteral("multiply"))
+    const QString lower = mode.toLower();
+    if (lower == QStringLiteral("multiply"))
         return BlendMode::Multiply;
-    if (mode == QStringLiteral("screen"))
+    if (lower == QStringLiteral("screen"))
         return BlendMode::Screen;
-    if (mode == QStringLiteral("overlay"))
+    if (lower == QStringLiteral("overlay"))
         return BlendMode::Overlay;
-    if (mode == QStringLiteral("add"))
+    if (lower == QStringLiteral("add") || lower == QStringLiteral("plus"))
         return BlendMode::Add;
-    if (mode == QStringLiteral("darken"))
+    if (lower == QStringLiteral("darken"))
         return BlendMode::Darken;
-    if (mode == QStringLiteral("lighten"))
+    if (lower == QStringLiteral("lighten"))
         return BlendMode::Lighten;
+    if (lower == QStringLiteral("colordodge") || lower == QStringLiteral("dodge"))
+        return BlendMode::ColorDodge;
+    if (lower == QStringLiteral("colorburn") || lower == QStringLiteral("burn"))
+        return BlendMode::ColorBurn;
+    if (lower == QStringLiteral("softlight"))
+        return BlendMode::SoftLight;
+    if (lower == QStringLiteral("difference"))
+        return BlendMode::Difference;
     return BlendMode::Normal;
 }
 

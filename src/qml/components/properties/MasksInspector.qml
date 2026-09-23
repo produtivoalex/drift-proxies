@@ -191,5 +191,79 @@ Item {
                 }
             }
         }
+
+        // ----- Silhueta com Brilho Neon (Neon Glow Outline) ---------------------------
+        Rectangle {
+            id: neonCard
+            width: parent.width
+            radius: Theme.radiusMd
+            color: Theme.panelBackground
+            border.width: 1
+            border.color: Theme.panelBorder
+            height: neonCol.height + 20
+
+            property string selectedColor: "#00ffff"
+
+            Column {
+                id: neonCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 10
+                spacing: 8
+
+                Row {
+                    spacing: 6
+                    ThemedLabel {
+                        text: "✨"
+                        font.pixelSize: 13
+                    }
+                    ThemedLabel {
+                        text: qsTr("Silhueta com Brilho Neon (Glow Outline)")
+                        font.pixelSize: 12
+                        font.weight: Font.DemiBold
+                        color: Theme.accent
+                    }
+                }
+
+                Text {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    font.family: Theme.fontFamily
+                    font.pixelSize: 11
+                    color: Theme.mutedForeground
+                    text: qsTr("Traça um contorno luminoso cibernético e pulsante ao redor da pessoa ou objeto recortado.")
+                }
+
+                // Color picker chips
+                Row {
+                    spacing: 6
+                    Repeater {
+                        model: [
+                            { label: qsTr("Ciano"), color: "#00ffff" },
+                            { label: qsTr("Magenta"), color: "#ff007f" },
+                            { label: qsTr("Dourado"), color: "#ffaa00" },
+                            { label: qsTr("Verde"), color: "#00ff66" },
+                            { label: qsTr("Roxo"), color: "#aa00ff" }
+                        ]
+                        delegate: ThemedChip {
+                            required property var modelData
+                            text: modelData.label
+                            selected: neonCard.selectedColor === modelData.color
+                            onClicked: neonCard.selectedColor = modelData.color
+                        }
+                    }
+                }
+
+                ThemedButton {
+                    width: parent.width
+                    text: qsTr("Aplicar Borda Neon")
+                    variant: "primary"
+                    glyph: Theme.icons.sparkles
+                    onClicked: EditorState.applyNeonGlowOutline(
+                                   EditorState.selectedTrack, EditorState.selectedClip, neonCard.selectedColor)
+                }
+            }
+        }
     }
 }

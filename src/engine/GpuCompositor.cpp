@@ -87,7 +87,7 @@ uniform float u_hasMask;
 uniform float u_maskInvert;
 uniform float u_hasFgr;
 uniform float u_layerPremul;
-uniform int u_blendMode;      // 1 multiply, 2 screen, 3 overlay, 5 darken, 6 lighten
+uniform int u_blendMode;      // 1 multiply, 2 screen, 3 overlay, 5 darken, 6 lighten, 7 dodge, 8 burn, 9 softlight, 10 diff
 
 vec3 blendRgb(vec3 base, vec3 src) {
     if (u_blendMode == 1) return base * src;
@@ -99,6 +99,10 @@ vec3 blendRgb(vec3 base, vec3 src) {
     }
     if (u_blendMode == 5) return min(base, src);
     if (u_blendMode == 6) return max(base, src);
+    if (u_blendMode == 7) return min(vec3(1.0), base / max(vec3(1.0) - src, vec3(0.001)));
+    if (u_blendMode == 8) return max(vec3(0.0), vec3(1.0) - (vec3(1.0) - base) / max(src, vec3(0.001)));
+    if (u_blendMode == 9) return (vec3(1.0) - 2.0 * src) * base * base + 2.0 * src * base;
+    if (u_blendMode == 10) return abs(base - src);
     return src;
 }
 
@@ -191,6 +195,14 @@ int blendModeCode(drift::BlendMode mode)
         return 5;
     case drift::BlendMode::Lighten:
         return 6;
+    case drift::BlendMode::ColorDodge:
+        return 7;
+    case drift::BlendMode::ColorBurn:
+        return 8;
+    case drift::BlendMode::SoftLight:
+        return 9;
+    case drift::BlendMode::Difference:
+        return 10;
     case drift::BlendMode::Normal:
         break;
     }

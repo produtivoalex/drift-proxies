@@ -277,6 +277,7 @@ QJsonObject clipToJson(const Clip &clip)
         {QStringLiteral("animIn"), clipAnimationToJson(clip.animIn)},
         {QStringLiteral("animOut"), clipAnimationToJson(clip.animOut)},
         {QStringLiteral("animCombo"), clipAnimationToJson(clip.animCombo)},
+        {QStringLiteral("blendMode"), blendModeToString(clip.blendMode)},
         {QStringLiteral("timelineStartUs"), static_cast<double>(clip.timelineStart)},
         {QStringLiteral("timelineDurationUs"), static_cast<double>(clip.timelineDuration)},
         {QStringLiteral("srcInUs"), static_cast<double>(clip.srcIn)},
@@ -398,6 +399,8 @@ Clip clipFromJsonV2(const QJsonObject &object, int canvasW = 1920, int canvasH =
     clip.animOut = clipAnimationFromJson(object.value(QStringLiteral("animOut")).toObject());
     if (object.contains(QStringLiteral("animCombo")))
         clip.animCombo = clipAnimationFromJson(object.value(QStringLiteral("animCombo")).toObject());
+    if (object.contains(QStringLiteral("blendMode")))
+        clip.blendMode = blendModeFromString(object.value(QStringLiteral("blendMode")).toString());
     clip.timelineStart = static_cast<TimeUs>(object.value(QStringLiteral("timelineStartUs")).toDouble());
     clip.timelineDuration = static_cast<TimeUs>(object.value(QStringLiteral("timelineDurationUs")).toDouble());
     clip.srcIn = static_cast<TimeUs>(object.value(QStringLiteral("srcInUs")).toDouble());

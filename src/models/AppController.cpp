@@ -4082,6 +4082,7 @@ QVariantMap AppController::clipToMap(const drift::Clip &clip, const drift::Clip 
          }},
         {QStringLiteral("effects"), effects},
         {QStringLiteral("audioEffects"), audioEffects},
+        {QStringLiteral("blendMode"), drift::blendModeToString(clip.blendMode)},
         {QStringLiteral("keyframes"), keyframesToMap(clip)},
     };
     if (clip.type == drift::ClipType::Vector)
@@ -17195,6 +17196,37 @@ void AppController::applyEffectTemplate(int trackIndex, int clipIndex, const QSt
 
     m_pendingEffectTemplate.reset();
     applyEffectTemplateInternal(trackIndex, clipIndex, *entry);
+}
+
+void AppController::applyNeonGlowOutline(int trackIndex, int clipIndex, const QString &color)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return;
+    const drift::Track &track = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return;
+
+    const drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Video && clip.type != drift::ClipType::Image)
+        return;
+
+    if (effectTemplateForId(QStringLiteral("neon_cutout"))) {
+        applyEffectTemplate(trackIndex, clipIndex, QStringLiteral("neon_cutout"));
+        return;
+    }
+
+    addEffect(trackIndex, clipIndex, QStringLiteral("edge_neon"));
+    if (trackIndex >= 0 && trackIndex < m_project.tracks().size()
+        && clipIndex >= 0 && clipIndex < m_project.tracks().at(trackIndex).clips.size()) {
+        const int newEffectIndex = m_project.tracks().at(trackIndex).clips.at(clipIndex).effects.size() - 1;
+        if (newEffectIndex >= 0) {
+            setEffectParam(trackIndex, clipIndex, newEffectIndex, QStringLiteral("intensity"), 1.2);
+            setEffectParam(trackIndex, clipIndex, newEffectIndex, QStringLiteral("radius"), 6.0);
+            setEffectParam(trackIndex, clipIndex, newEffectIndex, QStringLiteral("threshold"), 0.2);
+            if (!color.isEmpty())
+                setEffectColorParam(trackIndex, clipIndex, newEffectIndex, QStringLiteral("color"), color);
+        }
+    }
 }
 
 void AppController::removeEffect(int trackIndex, int clipIndex, int effectIndex)

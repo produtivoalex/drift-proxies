@@ -1422,6 +1422,7 @@ public:
     Q_INVOKABLE QVariantList effectTemplateCategories() const;
     Q_INVOKABLE void addEffect(int trackIndex, int clipIndex, const QString &effectId);
     Q_INVOKABLE void applyEffectTemplate(int trackIndex, int clipIndex, const QString &templateId);
+    Q_INVOKABLE void applyNeonGlowOutline(int trackIndex, int clipIndex, const QString &color = QStringLiteral("#00ffff"));
     Q_INVOKABLE void removeEffect(int trackIndex, int clipIndex, int effectIndex);
     Q_INVOKABLE void setEffectEnabled(int trackIndex, int clipIndex, int effectIndex, bool enabled);
     Q_INVOKABLE void moveEffect(int trackIndex, int clipIndex, int fromIndex, int toIndex);
