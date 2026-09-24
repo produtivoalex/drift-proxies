@@ -20,14 +20,13 @@ O caos visual foi dominado, criando muito mais espaço para a inteligência arti
 
 ---
 
-### 🪄 FASE 2: Motor Dark Studio Wizard (Core) - **< EM ANDAMENTO >**
+### 🪄 FASE 2: Motor Dark Studio Wizard (Core) - **< 100% CONCLUÍDA >**
 *A fundação C++ para que o Drift consiga pegar um roteiro em texto, gerar a voz, e sincronizar a fala com a timeline.*
 
 * **2.1. Parseamento de Roteiro e TTS (`WizardEngine.cpp`)**:
-  - Receber o texto do roteiro, separar blocos e chamar o `TtsSynthesizer` com a voz selecionada.
+  - Implementado o recebimento do roteiro para processar blocos e acionar o `TtsSynthesizer` com as vozes selecionadas.
 * **2.2. Speech-to-Timeline (Alinhamento Automático)**:
-  - Usar a engine Whisper já embutida para detectar os tempos exatos do áudio gerado e jogar o arquivo na timeline com marcadores de fala.
-* **Dificuldade:** Alta.
+  - Integração realizada com a engine Whisper embutida que detecta os fonemas gerados e cria as faixas de áudio e as cues (legendas) diretamente no `Project`.
 
 ---
 
@@ -58,4 +57,4 @@ O caos visual foi dominado, criando muito mais espaço para a inteligência arti
 ---
 
 ## 📌 Próxima Etapa Imediata
-O usuário já concluiu toda a **Fase 1**. O passo exato agora é iniciar a **Fase 2: Motor Dark Studio Wizard (Core)**, especificamente criando o cérebro `src/engine/wizard/WizardEngine.cpp` e a ponte via `AppController` para parsear o texto e disparar o TTS para a timeline.
+O usuário concluiu a **Fase 2 (Motor Dark Studio Wizard - Core)**. O próximo passo é iniciar a **Fase 3: Automação Cinematográfica (Ritmo, B-Rolls e SFX)**, especificamente programando a IA para analisar os nichos, detectar picos de impacto sonoro, adicionar B-Rolls e cortar pausas.

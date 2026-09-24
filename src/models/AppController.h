@@ -18,6 +18,7 @@
 #include "TimelineModel.h"
 #include "models/AssetLibrary.h"
 #include "models/BinFolderListModel.h"
+#include "engine/wizard/WizardEngine.h"
 
 #include <QAtomicInt>
 #include <QCursor>
@@ -382,6 +383,10 @@ class AppController : public QObject
     // False until the user picks a launch layout (or decides later via first-clip setup / load).
     Q_PROPERTY(bool projectLayoutChosen READ projectLayoutChosen NOTIFY projectLayoutChosenChanged)
 
+    Q_PROPERTY(bool wizardRunning READ wizardRunning NOTIFY wizardRunningChanged)
+    Q_PROPERTY(double wizardProgress READ wizardProgress NOTIFY wizardProgressChanged)
+    Q_PROPERTY(QString wizardStatus READ wizardStatus NOTIFY wizardStatusChanged)
+
 public:
     explicit AppController(AssetLibrary *assetLibrary, QObject *parent = nullptr);
     ~AppController() override;
@@ -599,6 +604,12 @@ public:
     Q_INVOKABLE QVariantMap debugInfo() const;
     Q_INVOKABLE QString debugInfoText() const;
     Q_INVOKABLE void copyDebugInfo();
+
+    Q_INVOKABLE void runWizard(const QString &script, const QString &vibe, const QString &voiceId);
+    Q_INVOKABLE void cancelWizard();
+    bool wizardRunning() const { return m_wizardRunning; }
+    double wizardProgress() const { return m_wizardProgress; }
+    QString wizardStatus() const { return m_wizardStatus; }
 
     // Playback diagnostics. The environment and counter half is cheap enough to call whenever
     // the dialog opens; the benchmark decodes for a couple of seconds and so runs off the GUI
@@ -2032,6 +2043,10 @@ signals:
     void saveAsRequested();
     void openPasteAttributesRequested();
 
+    void wizardRunningChanged();
+    void wizardProgressChanged();
+    void wizardStatusChanged();
+
 protected:
     // Every path that changes the timeline model goes through this instead of a bare
     // `emit tracksChanged()`. The cache has to be dropped *before* the signal goes out: whether
@@ -2445,6 +2460,10 @@ protected:
     double m_subtitleGenProgress = 0.0;
     QString m_subtitleGenStatus;
     QAtomicInt m_subtitleGenCancel = 0;
+    bool m_wizardRunning = false;
+    double m_wizardProgress = 0.0;
+    QString m_wizardStatus;
+    drift::WizardEngine *m_wizardEngine = nullptr;
     bool m_segmenting = false;
     double m_segmentProgress = 0.0;
     QString m_segmentStatus;

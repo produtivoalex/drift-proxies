@@ -27615,3 +27615,45 @@ bool AppController::exportUserTextAnimationPreset(const QString &presetId, const
     file.write(QJsonDocument(json).toJson(QJsonDocument::Indented));
     return true;
 }
+
+void AppController::runWizard(const QString &script, const QString &vibe, const QString &voiceId)
+{
+    if (m_wizardRunning) return;
+
+    if (!m_wizardEngine) {
+        m_wizardEngine = new drift::WizardEngine(this);
+        connect(m_wizardEngine, &drift::WizardEngine::progressChanged, this, [this](double fraction, const QString &status) {
+            m_wizardProgress = fraction;
+            m_wizardStatus = status;
+            emit wizardProgressChanged();
+            emit wizardStatusChanged();
+        });
+        connect(m_wizardEngine, &drift::WizardEngine::finished, this, [this](bool success, const QString &error) {
+            m_wizardRunning = false;
+            emit wizardRunningChanged();
+            if (!success) {
+                setLastMessage(error, QStringLiteral("error"));
+            } else {
+                setLastMessage(tr("Wizard completado com sucesso!"), QStringLiteral("success"));
+            }
+            notifyTracksChanged();
+        });
+    }
+
+    m_wizardRunning = true;
+    m_wizardProgress = 0.0;
+    m_wizardStatus = tr("Iniciando Dark Studio Wizard...");
+    emit wizardRunningChanged();
+    emit wizardProgressChanged();
+    emit wizardStatusChanged();
+
+    // Call engine
+    m_wizardEngine->generateTimeline(script, vibe, voiceId, &m_project);
+}
+
+void AppController::cancelWizard()
+{
+    if (m_wizardEngine && m_wizardRunning) {
+        m_wizardEngine->cancel();
+    }
+}

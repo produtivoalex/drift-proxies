@@ -223,6 +223,19 @@
   - Botões de 1-Clique na barra principal (Shorts, Legendas, WebDoc, Podcast, Clássico).
   - Controle centralizado no `EditorState` que ajusta automaticamente a UI, proporções (9:16 vs 16:9) e painéis conforme o tipo de conteúdo em produção.
 
+### 12. PLANO MESTRE - Fase 2: Motor Dark Studio Wizard (Core) (100% Concluída)
+* **Estrutura C++ (`WizardEngine.h` / `WizardEngine.cpp`)**:
+  - Cérebro central assíncrono para automatizar a criação de timelines via IA e roteiros.
+  - Processamento em background rodando fora da thread principal para manter a UI responsiva.
+* **Integração Text-to-Speech (`TtsSynthesizer`)**:
+  - O Wizard recebe o roteiro, processa a síntese usando a voz premium selecionada e salva o áudio temporariamente.
+* **Alinhamento Forçado via Whisper (`WhisperTranscriber`)**:
+  - Decodificação iterativa do áudio gerado pelo TTS usando `ClipReaderPool`.
+  - Passagem do áudio para Whisper transcrever e gerar as cues (legendas) sincronizadas fonema a fonema.
+* **Ponte com o Projeto e Interface (`AppController`)**:
+  - Injeção inteligente no objeto `Project` inserindo as tracks de áudio e de legendas dinamicamente.
+  - Sinais nativos (`wizardRunning`, `wizardProgress`, `wizardStatus`) para exibir o estado na interface em tempo real.
+
 ---
 
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
