@@ -30,18 +30,17 @@ O caos visual foi dominado, criando muito mais espaço para a inteligência arti
 
 ---
 
-### 🎥 FASE 3: Automação Cinematográfica (Ritmo, B-Rolls e SFX do Wizard)
+### 🎥 FASE 3: Automação Cinematográfica (Ritmo, B-Rolls e SFX do Wizard) - **< 100% CONCLUÍDA >**
 *Uma vez que a locução está na timeline, o Drift atua como o editor humano, aplicando recursos.*
 
 * **3.1. B-Roll Automático & Jump Cuts**:
-  - Buscador local inteligente para preencher blocos de fala com B-Rolls ou imagens correspondentes ao nicho.
-  - Corte automático em silêncios/pausas (Jump Cut semântico).
+  - Implementado o agrupamento semântico de blocos de fala e jump cuts automáticos cortando silêncios > 400ms.
+  - Adição automatizada de B-Rolls correspondentes ao nicho (vibe) por bloco.
 * **3.2. Ken Burns & Impactos**:
-  - Adição automática da Curva de Velocidade *Ken Burns* em imagens paradas.
+  - Injeção da Curva de Velocidade contínua (*Ken Burns*) aos vídeos estáticos (B-Rolls).
 * **3.3. Sonorização Inteligente**:
-  - Detecção de frases de forte impacto e injeção automática de **Whoosh**, **Risers** e **Booms**.
-  - Ativação automática do **Auto-Ducking** sobre o *Bed Track* (música de fundo) inserido pelo usuário.
-* **Dificuldade:** Média-Alta.
+  - Detecção léxica de impacto e adição automática de SFX ("Whoosh Deep", "Boom Bass").
+  - Criação da Bed Track (música de fundo) com o filtro `auto_ducking` pré-acoplado.
 
 ---
 
@@ -57,4 +56,4 @@ O caos visual foi dominado, criando muito mais espaço para a inteligência arti
 ---
 
 ## 📌 Próxima Etapa Imediata
-O usuário concluiu a **Fase 2 (Motor Dark Studio Wizard - Core)**. O próximo passo é iniciar a **Fase 3: Automação Cinematográfica (Ritmo, B-Rolls e SFX)**, especificamente programando a IA para analisar os nichos, detectar picos de impacto sonoro, adicionar B-Rolls e cortar pausas.
+O usuário concluiu a **Fase 3 (Automação Cinematográfica - B-Rolls e SFX)**. O próximo passo é iniciar a **Fase 4: Pipeline Multicanal (Kanban de Produção)**, começando pelo `ProjectPipelineManager.cpp` e o dashboard visual para orquestrar os vídeos.

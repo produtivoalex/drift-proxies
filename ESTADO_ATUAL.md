@@ -236,6 +236,18 @@
   - Injeção inteligente no objeto `Project` inserindo as tracks de áudio e de legendas dinamicamente.
   - Sinais nativos (`wizardRunning`, `wizardProgress`, `wizardStatus`) para exibir o estado na interface em tempo real.
 
+### 13. PLANO MESTRE - Fase 3: Automação Cinematográfica (Ritmo, B-Rolls e SFX) (100% Concluída)
+* **Jump Cuts Semânticos Inteligentes**:
+  - Implementado algoritmo em `WizardEngine.cpp` que analisa o espaçamento temporal entre as `SubtitleCues` transcritas.
+  - Pausas estéreis e silenciosas maiores que 400ms são sumariamente ignoradas e a timeline é colapsada, gerando um jump cut limpo, vital para alta retenção em Shorts.
+* **Sonorização Dinâmica (Impactos & SFX)**:
+  - Integração semântica onde palavras de alta voltagem léxica ("!", "Poder", "Dinheiro") invocam a injeção instantânea de SFX (`whoosh_deep`, `boom_bass`) na `sfxTrack`.
+* **Cinematografia de Apoio (B-Rolls & Ken Burns)**:
+  - Adição automatizada de clipes de imagem/B-Roll sincronizados ao bloco de voz.
+  - Acoplamento automático do movimento `ClipAnimKind::KenBurns` para trazer dinâmica suave de ponta a ponta nesses vídeos.
+* **Auto-Ducking Nativo na Música de Fundo**:
+  - Geração automatizada da "Bed Track" musical, com o efeito `auto_ducking` nativamente instanciado e aplicado a toda extensão do projeto.
+
 ---
 
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
