@@ -270,7 +270,7 @@ void AvatarRenderer::exportFrameSequence(const QString &audioPath,
     QDir().mkpath(outputDir);
     emit exportProgress(0.05);
 
-    QtConcurrent::run([this, outputDir, width, height, fps]() {
+    (void)QtConcurrent::run([this, outputDir, width, height, fps]() {
         const int totalFrames = m_keyframes.size();
         for (int i = 0; i < totalFrames; ++i) {
             const double t = m_keyframes[i].timestampSec;

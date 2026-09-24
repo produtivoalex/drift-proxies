@@ -693,6 +693,9 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
         const bool isFemale = targetVoice.contains(QStringLiteral("Thalita"), Qt::CaseInsensitive)
                            || targetVoice.contains(QStringLiteral("Francisca"), Qt::CaseInsensitive)
                            || targetVoice.contains(QStringLiteral("Ava"), Qt::CaseInsensitive);
+        QString escapedCleanText = cleanText;
+        escapedCleanText.replace(QLatin1Char('\''), QStringLiteral("''"));
+
         QString fallbackPs = QStringLiteral(
             "$ErrorActionPreference = 'SilentlyContinue'; "
             "Add-Type -AssemblyName System.Speech; "
@@ -704,7 +707,7 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
             "$s.Dispose();"
         ).arg(isFemale ? QStringLiteral("$true") : QStringLiteral("$false"))
          .arg(QDir::toNativeSeparators(fallbackWav))
-         .arg(cleanText.replace(QLatin1Char('\''), QStringLiteral("''")));
+         .arg(escapedCleanText);
 
         QProcess fallbackProc;
         fallbackProc.start(QStringLiteral("powershell.exe"), {QStringLiteral("-NoProfile"), QStringLiteral("-NonInteractive"), QStringLiteral("-Command"), fallbackPs});

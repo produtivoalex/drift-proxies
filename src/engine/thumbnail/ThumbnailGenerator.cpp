@@ -74,7 +74,7 @@ void ThumbnailGenerator::generateVariants(const QString &videoPath,
     emit progressChanged(0.1, tr("Localizando momentos de maior impacto..."));
 
     // Executar em segundo plano
-    QtConcurrent::run([this, videoPath, title, subtitle, isPortrait]() {
+    (void)QtConcurrent::run([this, videoPath, title, subtitle, isPortrait]() {
         // Criar diretório de saída
         const QString outDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) +
                                QStringLiteral("/thumbnails");
