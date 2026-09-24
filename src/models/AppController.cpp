@@ -28049,20 +28049,20 @@ void AppController::applyAutoReframe(int trackIndex, int clipIndex,
     const double scaledH = targetH;
     const double scaledW = targetH * sourceAspect; // ex: 3413.33px para 1080x1920
 
-    clip.transformW.clear();
-    clip.transformW.setDefaultValue(scaledW);
+    clip.transformW = {};
+    clip.transformW.setKeyframe(0, scaledW);
 
-    clip.transformH.clear();
-    clip.transformH.setDefaultValue(scaledH);
+    clip.transformH = {};
+    clip.transformH.setKeyframe(0, scaledH);
 
-    clip.transformY.clear();
-    clip.transformY.setDefaultValue(0.0);
+    clip.transformY = {};
+    clip.transformY.setKeyframe(0, 0.0);
 
     const double minX = targetW - scaledW;
     const double maxX = 0.0;
     double currentX = (targetW - scaledW) / 2.0;
 
-    clip.transformX.clear();
+    clip.transformX = {};
 
     emit autoReframeProgress(0.3, tr("Analisando tracking facial e gerando keyframes..."));
 
@@ -28092,7 +28092,7 @@ void AppController::applyAutoReframe(int trackIndex, int clipIndex,
 
     if (!trackedFaces) {
         // Enquadramento centralizado estável
-        clip.transformX.setDefaultValue((targetW - scaledW) / 2.0);
+        clip.transformX.setKeyframe(0, (targetW - scaledW) / 2.0);
     }
 
     notifyTracksChanged();
@@ -28107,10 +28107,10 @@ void AppController::removeAutoReframe(int trackIndex, int clipIndex)
     if (!isValidClipIndex(trackIndex, clipIndex)) return;
     drift::Clip &clip = m_project.tracks()[trackIndex].clips[clipIndex];
 
-    clip.transformX.clear();
-    clip.transformY.clear();
-    clip.transformW.clear();
-    clip.transformH.clear();
+    clip.transformX = {};
+    clip.transformY = {};
+    clip.transformW = {};
+    clip.transformH = {};
 
     notifyTracksChanged();
     emit autoReframeFinished(trackIndex, clipIndex, true);
@@ -28121,6 +28121,6 @@ bool AppController::hasAutoReframe(int trackIndex, int clipIndex) const
 {
     if (!isValidClipIndex(trackIndex, clipIndex)) return false;
     const drift::Clip &clip = m_project.tracks().at(trackIndex).clips.at(clipIndex);
-    return clip.transformX.keyframeCount() > 0 ||
-           (clip.transformW.hasDefaultValue() && clip.transformW.defaultValue() > 1920.0);
+    return clip.transformX.keyframes().size() > 1 ||
+           (!clip.transformW.isEmpty() && clip.transformW.evaluateAt(0) > 1920.0);
 }
