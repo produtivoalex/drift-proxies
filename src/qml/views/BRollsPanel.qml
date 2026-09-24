@@ -100,7 +100,9 @@ Item {
             border.color: "#d97706"; border.width: 1
             Behavior on height { NumberAnimation { duration: 200 } }
             ColumnLayout {
-                anchors { fill: parent; margins: 10 }; spacing: 4
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 4
                 Text {
                     text: "🔑 Cole sua API Key do Pexels (gratuita)"
                     font { pixelSize: 12; weight: Font.Medium; family: "Inter" }
@@ -123,7 +125,7 @@ Item {
                     Rectangle {
                         height: 28; radius: 6; width: 60
                         color: "#0369a1"
-                        Text { anchors.centerIn: parent; text: "Salvar"; font { pixelSize: 12; family: "Inter" }; color: "#fff" }
+                        Text { anchors.centerIn: parent; text: "Salvar"; font.pixelSize: 12; font.family: "Inter"; color: "#fff" }
                         MouseArea {
                             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                             onClicked: { app.configurePexelsApiKey(keyField.text.trim()); keyField.text = "" }
@@ -224,11 +226,16 @@ Item {
                 Layout.fillWidth: true
                 Text {
                     text: app.brollFetchStatus
-                    font { pixelSize: 11; family: "Inter" }; color: "#64748b"
+                    font.pixelSize: 11
+                    font.family: "Inter"
+                    color: "#64748b"
                 }
                 Item { Layout.fillWidth: true }
                 Text {
-                    text: "Cancelar"; font { pixelSize: 11; family: "Inter" }; color: "#f87171"
+                    text: "Cancelar"
+                    font.pixelSize: 11
+                    font.family: "Inter"
+                    color: "#f87171"
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: app.cancelBRollFetch() }
                 }
             }
@@ -257,12 +264,14 @@ Item {
                     }
                 }
                 CheckBox { id: portraitToggle; visible: false }
-                Text { text: "Modo 9:16 (Shorts)"; font { pixelSize: 11; family: "Inter" }; color: "#6b7280" }
+                Text { text: "Modo 9:16 (Shorts)"; font.pixelSize: 11; font.family: "Inter"; color: "#6b7280" }
             }
             Item { Layout.fillWidth: true }
             Text {
                 text: "🗑 Limpar cache"
-                font { pixelSize: 11; family: "Inter" }; color: "#374151"
+                font.pixelSize: 11
+                font.family: "Inter"
+                color: "#374151"
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: app.pruneBRollCache() }
             }
         }
@@ -280,11 +289,15 @@ Item {
                 Text { anchors.horizontalCenter: parent.horizontalCenter; text: "🎬"; font.pixelSize: 36 }
                 Text {
                     text: "Seus B-Rolls aparecerão aqui"
-                    font { pixelSize: 13; family: "Inter" }; color: "#374151"
+                    font.pixelSize: 13
+                    font.family: "Inter"
+                    color: "#374151"
                 }
                 Text {
                     text: "Use o roteiro ou busque acima"
-                    font { pixelSize: 11; family: "Inter" }; color: "#1f2937"
+                    font.pixelSize: 11
+                    font.family: "Inter"
+                    color: "#1f2937"
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
             }
@@ -351,7 +364,9 @@ Item {
                                 Text {
                                     id: durBadge; anchors.centerIn: parent
                                     text: modelData.durationSec + "s"
-                                    font { pixelSize: 9; family: "Inter" }; color: "#f1f5f9"
+                                    font.pixelSize: 9
+                                    font.family: "Inter"
+                                    color: "#f1f5f9"
                                 }
                             }
                         }
@@ -363,7 +378,9 @@ Item {
                             Text {
                                 Layout.fillWidth: true
                                 text: modelData.query
-                                font { pixelSize: 10; family: "Inter" }; color: "#9ca3af"
+                                font.pixelSize: 10
+                                font.family: "Inter"
+                                color: "#9ca3af"
                                 elide: Text.ElideRight
                             }
                             // Insert to timeline button
@@ -371,7 +388,7 @@ Item {
                                 height: 22; radius: 11; width: 22
                                 color: insertArea.containsMouse ? "#0ea5e9" : "#0c1a2e"
                                 Behavior on color { ColorAnimation { duration: 100 } }
-                                Text { anchors.centerIn: parent; text: "+"; font { pixelSize: 14; weight: Font.Bold }; color: "#fff" }
+                                Text { anchors.centerIn: parent; text: "+"; font.pixelSize: 14; font.bold: true; color: "#fff" }
                                 MouseArea {
                                     id: insertArea; anchors.fill: parent; hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor

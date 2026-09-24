@@ -162,7 +162,7 @@ Item {
             RowLayout {
                 spacing: 8
                 visible: root.hasKey
-                Text { text: "Provedor:"; font { pixelSize: 12; family: "Inter" }; color: "#6b7280" }
+                Text { text: "Provedor:"; font.pixelSize: 12; font.family: "Inter"; color: "#6b7280" }
                 Rectangle {
                     height: 22; radius: 11
                     width: providerLabel.implicitWidth + 20
@@ -321,8 +321,10 @@ Item {
                 Layout.fillWidth: true; height: hookText.implicitHeight + 24
                 color: "#0f0a1e"; radius: 8; border.color: "#7c3aed"; border.width: 1
                 ColumnLayout {
-                    anchors { fill: parent; margins: 12 }; spacing: 4
-                    Text { text: "🎣 GANCHO"; font { pixelSize: 10; weight: Font.Bold; family: "Inter" }; color: "#7c3aed" }
+                    anchors.fill: parent
+                    anchors.margins: 12
+                    spacing: 4
+                    Text { text: "🎣 GANCHO"; font.pixelSize: 10; font.weight: Font.Bold; font.family: "Inter"; color: "#7c3aed" }
                     Text {
                         id: hookText
                         text: app.lastScriptHook
@@ -335,7 +337,7 @@ Item {
             }
 
             // Full script scrollable
-            Text { text: "ROTEIRO COMPLETO"; font { pixelSize: 10; weight: Font.Bold; family: "Inter" }; color: "#4b5563" }
+            Text { text: "ROTEIRO COMPLETO"; font.pixelSize: 10; font.weight: Font.Bold; font.family: "Inter"; color: "#4b5563" }
             Rectangle {
                 Layout.fillWidth: true; height: 200; color: "#0a0a12"; radius: 8
                 border.color: "#1f1f2e"; border.width: 1
@@ -368,7 +370,7 @@ Item {
             RowLayout {
                 visible: app.lastScriptBrollHints.length > 0
                 Layout.fillWidth: true; spacing: 6
-                Text { text: "B-Roll:"; font { pixelSize: 11; family: "Inter" }; color: "#4b5563" }
+                Text { text: "B-Roll:"; font.pixelSize: 11; font.family: "Inter"; color: "#4b5563" }
                 Flow {
                     Layout.fillWidth: true; spacing: 4
                     Repeater {
@@ -378,7 +380,7 @@ Item {
                             color: "#0f1a0f"; border.color: "#166534"; border.width: 1
                             Text {
                                 id: tagLabel; anchors.centerIn: parent
-                                text: modelData; font { pixelSize: 10; family: "Inter" }; color: "#4ade80"
+                                text: modelData; font.pixelSize: 10; font.family: "Inter"; color: "#4ade80"
                             }
                         }
                     }
@@ -393,7 +395,10 @@ Item {
                 border.color: "#0ea5e9"; border.width: 1
                 Behavior on color { ColorAnimation { duration: 120 } }
                 RowLayout {
-                    anchors { fill: parent; leftMargin: 12; rightMargin: 12 }; spacing: 8
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    spacing: 8
                     Text { text: "🎬"; font.pixelSize: 14 }
                     Text {
                         text: "Buscar B-Rolls Automáticos (" + app.lastScriptBrollHints.length + " cenas)"
@@ -404,12 +409,16 @@ Item {
                     Text {
                         visible: app.brollFetching
                         text: Math.round(app.brollFetchProgress * 100) + "%"
-                        font { pixelSize: 11; family: "Inter" }; color: "#0ea5e9"
+                        font.pixelSize: 11
+                        font.family: "Inter"
+                        color: "#0ea5e9"
                     }
                     Text {
                         visible: !app.brollFetching && app.brollReadyCount > 0
                         text: "✓ " + app.brollReadyCount + " prontos"
-                        font { pixelSize: 11; family: "Inter" }; color: "#4ade80"
+                        font.pixelSize: 11
+                        font.family: "Inter"
+                        color: "#4ade80"
                     }
                 }
                 MouseArea {
@@ -443,7 +452,9 @@ Item {
                     Text {
                         visible: app.dubbingActive
                         text: Math.round(app.dubbingProgress * 100) + "%"
-                        font { pixelSize: 11; family: "Inter" }; color: "#06b6d4"
+                        font.pixelSize: 11
+                        font.family: "Inter"
+                        color: "#06b6d4"
                     }
                 }
                 MouseArea {
