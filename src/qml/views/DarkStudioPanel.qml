@@ -654,15 +654,18 @@ Item {
         signal clicked
         implicitHeight: 42; radius: 8
         opacity: btn.enabled ? 1.0 : 0.45
-        gradient: accent ? Gradient {
-            orientation: Gradient.Horizontal
-            GradientStop { position: 0.0; color: "#7c3aed" }
-            GradientStop { position: 1.0; color: "#c026d3" }
-        } : null
+        gradient: accent ? accentGrad : null
         color: accent ? "transparent" : "#141420"
         border.color: accent ? "transparent" : "#1f1f2e"; border.width: 1
         scale: ma.pressed && btn.enabled ? 0.97 : 1.0
         Behavior on scale { NumberAnimation { duration: 80 } }
+
+        Gradient {
+            id: accentGrad
+            orientation: Gradient.Horizontal
+            GradientStop { position: 0.0; color: "#7c3aed" }
+            GradientStop { position: 1.0; color: "#c026d3" }
+        }
         Text {
             anchors.centerIn: parent
             text: btn.text
