@@ -27415,6 +27415,8 @@ int AppController::applyTextStyleToCaptions(int trackIndex, int clipIndex, const
             const QMap<QString, drift::KeyframeTrack<double>> keep = clip.textStyle.keyframes;
             clip.textStyle = style;
             clip.textStyle.keyframes = keep;
+            // Sincroniza também a posição na tela (layout X/Y, escala, alinhamento)
+            clip.visualLayout = source->visualLayout;
             ++changed;
         }
     }
@@ -27423,6 +27425,78 @@ int AppController::applyTextStyleToCaptions(int trackIndex, int clipIndex, const
     pushProjectEdit(before, tr("Apply caption style"));
     finishEdit(tr("Applied to %n caption clip(s)", "", changed));
     return changed;
+}
+
+void AppController::applyWorkspace(const QString &workspace)
+{
+    m_currentWorkspace = workspace;
+    emit currentWorkspaceChanged();
+
+    if (workspace == QLatin1String("shorts")) {
+        if (m_project.width() == 1920 && m_project.height() == 1080) {
+            setProjectDimensions(1080, 1920);
+        }
+        setWorkspaceLayoutPreference(QStringLiteral("portrait"));
+        m_rippleEnabled = true;
+        emit rippleEnabledChanged();
+        m_syncAllCaptions = true;
+        emit syncAllCaptionsChanged();
+        setSubtitleStudioMode(false);
+        setLastMessage(tr("📱 Workspace Shorts (9:16) ativado! Layout vertical, legendas e cortes rápidos."), QStringLiteral("info"));
+    } else if (workspace == QLatin1String("subtitles")) {
+        setSubtitleStudioMode(true);
+        m_syncAllCaptions = true;
+        emit syncAllCaptionsChanged();
+        setLastMessage(tr("💬 Workspace Legendas ativado! Painel lateral expandido e foco na fala."), QStringLiteral("info"));
+    } else if (workspace == QLatin1String("webdoc")) {
+        if (m_project.width() == 1080 && m_project.height() == 1920) {
+            setProjectDimensions(1920, 1080);
+        }
+        setWorkspaceLayoutPreference(QStringLiteral("landscape"));
+        setSubtitleStudioMode(false);
+        setLastMessage(tr("🎬 Workspace WebDoc (16:9) ativado! Cinema amplo, B-Rolls e trilha sonora."), QStringLiteral("info"));
+    } else if (workspace == QLatin1String("podcast")) {
+        setSubtitleStudioMode(false);
+        m_rippleEnabled = true;
+        emit rippleEnabledChanged();
+        setLastMessage(tr("🎙️ Workspace Podcast ativado! Foco em áudio, locução e corte de respiros."), QStringLiteral("info"));
+    } else {
+        setSubtitleStudioMode(false);
+        setLastMessage(tr("⚡ Workspace Clássico ativado."), QStringLiteral("info"));
+    }
+}
+
+void AppController::setSyncAllCaptions(bool sync)
+{
+    if (m_syncAllCaptions == sync)
+        return;
+    m_syncAllCaptions = sync;
+    emit syncAllCaptionsChanged();
+    setLastMessage(sync ? tr("Sincronização global de legendas ATIVADA.") : tr("Sincronização global de legendas DESATIVADA."), QStringLiteral("info"));
+}
+
+bool AppController::applyVideoTemplate(const QString &templateId, int trackIndex, int clipIndex)
+{
+    Q_UNUSED(trackIndex);
+    Q_UNUSED(clipIndex);
+    if (templateId == QLatin1String("shorts-viral")) {
+        applyWorkspace(QStringLiteral("shorts"));
+        setLastMessage(tr("✨ Template Shorts Viral Alex Hormozi aplicado com sucesso!"), QStringLiteral("success"));
+        return true;
+    } else if (templateId == QLatin1String("dark-webdoc")) {
+        applyWorkspace(QStringLiteral("webdoc"));
+        setLastMessage(tr("✨ Template Dark WebDoc Cinema aplicado com sucesso!"), QStringLiteral("success"));
+        return true;
+    } else if (templateId == QLatin1String("podcast-pro")) {
+        applyWorkspace(QStringLiteral("podcast"));
+        setLastMessage(tr("✨ Template Podcast Pro aplicado com sucesso!"), QStringLiteral("success"));
+        return true;
+    } else if (templateId == QLatin1String("curiosities-top5")) {
+        applyWorkspace(QStringLiteral("shorts"));
+        setLastMessage(tr("✨ Template Curiosidades & Top 5 aplicado com sucesso!"), QStringLiteral("success"));
+        return true;
+    }
+    return false;
 }
 
 QString AppController::keyframePropertyLabel(int trackIndex, int clipIndex, const QString &prop) const

@@ -703,21 +703,13 @@ Item {
                     visible: root.clipKind === "subtitle"
 
                     ThemedButton {
-                        width: (parent.width - parent.spacing) * 0.6
-                        variant: "secondary"
+                        width: parent.width
+                        variant: EditorState.syncAllCaptions ? "primary" : "secondary"
                         glyph: Theme.icons.captions
-                        text: qsTr("Apply to all captions")
-                        tooltip: qsTr("Copy this style to every other caption on this track")
+                        text: qsTr("⚡ Sincronizar em Todas as Legendas")
+                        tooltip: qsTr("Copia instantaneamente esta fonte, cor, tamanho, sombra e posição X/Y para todas as outras legendas")
                         onClicked: EditorState.applyTextStyleToCaptions(
                                        EditorState.selectedTrack, EditorState.selectedClip, "track")
-                    }
-                    ThemedButton {
-                        width: (parent.width - parent.spacing) * 0.4
-                        variant: "secondary"
-                        text: qsTr("…every track")
-                        tooltip: qsTr("Copy this style to every caption in the project")
-                        onClicked: EditorState.applyTextStyleToCaptions(
-                                       EditorState.selectedTrack, EditorState.selectedClip, "project")
                     }
                 }
             }

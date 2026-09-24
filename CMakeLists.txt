@@ -1023,6 +1023,7 @@ qt_add_qml_module(drift
         src/qml/components/assets/ShapesTab.qml
         src/qml/components/assets/MasksTab.qml
         src/qml/components/assets/BackgroundsTab.qml
+        src/qml/components/assets/TemplatesTab.qml
         src/qml/components/assets/SoundsTab.qml
         src/qml/components/assets/ShortcutsTab.qml
         src/qml/components/assets/MediaAssetsTab.qml

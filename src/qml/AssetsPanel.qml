@@ -577,57 +577,37 @@ PanelFrame {
     // ListElement only accepts literal values; qsTr() calls are not
     // evaluated. Labels are translated via tabLabels below.
     property var tabLabels: ({
-        "media": qsTr("Media"),
-        "market": qsTr("Market"),
-        "text": qsTr("Text"),
-        "subtitles": qsTr("Subtitles"),
-        "stickers": qsTr("Stickers"),
-        "shapes": qsTr("Shapes"),
-        "scenes": qsTr("Scenes"),
-        "masks": qsTr("Masks"),
-        "backgrounds": qsTr("Cenários"),
-        "effects": qsTr("Effects"),
-        "templates": qsTr("Templates"),
-        "transitions": qsTr("Transitions"),
-        "sounds": qsTr("Audio FX"),
-        "shortcuts": qsTr("Shortcuts")
+        "media": qsTr("Mídia"),
+        "templates": qsTr("Templates & Presets"),
+        "subtitles": qsTr("Legendas & Texto"),
+        "backgrounds": qsTr("Cenários Virtuais"),
+        "effects": qsTr("Efeitos"),
+        "transitions": qsTr("Transições"),
+        "sounds": qsTr("Áudio & Locução"),
+        "shortcuts": qsTr("Atalhos")
     })
 
-    // Rail order: project media → on-canvas graphics → processing → prefs.
-    // `separatorAfter` draws a hairline under the tab so groups read as sections.
-    // tabId "sounds" is kept for favorites persistence (settings key).
+    // Limpo e focado: 8 Macro-Hubs estratégicos sem poluição visual
     ListModel {
         id: tabsModel
         ListElement { tabId: "media"; icon: 0; separatorAfter: false }
-        ListElement { tabId: "market"; icon: 12; separatorAfter: true }
-        ListElement { tabId: "text"; icon: 1; separatorAfter: false }
+        ListElement { tabId: "templates"; icon: 1; separatorAfter: true }
         ListElement { tabId: "subtitles"; icon: 2; separatorAfter: false }
-        ListElement { tabId: "stickers"; icon: 3; separatorAfter: false }
-        ListElement { tabId: "shapes"; icon: 4; separatorAfter: false }
-        ListElement { tabId: "masks"; icon: 11; separatorAfter: false }
-        ListElement { tabId: "backgrounds"; icon: 13; separatorAfter: true }
-        ListElement { tabId: "scenes"; icon: 10; separatorAfter: true }
-        ListElement { tabId: "effects"; icon: 5; separatorAfter: false }
-        ListElement { tabId: "templates"; icon: 6; separatorAfter: false }
-        ListElement { tabId: "transitions"; icon: 7; separatorAfter: false }
-        ListElement { tabId: "sounds"; icon: 8; separatorAfter: true }
-        ListElement { tabId: "shortcuts"; icon: 9; separatorAfter: false }
+        ListElement { tabId: "backgrounds"; icon: 3; separatorAfter: true }
+        ListElement { tabId: "effects"; icon: 4; separatorAfter: false }
+        ListElement { tabId: "transitions"; icon: 5; separatorAfter: true }
+        ListElement { tabId: "sounds"; icon: 6; separatorAfter: true }
+        ListElement { tabId: "shortcuts"; icon: 7; separatorAfter: false }
     }
     property var tabIcons: [
-        Theme.icons.film,
-        Theme.icons.type,
-        Theme.icons.captions,
-        Theme.icons.smile,
-        Theme.icons.shapes,
-        Theme.icons.wand,
-        Theme.icons.layers,
-        Theme.icons.chevronsRight,
-        Theme.icons.audioLines,
-        Theme.icons.keyboard,
-        Theme.icons.listVideo,
-        Theme.icons.mask,
-        Theme.icons.store,
-        Theme.icons.sparkles
+        Theme.icons.film,           // 0: media
+        Theme.icons.sparkles,       // 1: templates
+        Theme.icons.captions,       // 2: subtitles
+        Theme.icons.layers,         // 3: backgrounds
+        Theme.icons.wand,           // 4: effects
+        Theme.icons.chevronsRight,  // 5: transitions
+        Theme.icons.audioLines,     // 6: sounds
+        Theme.icons.keyboard        // 7: shortcuts
     ]
     property int activeTab: 0
 
@@ -1029,11 +1009,12 @@ PanelFrame {
                 height: parent.height - Theme.panelHeaderHeight
             }
 
-            EffectTemplateBrowser {
+            TemplatesTab {
                 visible: tabsModel.get(activeTab).tabId === "templates"
                 width: parent.width
                 opacity: root.tabOpacity
                 height: parent.height - Theme.panelHeaderHeight
+                onAdded: root.addCompleted()
             }
 
             // Transitions browser

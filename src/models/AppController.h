@@ -133,10 +133,12 @@ class AppController : public QObject
     Q_PROPERTY(bool reopenLastProject READ reopenLastProject WRITE setReopenLastProject NOTIFY reopenLastProjectChanged)
     // 100% Local AI Isolation (Air-gapped / Zero Cloud): ensures zero network leakage and purely local processing.
     Q_PROPERTY(bool strictOfflineMode READ strictOfflineMode WRITE setStrictOfflineMode NOTIFY strictOfflineModeChanged)
-    // Custom folder on disk / USB containing offline ONNX models (Whisper, Denoise, RVM, SAM2).
-    Q_PROPERTY(QString customAiModelPath READ customAiModelPath WRITE setCustomAiModelPath NOTIFY customAiModelPathChanged)
     // Full-height subtitle studio layout (expands subtitle editor vertically, timeline anchored to bottom-left)
     Q_PROPERTY(bool subtitleStudioMode READ subtitleStudioMode WRITE setSubtitleStudioMode NOTIFY subtitleStudioModeChanged)
+    // 1-Click Workspaces: "shorts", "subtitles", "webdoc", "podcast", "classic"
+    Q_PROPERTY(QString currentWorkspace READ currentWorkspace NOTIFY currentWorkspaceChanged)
+    // Synchronize subtitle styling, position and layout to all captions on the track automatically (on by default)
+    Q_PROPERTY(bool syncAllCaptions READ syncAllCaptions WRITE setSyncAllCaptions NOTIFY syncAllCaptionsChanged)
     // Preview zero-copy import: VAAPI dma-buf on Linux, D3D11 interop on Windows. Takes effect
     // after restart; hidden when this machine has no decode backend for either.
     Q_PROPERTY(bool vaapiZeroCopy READ vaapiZeroCopy WRITE setVaapiZeroCopy NOTIFY vaapiZeroCopyChanged)
@@ -923,6 +925,13 @@ public:
                                            const QString &presetId,
                                            double blurAmount = 0.0);
     Q_INVOKABLE bool removeVirtualBackground(int trackIndex, int clipIndex);
+
+    // 1-Click Workspaces & Global Subtitle Sync
+    QString currentWorkspace() const { return m_currentWorkspace; }
+    Q_INVOKABLE void applyWorkspace(const QString &workspace);
+    bool syncAllCaptions() const { return m_syncAllCaptions; }
+    Q_INVOKABLE void setSyncAllCaptions(bool sync);
+    Q_INVOKABLE bool applyVideoTemplate(const QString &templateId, int trackIndex = -1, int clipIndex = -1);
 
     // Starts a punching session from the current video selection (two or more clips on
     // distinct tracks). Returns false when there is nothing to punch and no empty-timeline
@@ -1862,6 +1871,8 @@ signals:
     void audioOutputDeviceIdChanged();
     void snapEnabledChanged();
     void rippleEnabledChanged();
+    void syncAllCaptionsChanged();
+    void currentWorkspaceChanged();
     void allowClipOverlapChanged();
     void darkModePreferenceChanged();
     void workspaceLayoutPreferenceChanged();
@@ -2382,7 +2393,9 @@ protected:
     drift::TimeUs m_playheadUs = 0;
     bool m_playing = false;
     bool m_snapEnabled = true;
-    bool m_rippleEnabled = false;
+    bool m_rippleEnabled = true; // Ripple delete ON by default for fast, seamless trimming
+    bool m_syncAllCaptions = true; // Auto-sync style & layout across all captions ON by default
+    QString m_currentWorkspace = QStringLiteral("classic");
     bool m_allowClipOverlap = false;
     bool m_loopWorkAreaEnabled = false;
     bool m_darkModeOverridden = false;

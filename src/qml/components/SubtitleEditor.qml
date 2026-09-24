@@ -378,6 +378,43 @@ Item {
             }
         }
 
+        // Auto Sync All Captions Toggle
+        Rectangle {
+            width: parent.width
+            height: 38
+            color: Theme.cardBackground
+            radius: Theme.radiusSm
+            border.width: 1
+            border.color: Theme.cardBorder
+
+            Row {
+                anchors.fill: parent
+                anchors.leftMargin: 10
+                anchors.rightMargin: 10
+                spacing: 8
+
+                Text {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: qsTr("⚡ Sincronizar estilo/posição em todas:")
+                    color: Theme.panelForeground
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeXs
+                    font.weight: Font.Medium
+                }
+
+                Item {
+                    width: parent.width - 250
+                    height: 1
+                }
+
+                ThemedSwitch {
+                    anchors.verticalCenter: parent.verticalCenter
+                    checked: EditorState.syncAllCaptions
+                    onToggled: EditorState.setSyncAllCaptions(checked)
+                }
+            }
+        }
+
         // Quick Tools Row: Import/Export + Find & Replace toggle
         Row {
             width: parent.width
