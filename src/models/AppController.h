@@ -21,6 +21,7 @@
 #include "models/kanban/ProjectPipelineManager.h"
 #include "engine/wizard/WizardEngine.h"
 #include "engine/ai/ScriptGenerator.h"
+#include "engine/ai/StockFootageFetcher.h"
 
 #include <QAtomicInt>
 #include <QCursor>
@@ -404,6 +405,14 @@ class AppController : public QObject
     Q_PROPERTY(QStringList lastScriptBrollHints READ lastScriptBrollHints NOTIFY scriptReady)
     Q_PROPERTY(QStringList lastScriptSfxHints READ lastScriptSfxHints NOTIFY scriptReady)
 
+    // ── B-Roll Auto-Fetch (Fase 5B) ────────────────────────────────────
+    Q_PROPERTY(bool brollFetching READ brollFetching NOTIFY brollFetchingChanged)
+    Q_PROPERTY(double brollFetchProgress READ brollFetchProgress NOTIFY brollFetchProgressChanged)
+    Q_PROPERTY(QString brollFetchStatus READ brollFetchStatus NOTIFY brollFetchProgressChanged)
+    Q_PROPERTY(int brollReadyCount READ brollReadyCount NOTIFY brollReadyCountChanged)
+    Q_PROPERTY(bool hasPexelsKey READ hasPexelsKey NOTIFY brollApiKeyChanged)
+    Q_PROPERTY(bool hasPixabayKey READ hasPixabayKey NOTIFY brollApiKeyChanged)
+
 public:
     explicit AppController(AssetLibrary *assetLibrary, QObject *parent = nullptr);
     ~AppController() override;
@@ -652,6 +661,32 @@ public:
     QString lastScriptCta() const { return m_lastScriptCta; }
     QStringList lastScriptBrollHints() const { return m_lastScriptBrollHints; }
     QStringList lastScriptSfxHints() const { return m_lastScriptSfxHints; }
+
+    // ── B-Roll Auto-Fetch — Fase 5B ────────────────────────────────────────
+    // Configure Pexels / Pixabay API keys
+    Q_INVOKABLE void configurePexelsApiKey(const QString &key);
+    Q_INVOKABLE void configurePixabayApiKey(const QString &key);
+    // Fetch B-Rolls for the given list of keywords.
+    // portrait=true for 9:16 Shorts content.
+    Q_INVOKABLE void fetchBRolls(const QStringList &queries,
+                                  int maxPerQuery = 1,
+                                  bool portrait = false);
+    // Fetch B-Rolls automatically using last script’s broll hints
+    Q_INVOKABLE void fetchBRollsFromLastScript(bool portrait = false);
+    Q_INVOKABLE void cancelBRollFetch();
+    // Place a previously fetched B-Roll into the timeline at the given position
+    Q_INVOKABLE void insertBRollAtPlayhead(const QString &localPath);
+    // Cleanup cache
+    Q_INVOKABLE void pruneBRollCache();
+
+    bool brollFetching() const { return m_brollFetching; }
+    double brollFetchProgress() const { return m_brollFetchProgress; }
+    QString brollFetchStatus() const { return m_brollFetchStatus; }
+    int brollReadyCount() const { return m_brollReadyCount; }
+    bool hasPexelsKey() const { return m_stockFetcher.hasPexelsKey(); }
+    bool hasPixabayKey() const { return m_stockFetcher.hasPixabayKey(); }
+    // Returns list of {query, localPath, previewUrl, durationSec, source}
+    Q_INVOKABLE QVariantList fetchedBRolls() const { return m_fetchedBRolls; }
 
     // Playback diagnostics. The environment and counter half is cheap enough to call whenever
     // the dialog opens; the benchmark decodes for a couple of seconds and so runs off the GUI
@@ -2097,6 +2132,15 @@ signals:
     void scriptReady(); // Fires when all lastScript* properties are populated
     void scriptError(const QString &message);
 
+    // ── B-Roll Auto-Fetch signals (Fase 5B) ─────────────────────────────────
+    void brollFetchingChanged();
+    void brollFetchProgressChanged();
+    void brollReadyCountChanged();
+    void brollApiKeyChanged();
+    // Fired each time a single B-Roll is ready (localPath is the cached file)
+    void brollItemReady(const QString &query, const QString &localPath,
+                        const QString &previewUrl, int durationSec, const QString &source);
+
 protected:
     // Every path that changes the timeline model goes through this instead of a bare
     // `emit tracksChanged()`. The cache has to be dropped *before* the signal goes out: whether
@@ -2751,11 +2795,7 @@ protected:
 
     void setProjectLayoutChosen(bool chosen);
 
-    // Wizard engine state (lazily created pointer, see runWizard())
-    drift::WizardEngine *m_wizardEngine = nullptr;
-    bool m_wizardRunning = false;
-    double m_wizardProgress = 0.0;
-    QString m_wizardStatus;
+    // (Wizard engine state is at line ~2550 with the rest of the runtime state)
 
     // AI Script Generator state (Fase 5A)
     bool m_scriptGenerating = false;
@@ -2766,6 +2806,17 @@ protected:
     QString m_lastScriptCta;
     QStringList m_lastScriptBrollHints;
     QStringList m_lastScriptSfxHints;
+
+    // B-Roll Auto-Fetch state (Fase 5B)
+    drift::StockFootageFetcher m_stockFetcher;
+    bool m_brollFetching = false;
+    double m_brollFetchProgress = 0.0;
+    QString m_brollFetchStatus;
+    int m_brollReadyCount = 0;
+    QVariantList m_fetchedBRolls;  // [{query, localPath, previewUrl, durationSec, source}]
+
+    // Script generator engine (Fase 5A)
+    drift::ScriptGenerator m_scriptGenerator;
 
     static constexpr int kMaxUndoSteps = 50;
     static constexpr int kAutosaveIntervalMs = 15000;

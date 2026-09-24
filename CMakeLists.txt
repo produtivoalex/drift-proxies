@@ -706,6 +706,9 @@ add_library(driftengine STATIC
     # Fase 5A: Roteirista LLM
     src/engine/ai/ScriptGenerator.h
     src/engine/ai/ScriptGenerator.cpp
+    # Fase 5B: Auto-Fetch B-Rolls
+    src/engine/ai/StockFootageFetcher.h
+    src/engine/ai/StockFootageFetcher.cpp
     # WizardEngine: Dark Studio Wizard
     src/engine/wizard/WizardEngine.h
     src/engine/wizard/WizardEngine.cpp
@@ -990,6 +993,7 @@ qt_add_qml_module(drift
         src/qml/PreviewPanel.qml
         src/qml/views/PipelineView.qml
         src/qml/views/DarkStudioPanel.qml
+        src/qml/views/BRollsPanel.qml
         src/qml/components/preview/TransformOverlay.qml
         src/qml/components/preview/CropOverlay.qml
         src/qml/components/preview/MaskOverlay.qml

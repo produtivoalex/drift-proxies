@@ -385,6 +385,46 @@ Item {
                 }
             }
 
+            // Auto B-Roll fetch shortcut
+            Rectangle {
+                Layout.fillWidth: true; height: 38; radius: 8
+                visible: app.lastScriptBrollHints.length > 0
+                color: brollBtn.containsMouse ? "#0c2a40" : "#071520"
+                border.color: "#0ea5e9"; border.width: 1
+                Behavior on color { ColorAnimation { duration: 120 } }
+                RowLayout {
+                    anchors { fill: parent; leftMargin: 12; rightMargin: 12 }; spacing: 8
+                    Text { text: "🎬"; font.pixelSize: 14 }
+                    Text {
+                        text: "Buscar B-Rolls Automáticos (" + app.lastScriptBrollHints.length + " cenas)"
+                        font { pixelSize: 12; weight: Font.Medium; family: "Inter" }
+                        color: "#38bdf8"
+                    }
+                    Item { Layout.fillWidth: true }
+                    Text {
+                        visible: app.brollFetching
+                        text: Math.round(app.brollFetchProgress * 100) + "%"
+                        font { pixelSize: 11; family: "Inter" }; color: "#0ea5e9"
+                    }
+                    Text {
+                        visible: !app.brollFetching && app.brollReadyCount > 0
+                        text: "✓ " + app.brollReadyCount + " prontos"
+                        font { pixelSize: 11; family: "Inter" }; color: "#4ade80"
+                    }
+                }
+                MouseArea {
+                    id: brollBtn; anchors.fill: parent; hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (!app.brollFetching)
+                            app.fetchBRollsFromLastScript(
+                                // portrait if format is shorts
+                                app.scriptApiProvider !== "" // just a placeholder to detect format
+                            )
+                    }
+                }
+            }
+
             // Action buttons
             RowLayout {
                 Layout.fillWidth: true; spacing: 8

@@ -27754,3 +27754,134 @@ void AppController::generateTimelineFromLastScript(const QString &vibe, const QS
     }
     runWizard(m_lastScriptBody, vibe, voiceId);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fase 5B: Auto-Fetch B-Rolls (StockFootageFetcher)
+// ─────────────────────────────────────────────────────────────────────────────
+
+void AppController::configurePexelsApiKey(const QString &key)
+{
+    m_stockFetcher.setPexelsApiKey(key);
+    emit brollApiKeyChanged();
+    setLastMessage(tr("Pexels API configurada!"), QStringLiteral("success"));
+}
+
+void AppController::configurePixabayApiKey(const QString &key)
+{
+    m_stockFetcher.setPixabayApiKey(key);
+    emit brollApiKeyChanged();
+    setLastMessage(tr("Pixabay API configurada!"), QStringLiteral("success"));
+}
+
+void AppController::fetchBRolls(const QStringList &queries, int maxPerQuery, bool portrait)
+{
+    if (m_brollFetching) return;
+    if (!m_stockFetcher.hasAnyKey()) {
+        const QString msg = tr("Configure sua chave de API do Pexels ou Pixabay em Configurações → B-Rolls.");
+        setLastMessage(msg, QStringLiteral("warning"));
+        return;
+    }
+    if (queries.isEmpty()) return;
+
+    m_brollFetching = true;
+    m_brollFetchProgress = 0.0;
+    m_brollFetchStatus = tr("Iniciando busca de B-Rolls...");
+    m_brollReadyCount = 0;
+    m_fetchedBRolls.clear();
+    emit brollFetchingChanged();
+    emit brollFetchProgressChanged();
+    emit brollReadyCountChanged();
+
+    // Wire signals (disconnect first to avoid duplicate connections)
+    disconnect(&m_stockFetcher, nullptr, this, nullptr);
+
+    connect(&m_stockFetcher, &drift::StockFootageFetcher::progressChanged,
+            this, [this](double fraction, const QString &status) {
+        m_brollFetchProgress = fraction;
+        m_brollFetchStatus   = status;
+        emit brollFetchProgressChanged();
+    });
+
+    connect(&m_stockFetcher, &drift::StockFootageFetcher::brollReady,
+            this, [this](const drift::BRollResult &result) {
+        if (!result.success) return;
+        // Append to the fetched list
+        QVariantMap item;
+        item[QStringLiteral("query")]       = result.query;
+        item[QStringLiteral("localPath")]   = result.localPath;
+        item[QStringLiteral("previewUrl")]  = result.previewUrl;
+        item[QStringLiteral("durationSec")] = result.durationSec;
+        item[QStringLiteral("source")]      = result.source;
+        m_fetchedBRolls.append(item);
+        ++m_brollReadyCount;
+        emit brollReadyCountChanged();
+        emit brollItemReady(result.query, result.localPath,
+                            result.previewUrl, result.durationSec, result.source);
+    });
+
+    connect(&m_stockFetcher, &drift::StockFootageFetcher::fetchFinished,
+            this, [this](int successCount, int failCount) {
+        m_brollFetching      = false;
+        m_brollFetchProgress = 1.0;
+        emit brollFetchingChanged();
+        emit brollFetchProgressChanged();
+
+        if (successCount > 0) {
+            setLastMessage(
+                tr("%1 B-Roll(s) prontos! Arraste para a timeline ou use Gerar Vídeo.")
+                    .arg(successCount),
+                QStringLiteral("success"));
+        } else {
+            setLastMessage(
+                tr("Nenhum B-Roll encontrado (%1 falha(s)). Verifique as keywords e a API key.")
+                    .arg(failCount),
+                QStringLiteral("warning"));
+        }
+    });
+
+    // Determine format: portrait for Shorts/Reels
+    m_stockFetcher.fetchBRolls(queries, maxPerQuery,
+                                /*minDuration=*/4,
+                                /*maxDuration=*/portrait ? 30 : 60,
+                                portrait);
+}
+
+void AppController::fetchBRollsFromLastScript(bool portrait)
+{
+    if (m_lastScriptBrollHints.isEmpty()) {
+        setLastMessage(tr("Gere um roteiro primeiro para usar Auto B-Rolls."),
+                       QStringLiteral("warning"));
+        return;
+    }
+    fetchBRolls(m_lastScriptBrollHints, /*maxPerQuery=*/1, portrait);
+}
+
+void AppController::cancelBRollFetch()
+{
+    m_stockFetcher.cancel();
+    m_brollFetching = false;
+    emit brollFetchingChanged();
+    setLastMessage(tr("Busca de B-Rolls cancelada."), QStringLiteral("info"));
+}
+
+void AppController::insertBRollAtPlayhead(const QString &localPath)
+{
+    if (localPath.isEmpty() || !QFile::exists(localPath)) {
+        setLastMessage(tr("Arquivo de B-Roll não encontrado: ") + localPath,
+                       QStringLiteral("error"));
+        return;
+    }
+
+    // Import and insert at current playhead position on the first available video track
+    const qint64 positionMs = static_cast<qint64>(m_playbackPosition * 1000.0);
+    const QString url = QUrl::fromLocalFile(localPath).toString();
+    importAndInsertMediaAt(url, positionMs);  // existing AppController method
+    setLastMessage(tr("B-Roll inserido na timeline!"), QStringLiteral("success"));
+}
+
+void AppController::pruneBRollCache()
+{
+    drift::StockFootageFetcher::pruneCache(7);
+    setLastMessage(tr("Cache de B-Rolls limpo (arquivos com mais de 7 dias removidos)."),
+                   QStringLiteral("success"));
+}
