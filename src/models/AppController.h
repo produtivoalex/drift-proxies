@@ -22,6 +22,7 @@
 #include "engine/wizard/WizardEngine.h"
 #include "engine/ai/ScriptGenerator.h"
 #include "engine/ai/StockFootageFetcher.h"
+#include "engine/ai/ProjectLocalizer.h"
 
 #include <QAtomicInt>
 #include <QCursor>
@@ -413,6 +414,15 @@ class AppController : public QObject
     Q_PROPERTY(bool hasPexelsKey READ hasPexelsKey NOTIFY brollApiKeyChanged)
     Q_PROPERTY(bool hasPixabayKey READ hasPixabayKey NOTIFY brollApiKeyChanged)
 
+    // ── Dublagem Multiidioma (Fase 5C) ──────────────────────────────────
+    Q_PROPERTY(bool dubbingActive READ dubbingActive NOTIFY dubbingActiveChanged)
+    Q_PROPERTY(double dubbingProgress READ dubbingProgress NOTIFY dubbingProgressChanged)
+    Q_PROPERTY(QString dubbingStatus READ dubbingStatus NOTIFY dubbingProgressChanged)
+    Q_PROPERTY(QString lastDubbedAudioPath READ lastDubbedAudioPath NOTIFY dubbingFinished)
+    Q_PROPERTY(QString lastDubbedLanguage READ lastDubbedLanguage NOTIFY dubbingFinished)
+    Q_PROPERTY(bool hasTranslationKey READ hasTranslationKey NOTIFY dubbingApiKeyChanged)
+    Q_PROPERTY(QVariantList supportedDubbingLanguages READ supportedDubbingLanguages CONSTANT)
+
 public:
     explicit AppController(AssetLibrary *assetLibrary, QObject *parent = nullptr);
     ~AppController() override;
@@ -687,6 +697,23 @@ public:
     bool hasPixabayKey() const { return m_stockFetcher.hasPixabayKey(); }
     // Returns list of {query, localPath, previewUrl, durationSec, source}
     Q_INVOKABLE QVariantList fetchedBRolls() const { return m_fetchedBRolls; }
+
+    // ── Dublagem Multiidioma (Fase 5C) ──────────────────────────────────
+    Q_INVOKABLE void configureDeepLApiKey(const QString &key);
+    Q_INVOKABLE void configureLibreTranslateUrl(const QString &url);
+    Q_INVOKABLE void dubProject(const QString &targetLangCode,
+                                const QString &voiceId = QString(),
+                                double speechRate = 1.0);
+    Q_INVOKABLE void cancelDubbing();
+    Q_INVOKABLE void insertDubbedAudioAtPlayhead();
+
+    bool dubbingActive() const { return m_dubbingActive; }
+    double dubbingProgress() const { return m_dubbingProgress; }
+    QString dubbingStatus() const { return m_dubbingStatus; }
+    QString lastDubbedAudioPath() const { return m_lastDubbedAudioPath; }
+    QString lastDubbedLanguage() const { return m_lastDubbedLanguage; }
+    bool hasTranslationKey() const { return m_projectLocalizer.hasTranslationKey(); }
+    QVariantList supportedDubbingLanguages() const;
 
     // Playback diagnostics. The environment and counter half is cheap enough to call whenever
     // the dialog opens; the benchmark decodes for a couple of seconds and so runs off the GUI
@@ -2141,6 +2168,12 @@ signals:
     void brollItemReady(const QString &query, const QString &localPath,
                         const QString &previewUrl, int durationSec, const QString &source);
 
+    // ── Dublagem Multiidioma signals (Fase 5C) ──────────────────────────────
+    void dubbingActiveChanged();
+    void dubbingProgressChanged();
+    void dubbingApiKeyChanged();
+    void dubbingFinished(bool success, const QString &audioPath, const QString &error);
+
 protected:
     // Every path that changes the timeline model goes through this instead of a bare
     // `emit tracksChanged()`. The cache has to be dropped *before* the signal goes out: whether
@@ -2817,6 +2850,14 @@ protected:
 
     // Script generator engine (Fase 5A)
     drift::ScriptGenerator m_scriptGenerator;
+
+    // Dublagem Multiidioma state (Fase 5C)
+    drift::ProjectLocalizer m_projectLocalizer;
+    bool m_dubbingActive = false;
+    double m_dubbingProgress = 0.0;
+    QString m_dubbingStatus;
+    QString m_lastDubbedAudioPath;
+    QString m_lastDubbedLanguage;
 
     static constexpr int kMaxUndoSteps = 50;
     static constexpr int kAutosaveIntervalMs = 15000;

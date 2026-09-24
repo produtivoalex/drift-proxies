@@ -425,6 +425,38 @@ Item {
                 }
             }
 
+            // Quick Dubbing button (Fase 5C)
+            Rectangle {
+                Layout.fillWidth: true; height: 34; radius: 6
+                border.color: app.dubbingActive ? "#06b6d4" : "#1e293b"
+                border.width: 1
+                color: dubBtn.containsMouse ? "#0c2838" : "#08131d"
+
+                RowLayout {
+                    anchors.centerIn: parent; spacing: 6
+                    Text { text: "🌐"; font.pixelSize: 13 }
+                    Text {
+                        text: app.dubbingActive ? app.dubbingStatus : "Dublar Roteiro (8 Idiomas)"
+                        font { pixelSize: 11; family: "Inter" }
+                        color: "#38bdf8"
+                    }
+                    Text {
+                        visible: app.dubbingActive
+                        text: Math.round(app.dubbingProgress * 100) + "%"
+                        font { pixelSize: 11; family: "Inter" }; color: "#06b6d4"
+                    }
+                }
+                MouseArea {
+                    id: dubBtn; anchors.fill: parent; hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        if (!app.dubbingActive) {
+                            app.dubProject("en-US", "", 1.0)
+                        }
+                    }
+                }
+            }
+
             // Action buttons
             RowLayout {
                 Layout.fillWidth: true; spacing: 8

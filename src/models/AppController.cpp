@@ -27872,11 +27872,15 @@ void AppController::insertBRollAtPlayhead(const QString &localPath)
         return;
     }
 
-    // Import and insert at current playhead position on the first available video track
-    const qint64 positionMs = static_cast<qint64>(m_playbackPosition * 1000.0);
-    const QString url = QUrl::fromLocalFile(localPath).toString();
-    importAndInsertMediaAt(url, positionMs);  // existing AppController method
-    setLastMessage(tr("B-Roll inserido na timeline!"), QStringLiteral("success"));
+    if (m_assetLibrary) {
+        const QStringList ids = m_assetLibrary->importLocalPaths({localPath});
+        if (!ids.isEmpty()) {
+            addClipsFromAssets(ids);
+            setLastMessage(tr("B-Roll inserido na timeline!"), QStringLiteral("success"));
+            return;
+        }
+    }
+    setLastMessage(tr("Falha ao importar B-Roll para a timeline."), QStringLiteral("error"));
 }
 
 void AppController::pruneBRollCache()
@@ -27884,4 +27888,129 @@ void AppController::pruneBRollCache()
     drift::StockFootageFetcher::pruneCache(7);
     setLastMessage(tr("Cache de B-Rolls limpo (arquivos com mais de 7 dias removidos)."),
                    QStringLiteral("success"));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fase 5C: Dublagem Multiidioma
+// ─────────────────────────────────────────────────────────────────────────────
+
+QVariantList AppController::supportedDubbingLanguages() const
+{
+    QVariantList list;
+    const auto langs = drift::ProjectLocalizer::supportedLanguages();
+    for (const auto &lang : langs) {
+        QVariantMap m;
+        m[QStringLiteral("code")]           = lang.code;
+        m[QStringLiteral("label")]          = lang.label;
+        m[QStringLiteral("flag")]           = lang.flag;
+        m[QStringLiteral("deeplCode")]      = lang.deeplCode;
+        m[QStringLiteral("defaultVoiceId")] = lang.defaultVoiceId;
+        m[QStringLiteral("ttsLang")]        = lang.ttsLang;
+        list.append(m);
+    }
+    return list;
+}
+
+void AppController::configureDeepLApiKey(const QString &key)
+{
+    m_projectLocalizer.setDeepLApiKey(key);
+    emit dubbingApiKeyChanged();
+    setLastMessage(tr("DeepL API configurada!"), QStringLiteral("success"));
+}
+
+void AppController::configureLibreTranslateUrl(const QString &url)
+{
+    m_projectLocalizer.setLibreTranslateUrl(url);
+    emit dubbingApiKeyChanged();
+    setLastMessage(tr("LibreTranslate URL configurada!"), QStringLiteral("success"));
+}
+
+void AppController::dubProject(const QString &targetLangCode,
+                               const QString &voiceId,
+                               double speechRate)
+{
+    if (m_dubbingActive) return;
+
+    // 1. Extrair texto fonte das legendas do projeto ou do último roteiro gerado
+    QString sourceText = drift::ProjectLocalizer::extractProjectText(m_project);
+    if (sourceText.isEmpty()) {
+        if (!m_lastScriptBody.isEmpty()) {
+            sourceText = m_lastScriptHook + QStringLiteral(" ") +
+                         m_lastScriptBody + QStringLiteral(" ") +
+                         m_lastScriptCta;
+            sourceText = sourceText.simplified();
+        }
+    }
+
+    if (sourceText.isEmpty()) {
+        setLastMessage(tr("Nenhum texto encontrado no projeto ou no Dark Studio para dublar."),
+                       QStringLiteral("warning"));
+        return;
+    }
+
+    m_dubbingActive   = true;
+    m_dubbingProgress = 0.0;
+    m_dubbingStatus   = tr("Iniciando localização...");
+    emit dubbingActiveChanged();
+    emit dubbingProgressChanged();
+
+    // Reconectar sinais
+    disconnect(&m_projectLocalizer, nullptr, this, nullptr);
+
+    connect(&m_projectLocalizer, &drift::ProjectLocalizer::progressChanged,
+            this, [this](double fraction, const QString &status) {
+        m_dubbingProgress = fraction;
+        m_dubbingStatus   = status;
+        emit dubbingProgressChanged();
+    });
+
+    connect(&m_projectLocalizer, &drift::ProjectLocalizer::localizationFinished,
+            this, [this](const drift::LocalizationResult &result) {
+        m_dubbingActive   = false;
+        m_dubbingProgress = 1.0;
+        emit dubbingActiveChanged();
+        emit dubbingProgressChanged();
+
+        if (result.success) {
+            m_lastDubbedAudioPath = result.audioPath;
+            m_lastDubbedLanguage  = result.language;
+            emit dubbingFinished(true, result.audioPath, QString());
+            setLastMessage(tr("Dublagem concluída com sucesso! Áudio pronto para inserção."),
+                           QStringLiteral("success"));
+        } else {
+            emit dubbingFinished(false, QString(), result.error);
+            setLastMessage(tr("Falha na dublagem: %1").arg(result.error),
+                           QStringLiteral("error"));
+        }
+    });
+
+    const QString sourceLang = QStringLiteral("pt-BR");
+    m_projectLocalizer.localize(sourceText, sourceLang, targetLangCode, voiceId, speechRate);
+}
+
+void AppController::cancelDubbing()
+{
+    m_projectLocalizer.cancel();
+    m_dubbingActive = false;
+    emit dubbingActiveChanged();
+    setLastMessage(tr("Dublagem cancelada."), QStringLiteral("info"));
+}
+
+void AppController::insertDubbedAudioAtPlayhead()
+{
+    if (m_lastDubbedAudioPath.isEmpty() || !QFile::exists(m_lastDubbedAudioPath)) {
+        setLastMessage(tr("Nenhum áudio dublado disponível para inserção."),
+                       QStringLiteral("warning"));
+        return;
+    }
+
+    if (m_assetLibrary) {
+        const QStringList ids = m_assetLibrary->importLocalPaths({m_lastDubbedAudioPath});
+        if (!ids.isEmpty()) {
+            addClipsFromAssets(ids);
+            setLastMessage(tr("Áudio dublado inserido na timeline!"), QStringLiteral("success"));
+            return;
+        }
+    }
+    setLastMessage(tr("Falha ao importar o áudio dublado para a timeline."), QStringLiteral("error"));
 }
