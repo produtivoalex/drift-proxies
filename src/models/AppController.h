@@ -23,6 +23,7 @@
 #include "engine/ai/ScriptGenerator.h"
 #include "engine/ai/StockFootageFetcher.h"
 #include "engine/ai/ProjectLocalizer.h"
+#include "models/publishing/PublishingManager.h"
 
 #include <QAtomicInt>
 #include <QCursor>
@@ -392,6 +393,7 @@ class AppController : public QObject
     Q_PROPERTY(QString wizardStatus READ wizardStatus NOTIFY wizardStatusChanged)
 
     Q_PROPERTY(QObject* pipelineManager READ pipelineManager CONSTANT)
+    Q_PROPERTY(QObject* publishingManager READ publishingManager CONSTANT)
 
     // ── AI Script Generation (Fase 5A: Roteirista Dark Studio) ──────────────
     Q_PROPERTY(bool scriptGenerating READ scriptGenerating NOTIFY scriptGeneratingChanged)
@@ -434,6 +436,7 @@ public:
     TimelineModel *timelineModel() { return &m_timelineModel; }
     ClipListModel *clipListModel() { return &m_clipListModel; }
     QObject *pipelineManager() { return &m_pipelineManager; }
+    QObject *publishingManager() { return &m_publishingManager; }
     PlaybackEngine *playback() { return &m_playback; }
     QVariantList audioOutputDevices() const;
     QString audioOutputDeviceId() const { return m_audioOutputDeviceId; }
@@ -2494,6 +2497,7 @@ protected:
     TimelineModel m_timelineModel;
     ClipListModel m_clipListModel;
     drift::ProjectPipelineManager m_pipelineManager;
+    drift::PublishingManager m_publishingManager;
     drift::ScriptGenerator m_scriptGenerator;
     // These trees must outlive m_playback: the compositor thread holds a bare
     // pointer into whichever one is live and may still be mid-composite at

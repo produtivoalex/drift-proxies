@@ -827,6 +827,9 @@ qt_add_executable(drift
     src/models/TimelineClipsModel.cpp
     src/models/ClipListModel.h
     src/models/ClipListModel.cpp
+    # Fase 6A: Publicacao Direta nas Redes Sociais
+    src/models/publishing/PublishingManager.h
+    src/models/publishing/PublishingManager.cpp
     src/playback/PlaybackEngine.h
     src/playback/PlaybackEngine.cpp
     src/playback/PlaybackClock.h
@@ -998,6 +1001,7 @@ qt_add_qml_module(drift
         src/qml/views/DarkStudioPanel.qml
         src/qml/views/BRollsPanel.qml
         src/qml/views/LocalizationPanel.qml
+        src/qml/views/PublishingPanel.qml
         src/qml/components/preview/TransformOverlay.qml
         src/qml/components/preview/CropOverlay.qml
         src/qml/components/preview/MaskOverlay.qml

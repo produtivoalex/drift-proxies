@@ -108,8 +108,38 @@ Item {
                                 pipeline.addCard(modelData.id, "Nova Ideia " + Math.floor(Math.random() * 100))
                             }
                         }
+
+                        // Direct Publish button (Fase 6A)
+                        Button {
+                            Layout.fillWidth: true
+                            text: "🚀 Publicar nas Redes"
+                            visible: modelData.id === "col_published"
+                            onClicked: {
+                                publishingModal.open()
+                            }
+                        }
                     }
                 }
+            }
+        }
+
+        // Publishing Modal Dialog
+        Popup {
+            id: publishingModal
+            anchors.centerIn: parent
+            width: 460
+            height: 700
+            modal: true
+            focus: true
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+            background: Rectangle {
+                color: "#0a0a14"
+                radius: 12
+                border.color: "#334155"
+                border.width: 1
+            }
+            PublishingPanel {
+                anchors.fill: parent
             }
         }
     }
