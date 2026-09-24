@@ -213,6 +213,16 @@
   - Sliders de Velocidade e Tom (Pitch).
   - Prévia de áudio instantânea com Play/Stop e botão de inserção direta na timeline sincronizando legendas animadas na agulha.
 
+### 11. PLANO MESTRE - Fase 1: Interface UI/UX Respirável & Macro-Hubs (100% Concluída)
+* **As 8 Macro-Hubs Otimizadas (`AssetsPanel.qml`)**:
+  - Consolidação cirúrgica de abas poluídas (Stickers, Shapes, Cenas, Masks, Market) em prol de espaço e clareza mental do editor.
+  - O painel lateral agora contém apenas as 8 categorias primárias definitivas: *Mídia, Templates, Legendas, Cenários, Efeitos, Transições, Áudio, Atalhos*.
+* **Botão Templates 1-Clique (`TemplatesTab.qml`)**:
+  - Nova infraestrutura na UI para abrigar a biblioteca embutida e expansível de edições pré-feitas e pressets.
+* **Workspaces Dinâmicos Inteligentes (`EditorHeader.qml` & `AppController.cpp`)**:
+  - Botões de 1-Clique na barra principal (Shorts, Legendas, WebDoc, Podcast, Clássico).
+  - Controle centralizado no `EditorState` que ajusta automaticamente a UI, proporções (9:16 vs 16:9) e painéis conforme o tipo de conteúdo em produção.
+
 ---
 
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)
