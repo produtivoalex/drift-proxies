@@ -718,6 +718,13 @@ public:
     bool hasTranslationKey() const { return m_projectLocalizer.hasTranslationKey(); }
     QVariantList supportedDubbingLanguages() const;
 
+    // ── Auto-Reframe 9:16 Inteligente com Face Tracking (Fase 6D) ───────────
+    Q_INVOKABLE void applyAutoReframe(int trackIndex, int clipIndex,
+                                      const QString &targetAspect = QStringLiteral("9:16"),
+                                      double smoothingFactor = 0.15);
+    Q_INVOKABLE void removeAutoReframe(int trackIndex, int clipIndex);
+    Q_INVOKABLE bool hasAutoReframe(int trackIndex, int clipIndex) const;
+
     // Playback diagnostics. The environment and counter half is cheap enough to call whenever
     // the dialog opens; the benchmark decodes for a couple of seconds and so runs off the GUI
     // thread and answers with playbackBenchmarkFinished.
@@ -2176,6 +2183,10 @@ signals:
     void dubbingProgressChanged();
     void dubbingApiKeyChanged();
     void dubbingFinished(bool success, const QString &audioPath, const QString &error);
+
+    // ── Auto-Reframe signals (Fase 6D) ──────────────────────────────────────
+    void autoReframeProgress(double fraction, const QString &status);
+    void autoReframeFinished(int trackIndex, int clipIndex, bool success);
 
 protected:
     // Every path that changes the timeline model goes through this instead of a bare

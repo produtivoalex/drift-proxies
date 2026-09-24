@@ -28014,3 +28014,113 @@ void AppController::insertDubbedAudioAtPlayhead()
     }
     setLastMessage(tr("Falha ao importar o áudio dublado para a timeline."), QStringLiteral("error"));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fase 6D: Auto-Reframe 9:16 Inteligente com Face Tracking
+// ─────────────────────────────────────────────────────────────────────────────
+
+void AppController::applyAutoReframe(int trackIndex, int clipIndex,
+                                     const QString &targetAspect,
+                                     double smoothingFactor)
+{
+    if (!isValidClipIndex(trackIndex, clipIndex)) {
+        setLastMessage(tr("Nenhum clipe selecionado para Auto-Reframe."), QStringLiteral("warning"));
+        return;
+    }
+
+    emit autoReframeProgress(0.1, tr("Calculando proporções de enquadramento..."));
+
+    drift::Clip &clip = m_project.tracks()[trackIndex].clips[clipIndex];
+
+    // Dimensões do alvo
+    double targetW = 1080.0;
+    double targetH = 1920.0;
+
+    if (targetAspect == QStringLiteral("1:1")) {
+        targetW = 1080.0;
+        targetH = 1080.0;
+    } else if (targetAspect == QStringLiteral("4:5")) {
+        targetW = 1080.0;
+        targetH = 1350.0;
+    }
+
+    // Escala para preencher a altura mantendo proporção de 16:9 do vídeo original
+    const double sourceAspect = 16.0 / 9.0;
+    const double scaledH = targetH;
+    const double scaledW = targetH * sourceAspect; // ex: 3413.33px para 1080x1920
+
+    clip.transformW.clear();
+    clip.transformW.setDefaultValue(scaledW);
+
+    clip.transformH.clear();
+    clip.transformH.setDefaultValue(scaledH);
+
+    clip.transformY.clear();
+    clip.transformY.setDefaultValue(0.0);
+
+    const double minX = targetW - scaledW;
+    const double maxX = 0.0;
+    double currentX = (targetW - scaledW) / 2.0;
+
+    clip.transformX.clear();
+
+    emit autoReframeProgress(0.3, tr("Analisando tracking facial e gerando keyframes..."));
+
+    bool trackedFaces = false;
+    if (!clip.faceTrackPath.isEmpty()) {
+        const auto track = drift::loadFaceTrackCached(clip.faceTrackPath);
+        if (track && !track->isEmpty() && track->fps > 0) {
+            const int frameCount = track->frames.size();
+            const int maxKeys = 60;
+            const int step = qMax(1, (frameCount + maxKeys - 1) / maxKeys);
+
+            for (int i = 0; i < frameCount; i += step) {
+                const drift::TimeUs relUs = drift::TimeUs(i * drift::kUsPerSecond / track->fps);
+                for (const auto &face : track->frames.at(i).faces) {
+                    if (face.valid) {
+                        const double targetCenterX = (targetW / 2.0) - (face.faceCenter.x() * scaledW);
+                        const double clampedTarget = qBound(minX, targetCenterX, maxX);
+                        currentX += smoothingFactor * (clampedTarget - currentX);
+                        clip.transformX.setKeyframe(relUs, currentX);
+                        trackedFaces = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!trackedFaces) {
+        // Enquadramento centralizado estável
+        clip.transformX.setDefaultValue((targetW - scaledW) / 2.0);
+    }
+
+    notifyTracksChanged();
+    emit autoReframeProgress(1.0, tr("Auto-Reframe concluído!"));
+    emit autoReframeFinished(trackIndex, clipIndex, true);
+    setLastMessage(tr("Auto-Reframe %1 aplicado com sucesso!").arg(targetAspect),
+                   QStringLiteral("success"));
+}
+
+void AppController::removeAutoReframe(int trackIndex, int clipIndex)
+{
+    if (!isValidClipIndex(trackIndex, clipIndex)) return;
+    drift::Clip &clip = m_project.tracks()[trackIndex].clips[clipIndex];
+
+    clip.transformX.clear();
+    clip.transformY.clear();
+    clip.transformW.clear();
+    clip.transformH.clear();
+
+    notifyTracksChanged();
+    emit autoReframeFinished(trackIndex, clipIndex, true);
+    setLastMessage(tr("Auto-Reframe removido do clipe."), QStringLiteral("info"));
+}
+
+bool AppController::hasAutoReframe(int trackIndex, int clipIndex) const
+{
+    if (!isValidClipIndex(trackIndex, clipIndex)) return false;
+    const drift::Clip &clip = m_project.tracks().at(trackIndex).clips.at(clipIndex);
+    return clip.transformX.keyframeCount() > 0 ||
+           (clip.transformW.hasDefaultValue() && clip.transformW.defaultValue() > 1920.0);
+}

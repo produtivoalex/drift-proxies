@@ -694,6 +694,86 @@ Item {
                 onClicked: EditorState.resetClipTransform(
                                EditorState.selectedTrack, EditorState.selectedClip)
             }
+
+            // ── Auto-Reframe Inteligente (Fase 6D)
+            Text {
+                visible: !root.isModel3d && root.clipKind !== "audio"
+                text: qsTr("Auto-Reframe 9:16 (IA)")
+                color: Theme.foreground
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSizeSm
+                font.weight: Font.Bold
+            }
+
+            Rectangle {
+                visible: !root.isModel3d && root.clipKind !== "audio"
+                width: parent.width
+                implicitHeight: autoReframeCol.implicitHeight + 16
+                radius: Theme.radiusMd
+                color: Theme.colorPanelBackground
+                border.color: Theme.colorBorder
+                border.width: 1
+
+                property string selectedAspect: "9:16"
+
+                Column {
+                    id: autoReframeCol
+                    anchors { fill: parent; margins: 10 }
+                    spacing: 8
+
+                    Text {
+                        text: qsTr("Adapta vídeos 16:9 mantendo o rosto centralizado automaticamente via Face Tracking.")
+                        color: Theme.mutedForeground
+                        font.pixelSize: Theme.fontSizeXs
+                        wrapMode: Text.WordWrap
+                        width: parent.width
+                    }
+
+                    Row {
+                        spacing: 6
+                        ThemedChip {
+                            text: "9:16 Shorts"
+                            selected: parent.parent.parent.selectedAspect === "9:16"
+                            onClicked: parent.parent.parent.selectedAspect = "9:16"
+                        }
+                        ThemedChip {
+                            text: "1:1 Feed"
+                            selected: parent.parent.parent.selectedAspect === "1:1"
+                            onClicked: parent.parent.parent.selectedAspect = "1:1"
+                        }
+                        ThemedChip {
+                            text: "4:5 Reels"
+                            selected: parent.parent.parent.selectedAspect === "4:5"
+                            onClicked: parent.parent.parent.selectedAspect = "4:5"
+                        }
+                    }
+
+                    Row {
+                        width: parent.width
+                        spacing: 8
+
+                        ThemedButton {
+                            text: qsTr("Aplicar Auto-Reframe")
+                            onClicked: {
+                                EditorState.applyAutoReframe(
+                                    EditorState.selectedTrack,
+                                    EditorState.selectedClip,
+                                    parent.parent.parent.selectedAspect,
+                                    0.15)
+                            }
+                        }
+
+                        ThemedButton {
+                            text: qsTr("Remover")
+                            onClicked: {
+                                EditorState.removeAutoReframe(
+                                    EditorState.selectedTrack,
+                                    EditorState.selectedClip)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
