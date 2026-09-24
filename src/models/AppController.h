@@ -2861,10 +2861,7 @@ protected:
     double m_brollFetchProgress = 0.0;
     QString m_brollFetchStatus;
     int m_brollReadyCount = 0;
-    QVariantList m_fetchedBRolls;  // [{query, localPath, previewUrl, durationSec, source}]
-
-    // Script generator engine (Fase 5A)
-    drift::ScriptGenerator m_scriptGenerator;
+    QVariantList m_fetchedBRolls;
 
     // Dublagem Multiidioma state (Fase 5C)
     drift::ProjectLocalizer m_projectLocalizer;
