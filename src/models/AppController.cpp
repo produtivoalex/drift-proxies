@@ -759,7 +759,7 @@ AppController::AppController(AssetLibrary *assetLibrary, QObject *parent)
     // for a stdio-only headless run. applyMcpStartOnLaunch() is the GUI-only opt-in,
     // called once from Main.qml's own startup sequence.
     m_mcpStartOnLaunch =
-        QSettings().value(QStringLiteral("mcp/startOnLaunch"), false).toBool();
+        QSettings().value(QStringLiteral("mcp/startOnLaunch"), true).toBool();
     connect(&m_undoStack, &QUndoStack::indexChanged, this, &AppController::undoStackChanged);
     connect(&m_undoStack, &QUndoStack::indexChanged, this, [this] {
         m_timelineModel.refresh();
