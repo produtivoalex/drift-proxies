@@ -11394,15 +11394,17 @@ bool AppController::applyVirtualBackground(int trackIndex, int clipIndex,
     bgClip.srcOut = origClip.timelineDuration;
 
     // Setup rectangle shape filling the screen with the preset gradient
-    bgClip.shapeKind = drift::ShapeKind::Rectangle;
-    bgClip.shapeLayers = drift::defaultShapeLayers(preset->secondaryColor, preset->primaryColor, Qt::transparent, 0.0);
-    if (!bgClip.shapeLayers.isEmpty()) {
-        bgClip.shapeLayers[0].fillType = drift::FillType::Gradient;
-        bgClip.shapeLayers[0].gradientType = (preset->gradientType == 1)
-            ? drift::GradientType::Radial
-            : drift::GradientType::Linear;
-        bgClip.shapeLayers[0].gradientColor1 = preset->primaryColor;
-        bgClip.shapeLayers[0].gradientColor2 = preset->secondaryColor;
+    bgClip.shapeStyle.kind = drift::ShapeKind::Rectangle;
+    bgClip.shapeStyle.layers = drift::defaultShapeLayers(preset->secondaryColor, preset->primaryColor, Qt::transparent, 0.0);
+    if (!bgClip.shapeStyle.layers.isEmpty()) {
+        bgClip.shapeStyle.layers[0].paint.kind = drift::TextPaintKind::Gradient;
+        bgClip.shapeStyle.layers[0].paint.gradient.kind = (preset->gradientType == 1)
+            ? drift::TextGradientKind::Radial
+            : drift::TextGradientKind::Linear;
+        bgClip.shapeStyle.layers[0].paint.gradient.stops = {
+            {0.0, preset->primaryColor},
+            {1.0, preset->secondaryColor}
+        };
     }
 
     applyDefaultVisualLayout(bgClip, m_project.width(), m_project.height());
@@ -11412,10 +11414,10 @@ bool AppController::applyVirtualBackground(int trackIndex, int clipIndex,
     const double effectiveBlur = blurAmount > 0.0 ? blurAmount : preset->defaultBlur;
     if (effectiveBlur > 0.01) {
         drift::Effect blurFx;
-        blurFx.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-        blurFx.type = QStringLiteral("gaussian_blur");
+        blurFx.catalogId = QStringLiteral("gaussian_blur");
+        blurFx.name = QStringLiteral("Gaussian Blur");
         blurFx.enabled = true;
-        blurFx.params[QStringLiteral("radius")] = effectiveBlur * 40.0;
+        blurFx.parameters[QStringLiteral("radius")] = effectiveBlur * 40.0;
         bgClip.effects.append(blurFx);
     }
 
@@ -27416,7 +27418,11 @@ int AppController::applyTextStyleToCaptions(int trackIndex, int clipIndex, const
             clip.textStyle = style;
             clip.textStyle.keyframes = keep;
             // Sincroniza também a posição na tela (layout X/Y, escala, alinhamento)
-            clip.visualLayout = source->visualLayout;
+            clip.transformX = source->transformX;
+            clip.transformY = source->transformY;
+            clip.transformW = source->transformW;
+            clip.transformH = source->transformH;
+            clip.rotation = source->rotation;
             ++changed;
         }
     }
@@ -27434,7 +27440,7 @@ void AppController::applyWorkspace(const QString &workspace)
 
     if (workspace == QLatin1String("shorts")) {
         if (m_project.width() == 1920 && m_project.height() == 1080) {
-            setProjectDimensions(1080, 1920);
+            setProjectResolution(1080, 1920);
         }
         setWorkspaceLayoutPreference(QStringLiteral("portrait"));
         m_rippleEnabled = true;
@@ -27450,7 +27456,7 @@ void AppController::applyWorkspace(const QString &workspace)
         setLastMessage(tr("💬 Workspace Legendas ativado! Painel lateral expandido e foco na fala."), QStringLiteral("info"));
     } else if (workspace == QLatin1String("webdoc")) {
         if (m_project.width() == 1080 && m_project.height() == 1920) {
-            setProjectDimensions(1920, 1080);
+            setProjectResolution(1920, 1080);
         }
         setWorkspaceLayoutPreference(QStringLiteral("landscape"));
         setSubtitleStudioMode(false);
