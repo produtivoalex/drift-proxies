@@ -715,6 +715,9 @@ add_library(driftengine STATIC
     # Fase 6B: Gerador de Thumbnails com IA
     src/engine/thumbnail/ThumbnailGenerator.h
     src/engine/thumbnail/ThumbnailGenerator.cpp
+    # Fase 6C: Avatares 2D com Lip-Sync
+    src/engine/avatar/AvatarRenderer.h
+    src/engine/avatar/AvatarRenderer.cpp
     # WizardEngine: Dark Studio Wizard
     src/engine/wizard/WizardEngine.h
     src/engine/wizard/WizardEngine.cpp
