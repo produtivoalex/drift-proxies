@@ -382,6 +382,22 @@ static const QStringList kMonthsPt = {
     QStringLiteral("dezembro")
 };
 
+template <typename Functor>
+static QString replaceAll(const QString &input, const QRegularExpression &re, Functor &&replacer)
+{
+    QString result;
+    int lastPos = 0;
+    auto it = re.globalMatch(input);
+    while (it.hasNext()) {
+        auto match = it.next();
+        result.append(input.mid(lastPos, match.capturedStart() - lastPos));
+        result.append(replacer(match));
+        lastPos = match.capturedEnd();
+    }
+    result.append(input.mid(lastPos));
+    return result;
+}
+
 } // namespace
 
 QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &lang)
@@ -394,7 +410,7 @@ QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &
 
     // 1. Currencies (e.g. R$ 150,50 -> cento e cinquenta reais e cinquenta centavos)
     static const QRegularExpression realRe(QStringLiteral(R"(R\$\s*(\d+)(?:[.,](\d{1,2}))?)"));
-    s.replace(realRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, realRe, [](const QRegularExpressionMatch &m) {
         const qint64 intPart = m.captured(1).toLongLong();
         const QString centsStr = m.captured(2);
         QString res;
@@ -422,19 +438,19 @@ QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &
 
     // Dollars & Euros ($ 100, € 50)
     static const QRegularExpression dollarRe(QStringLiteral(R"((?:US\$|\$)\s*(\d+))"));
-    s.replace(dollarRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, dollarRe, [](const QRegularExpressionMatch &m) {
         const qint64 v = m.captured(1).toLongLong();
         return v == 1 ? QStringLiteral("um dólar") : numberToPortugueseWords(v) + QStringLiteral(" dólares");
     });
     static const QRegularExpression euroRe(QStringLiteral(R"(€\s*(\d+))"));
-    s.replace(euroRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, euroRe, [](const QRegularExpressionMatch &m) {
         const qint64 v = m.captured(1).toLongLong();
         return v == 1 ? QStringLiteral("um euro") : numberToPortugueseWords(v) + QStringLiteral(" euros");
     });
 
     // 2. Percentages (50%, 10,5%)
     static const QRegularExpression pctRe(QStringLiteral(R"((\d+)(?:[.,](\d+))?\s*%)"));
-    s.replace(pctRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, pctRe, [](const QRegularExpressionMatch &m) {
         const qint64 intPart = m.captured(1).toLongLong();
         const QString decPart = m.captured(2);
         if (!decPart.isEmpty()) {
@@ -445,7 +461,7 @@ QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &
 
     // 3. Time / Hours (14h, 14h30, 14:30)
     static const QRegularExpression timeColonRe(QStringLiteral(R"(\b(\d{1,2}):(\d{2})\b)"));
-    s.replace(timeColonRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, timeColonRe, [](const QRegularExpressionMatch &m) {
         const int h = m.captured(1).toInt();
         const int min = m.captured(2).toInt();
         const QString hStr = h == 1 ? QStringLiteral("uma hora") : numberToPortugueseWords(h) + QStringLiteral(" horas");
@@ -457,7 +473,7 @@ QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &
     });
 
     static const QRegularExpression timeHRe(QStringLiteral(R"(\b(\d{1,2})h(\d{1,2})?\b)"));
-    s.replace(timeHRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, timeHRe, [](const QRegularExpressionMatch &m) {
         const int h = m.captured(1).toInt();
         const QString minStr = m.captured(2);
         const QString hStr = h == 1 ? QStringLiteral("uma hora") : numberToPortugueseWords(h) + QStringLiteral(" horas");
@@ -471,7 +487,7 @@ QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &
 
     // 4. Dates (25/12 or 25/12/2026)
     static const QRegularExpression dateRe(QStringLiteral(R"(\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b)"));
-    s.replace(dateRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, dateRe, [](const QRegularExpressionMatch &m) {
         const int d = m.captured(1).toInt();
         const int mon = m.captured(2).toInt();
         const QString yStr = m.captured(3);
@@ -490,34 +506,34 @@ QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &
 
     // 5. Ordinals (1º, 2ª, 10º)
     static const QRegularExpression ordMRe(QStringLiteral(R"(\b(\d+)[º°]\b)"));
-    s.replace(ordMRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, ordMRe, [](const QRegularExpressionMatch &m) {
         return ordinalToPortuguese(m.captured(1).toInt(), false);
     });
     static const QRegularExpression ordFRe(QStringLiteral(R"(\b(\d+)ª\b)"));
-    s.replace(ordFRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, ordFRe, [](const QRegularExpressionMatch &m) {
         return ordinalToPortuguese(m.captured(1).toInt(), true);
     });
 
     // 6. Common units (km, kg, m, cm, min, s)
     static const QRegularExpression kmRe(QStringLiteral(R"(\b(\d+)\s*km\b)"));
-    s.replace(kmRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, kmRe, [](const QRegularExpressionMatch &m) {
         const qint64 v = m.captured(1).toLongLong();
         return numberToPortugueseWords(v) + (v == 1 ? QStringLiteral(" quilômetro") : QStringLiteral(" quilômetros"));
     });
     static const QRegularExpression kgRe(QStringLiteral(R"(\b(\d+)\s*kg\b)"));
-    s.replace(kgRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, kgRe, [](const QRegularExpressionMatch &m) {
         const qint64 v = m.captured(1).toLongLong();
         return numberToPortugueseWords(v) + (v == 1 ? QStringLiteral(" quilo") : QStringLiteral(" quilos"));
     });
     static const QRegularExpression minRe(QStringLiteral(R"(\b(\d+)\s*min\b)"));
-    s.replace(minRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, minRe, [](const QRegularExpressionMatch &m) {
         const qint64 v = m.captured(1).toLongLong();
         return numberToPortugueseWords(v) + (v == 1 ? QStringLiteral(" minuto") : QStringLiteral(" minutos"));
     });
 
     // 7. Decimal numbers with comma (e.g. 3,5)
     static const QRegularExpression decRe(QStringLiteral(R"(\b(\d+),(\d+)\b)"));
-    s.replace(decRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, decRe, [](const QRegularExpressionMatch &m) {
         return numberToPortugueseWords(m.captured(1).toLongLong())
                + QStringLiteral(" vírgula ")
                + numberToPortugueseWords(m.captured(2).toLongLong());
@@ -525,7 +541,7 @@ QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &
 
     // 8. Standalone integers
     static const QRegularExpression intRe(QStringLiteral(R"(\b\d+\b)"));
-    s.replace(intRe, [](const QRegularExpressionMatch &m) {
+    s = replaceAll(s, intRe, [](const QRegularExpressionMatch &m) {
         return numberToPortugueseWords(m.captured(0).toLongLong());
     });
 
@@ -563,6 +579,7 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
         targetVoice = QStringLiteral("en-US-AvaMultilingualNeural");
     }
 
+    const QString uniqueId = QUuid::createUuid().toString(QUuid::WithoutBraces);
     const QString outFilePath = outDir.filePath(QStringLiteral("tts_%1.mp3").arg(uniqueId));
 
 #if defined(Q_OS_WIN)
