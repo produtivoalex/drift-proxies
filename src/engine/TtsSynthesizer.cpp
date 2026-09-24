@@ -114,9 +114,7 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
     vYara.defaultPitch = 1.0;
     voices.append(vYara);
 
-    return voices;
-}
-#elif defined(Q_OS_MACOS)
+#if defined(Q_OS_MACOS)
     QProcess proc;
     proc.start(QStringLiteral("say"), {QStringLiteral("-v"), QStringLiteral("?")});
     if (proc.waitForFinished(3000)) {

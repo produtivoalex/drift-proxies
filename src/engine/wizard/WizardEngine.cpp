@@ -137,7 +137,7 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
     updateProgress(0.95, tr("Montando Dark Studio Timeline..."));
 
     // Aplicar no projeto (FASE 3 - Automação Cinematográfica)
-    QMetaObject::invokeMethod(project, [project, ttsResult, wResult, vibe]() {
+    QMetaObject::invokeMethod(this, [this, project, ttsResult, wResult, vibe, finish]() {
         int videoTrackIndex = drift::ensureTrackForClipType(*project, ClipType::Video);
         int audioTrackIndex = drift::ensureTrackForClipType(*project, ClipType::Audio);
         int subtitleTrackIndex = drift::ensureTrackForClipType(*project, ClipType::Subtitle);
@@ -145,7 +145,7 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
         // Track dedicada para SFX e Bed Track
         drift::Track sfxTrack;
         sfxTrack.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
-        sfxTrack.type = ClipType::Audio;
+        sfxTrack.type = TrackType::Audio;
         sfxTrack.name = QStringLiteral("SFX / Impactos");
         project->tracks().append(sfxTrack);
         int sfxTrackIndex = project->tracks().size() - 1;
@@ -156,11 +156,13 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
             audioClip.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
             audioClip.type = ClipType::Audio;
             audioClip.path = ttsResult.filePath;
-            audioClip.start = 0;
-            audioClip.duration = static_cast<drift::TimeUs>(ttsResult.durationSeconds * drift::kUsPerSecond);
-            audioClip.sourceStart = 0;
+            audioClip.timelineStart = 0;
+            audioClip.timelineDuration = static_cast<drift::TimeUs>(ttsResult.durationSeconds * drift::kUsPerSecond);
+            audioClip.srcIn = 0;
+            audioClip.srcOut = audioClip.timelineDuration;
             audioClip.name = QFileInfo(ttsResult.filePath).fileName();
             project->tracks()[audioTrackIndex].clips.append(audioClip);
+            finish(true, QString());
             return;
         }
 
@@ -176,19 +178,19 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
         for (const SubtitleCue &cue : wResult.cues) {
             if (currentBlock.cues.isEmpty()) {
                 currentBlock.startUs = cue.startUs;
-                currentBlock.endUs = cue.startUs + cue.durationUs;
+                currentBlock.endUs = cue.endUs;
                 currentBlock.text = cue.text;
                 currentBlock.cues.append(cue);
             } else {
                 if (cue.startUs - currentBlock.endUs > 400000) { // 400ms gap = silence
                     blocks.append(currentBlock);
                     currentBlock.startUs = cue.startUs;
-                    currentBlock.endUs = cue.startUs + cue.durationUs;
+                    currentBlock.endUs = cue.endUs;
                     currentBlock.text = cue.text;
                     currentBlock.cues.clear();
                     currentBlock.cues.append(cue);
                 } else {
-                    currentBlock.endUs = cue.startUs + cue.durationUs;
+                    currentBlock.endUs = cue.endUs;
                     currentBlock.text += " " + cue.text;
                     currentBlock.cues.append(cue);
                 }
@@ -209,9 +211,10 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
             audioClip.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
             audioClip.type = ClipType::Audio;
             audioClip.path = ttsResult.filePath;
-            audioClip.start = currentTimelineUs;
-            audioClip.duration = blockDuration;
-            audioClip.sourceStart = block.startUs;
+            audioClip.timelineStart = currentTimelineUs;
+            audioClip.timelineDuration = blockDuration;
+            audioClip.srcIn = block.startUs;
+            audioClip.srcOut = block.startUs + blockDuration;
             audioClip.name = QStringLiteral("Voz (Bloco %1)").arg(blockIndex + 1);
             project->tracks()[audioTrackIndex].clips.append(audioClip);
 
@@ -220,8 +223,10 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
                 Clip subClip;
                 subClip.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
                 subClip.type = ClipType::Subtitle;
-                subClip.start = currentTimelineUs + (cue.startUs - block.startUs);
-                subClip.duration = cue.durationUs;
+                subClip.timelineStart = currentTimelineUs + (cue.startUs - block.startUs);
+                subClip.timelineDuration = cue.endUs - cue.startUs;
+                subClip.srcIn = 0;
+                subClip.srcOut = subClip.timelineDuration;
                 subClip.name = cue.text;
                 project->tracks()[subtitleTrackIndex].clips.append(subClip);
             }
@@ -232,9 +237,10 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
             videoClip.type = ClipType::Video;
             // Buscador local simulado pelo nicho/vibe
             videoClip.path = QStringLiteral("app://b-roll/%1_%2.mp4").arg(vibe.toLower()).arg((blockIndex % 5) + 1);
-            videoClip.start = currentTimelineUs;
-            videoClip.duration = blockDuration;
-            videoClip.sourceStart = 0;
+            videoClip.timelineStart = currentTimelineUs;
+            videoClip.timelineDuration = blockDuration;
+            videoClip.srcIn = 0;
+            videoClip.srcOut = blockDuration;
             videoClip.name = QStringLiteral("B-Roll: %1").arg(vibe);
             
             // Adição automática da Curva de Velocidade Ken Burns
@@ -254,9 +260,10 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
                 sfxClip.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
                 sfxClip.type = ClipType::Audio;
                 sfxClip.path = (blockIndex == 0) ? QStringLiteral("sfx://whoosh_deep") : QStringLiteral("sfx://boom_bass");
-                sfxClip.start = currentTimelineUs;
-                sfxClip.duration = 1000000; // 1s
-                sfxClip.sourceStart = 0;
+                sfxClip.timelineStart = currentTimelineUs;
+                sfxClip.timelineDuration = 1000000; // 1s
+                sfxClip.srcIn = 0;
+                sfxClip.srcOut = 1000000;
                 sfxClip.name = (blockIndex == 0) ? QStringLiteral("Whoosh Deep") : QStringLiteral("Boom Bass");
                 project->tracks()[sfxTrackIndex].clips.append(sfxClip);
             }
@@ -270,22 +277,22 @@ void WizardEngine::processAsync(QString script, QString vibe, QString voiceId, P
         bedTrack.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
         bedTrack.type = ClipType::Audio;
         bedTrack.path = QStringLiteral("app://music/bgm_%1.mp3").arg(vibe.toLower());
-        bedTrack.start = 0;
-        bedTrack.duration = currentTimelineUs; // Cobre todo o vídeo
-        bedTrack.sourceStart = 0;
+        bedTrack.timelineStart = 0;
+        bedTrack.timelineDuration = currentTimelineUs; // Cobre todo o vídeo
+        bedTrack.srcIn = 0;
+        bedTrack.srcOut = currentTimelineUs;
         bedTrack.name = QStringLiteral("Trilha Sonora: %1").arg(vibe);
         
         // Efeito de Auto-Ducking
         drift::Effect duckingEffect;
-        duckingEffect.id = QStringLiteral("auto_ducking");
-        duckingEffect.label = QStringLiteral("Auto-Ducking");
+        duckingEffect.catalogId = QStringLiteral("auto_ducking");
+        duckingEffect.name = QStringLiteral("Auto-Ducking");
         bedTrack.audioEffects.append(duckingEffect);
         
         project->tracks()[sfxTrackIndex].clips.append(bedTrack);
 
+        finish(true, QString());
     }, Qt::QueuedConnection);
-
-    finish(true, "");
 }
 
 } // namespace drift

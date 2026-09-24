@@ -57,9 +57,9 @@ QString ProjectLocalizer::extractProjectText(const Project &project)
 {
     QStringList texts;
     for (const auto &track : project.tracks()) {
-        for (const auto &clip : track.clips()) {
-            if (!clip.subtitleCues().isEmpty()) {
-                for (const auto &cue : clip.subtitleCues())
+        for (const auto &clip : track.clips) {
+            if (!clip.subtitleCues.isEmpty()) {
+                for (const auto &cue : clip.subtitleCues)
                     texts << cue.text;
             }
         }
