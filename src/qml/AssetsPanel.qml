@@ -567,7 +567,8 @@ PanelFrame {
         if (tabId === "text" || tabId === "subtitles" || tabId === "stickers" || tabId === "shapes"
                 || tabId === "effects" || tabId === "templates" || tabId === "adjustment"
                 || tabId === "sounds" || tabId === "transitions" || tabId === "masks"
-                || tabId === "shortcuts" || tabId === "scenes" || tabId === "market")
+                || tabId === "shortcuts" || tabId === "scenes" || tabId === "market"
+                || tabId === "backgrounds")
             return false
         const kinds = kindsForTab(tabId)
         return kinds.length === 0 || kinds.indexOf(kind) >= 0
@@ -584,6 +585,7 @@ PanelFrame {
         "shapes": qsTr("Shapes"),
         "scenes": qsTr("Scenes"),
         "masks": qsTr("Masks"),
+        "backgrounds": qsTr("Cenários"),
         "effects": qsTr("Effects"),
         "templates": qsTr("Templates"),
         "transitions": qsTr("Transitions"),
@@ -602,7 +604,8 @@ PanelFrame {
         ListElement { tabId: "subtitles"; icon: 2; separatorAfter: false }
         ListElement { tabId: "stickers"; icon: 3; separatorAfter: false }
         ListElement { tabId: "shapes"; icon: 4; separatorAfter: false }
-        ListElement { tabId: "masks"; icon: 11; separatorAfter: true }
+        ListElement { tabId: "masks"; icon: 11; separatorAfter: false }
+        ListElement { tabId: "backgrounds"; icon: 13; separatorAfter: true }
         ListElement { tabId: "scenes"; icon: 10; separatorAfter: true }
         ListElement { tabId: "effects"; icon: 5; separatorAfter: false }
         ListElement { tabId: "templates"; icon: 6; separatorAfter: false }
@@ -623,7 +626,8 @@ PanelFrame {
         Theme.icons.keyboard,
         Theme.icons.listVideo,
         Theme.icons.mask,
-        Theme.icons.store
+        Theme.icons.store,
+        Theme.icons.sparkles
     ]
     property int activeTab: 0
 
@@ -1003,6 +1007,14 @@ PanelFrame {
 
             MasksTab {
                 visible: tabsModel.get(activeTab).tabId === "masks"
+                width: parent.width
+                opacity: root.tabOpacity
+                height: parent.height - Theme.panelHeaderHeight
+                onAdded: root.addCompleted()
+            }
+
+            BackgroundsTab {
+                visible: tabsModel.get(activeTab).tabId === "backgrounds"
                 width: parent.width
                 opacity: root.tabOpacity
                 height: parent.height - Theme.panelHeaderHeight

@@ -917,6 +917,13 @@ public:
     // Inverts the cutout mask (leaves only background)
     Q_INVOKABLE bool invertCutoutMask(int trackIndex, int clipIndex);
 
+    // 1-Click Virtual Background: Replaces video background with a virtual set (studio, podcast, neon, dynamic)
+    Q_INVOKABLE QVariantList virtualBackgroundPresets() const;
+    Q_INVOKABLE bool applyVirtualBackground(int trackIndex, int clipIndex,
+                                           const QString &presetId,
+                                           double blurAmount = 0.0);
+    Q_INVOKABLE bool removeVirtualBackground(int trackIndex, int clipIndex);
+
     // Starts a punching session from the current video selection (two or more clips on
     // distinct tracks). Returns false when there is nothing to punch and no empty-timeline
     // setup to offer; the window should stay closed.

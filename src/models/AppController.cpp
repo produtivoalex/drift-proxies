@@ -16,6 +16,7 @@
 #include "core/OtioReader.h"
 #include "core/ShapePath.h"
 #include "core/SubtitleCue.h"
+#include "engine/VirtualBackgrounds.h"
 #include "core/SrtIO.h"
 #include "core/DotLottie.h"
 #include "core/LottieTextImport.h"
@@ -11321,6 +11322,141 @@ bool AppController::invertCutoutMask(int trackIndex, int clipIndex)
         pushProjectEdit(before, tr("Invert cutout"));
         finishEdit(tr("Invert cutout"));
         setLastMessage(tr("Inversão de recorte alternada."), QStringLiteral("info"));
+        return true;
+    }
+    return false;
+}
+
+QVariantList AppController::virtualBackgroundPresets() const
+{
+    QVariantList list;
+    for (const auto &p : drift::VirtualBackgroundCatalog::presets()) {
+        list.append(p.toVariantMap());
+    }
+    return list;
+}
+
+bool AppController::applyVirtualBackground(int trackIndex, int clipIndex,
+                                           const QString &presetId,
+                                           double blurAmount)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    const drift::Track &origTrack = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= origTrack.clips.size())
+        return false;
+    const drift::Clip origClip = origTrack.clips.at(clipIndex);
+    if (origClip.type != drift::ClipType::Video) {
+        setLastMessage(tr("Selecione um clipe de vídeo para aplicar o cenário"), QStringLiteral("warning"));
+        return false;
+    }
+
+    const drift::VirtualBackgroundPreset *preset = drift::VirtualBackgroundCatalog::findPreset(presetId);
+    if (!preset) {
+        setLastMessage(tr("Cenário não encontrado"), QStringLiteral("error"));
+        return false;
+    }
+
+    const drift::Project before = m_project;
+
+    // 1. If subject is not yet cut out, trigger 1-click cutout automatically
+    if (!hasCutoutMask(trackIndex, clipIndex)) {
+        autoCutoutPerson(trackIndex, clipIndex);
+    }
+
+    // 2. Ensure background track exists directly beneath the subject track (at trackIndex + 1)
+    const int bgTrackIndex = trackIndex + 1;
+    if (bgTrackIndex >= m_project.tracks().size()) {
+        m_project.tracks().append(drift::Track{.type = drift::TrackType::Video});
+    } else if (m_project.tracks().at(bgTrackIndex).type != drift::TrackType::Video) {
+        m_project.tracks().insert(bgTrackIndex, drift::Track{.type = drift::TrackType::Video});
+    }
+
+    // 3. Remove any previous virtual background clip overlapping this span on the bg track
+    drift::Track &bgTrack = m_project.tracks()[bgTrackIndex];
+    for (int i = bgTrack.clips.size() - 1; i >= 0; --i) {
+        const drift::Clip &c = bgTrack.clips.at(i);
+        if (c.name.startsWith(QStringLiteral("Cenário:")) &&
+            c.timelineStart < origClip.timelineStart + origClip.timelineDuration &&
+            c.timelineStart + c.timelineDuration > origClip.timelineStart) {
+            bgTrack.clips.removeAt(i);
+        }
+    }
+
+    // 4. Create virtual background shape clip covering 100% canvas
+    drift::Clip bgClip;
+    bgClip.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+    bgClip.type = drift::ClipType::Shape;
+    bgClip.name = tr("Cenário: %1").arg(preset->name);
+    bgClip.timelineStart = origClip.timelineStart;
+    bgClip.timelineDuration = origClip.timelineDuration;
+    bgClip.srcIn = 0;
+    bgClip.srcOut = origClip.timelineDuration;
+
+    // Setup rectangle shape filling the screen with the preset gradient
+    bgClip.shapeKind = drift::ShapeKind::Rectangle;
+    bgClip.shapeLayers = drift::defaultShapeLayers(preset->secondaryColor, preset->primaryColor, Qt::transparent, 0.0);
+    if (!bgClip.shapeLayers.isEmpty()) {
+        bgClip.shapeLayers[0].fillType = drift::FillType::Gradient;
+        bgClip.shapeLayers[0].gradientType = (preset->gradientType == 1)
+            ? drift::GradientType::Radial
+            : drift::GradientType::Linear;
+        bgClip.shapeLayers[0].gradientColor1 = preset->primaryColor;
+        bgClip.shapeLayers[0].gradientColor2 = preset->secondaryColor;
+    }
+
+    applyDefaultVisualLayout(bgClip, m_project.width(), m_project.height());
+    setClipLayoutPixels(bgClip, 0, 0, m_project.width(), m_project.height());
+
+    // 5. Add blur effect if requested or specified by default preset blur
+    const double effectiveBlur = blurAmount > 0.0 ? blurAmount : preset->defaultBlur;
+    if (effectiveBlur > 0.01) {
+        drift::Effect blurFx;
+        blurFx.id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+        blurFx.type = QStringLiteral("gaussian_blur");
+        blurFx.enabled = true;
+        blurFx.params[QStringLiteral("radius")] = effectiveBlur * 40.0;
+        bgClip.effects.append(blurFx);
+    }
+
+    m_project.tracks()[bgTrackIndex].clips.append(bgClip);
+
+    pushProjectEdit(before, tr("Apply Virtual Background"));
+    finishEdit(tr("Apply Virtual Background"));
+    setLastMessage(tr("Cenário '%1' aplicado com sucesso!").arg(preset->name), QStringLiteral("success"));
+    return true;
+}
+
+bool AppController::removeVirtualBackground(int trackIndex, int clipIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return false;
+    const drift::Track &origTrack = m_project.tracks().at(trackIndex);
+    if (clipIndex < 0 || clipIndex >= origTrack.clips.size())
+        return false;
+    const drift::Clip origClip = origTrack.clips.at(clipIndex);
+
+    const int bgTrackIndex = trackIndex + 1;
+    if (bgTrackIndex >= m_project.tracks().size())
+        return false;
+
+    const drift::Project before = m_project;
+    drift::Track &bgTrack = m_project.tracks()[bgTrackIndex];
+    bool removed = false;
+    for (int i = bgTrack.clips.size() - 1; i >= 0; --i) {
+        const drift::Clip &c = bgTrack.clips.at(i);
+        if (c.name.startsWith(QStringLiteral("Cenário:")) &&
+            c.timelineStart < origClip.timelineStart + origClip.timelineDuration &&
+            c.timelineStart + c.timelineDuration > origClip.timelineStart) {
+            bgTrack.clips.removeAt(i);
+            removed = true;
+        }
+    }
+
+    if (removed) {
+        pushProjectEdit(before, tr("Remove Virtual Background"));
+        finishEdit(tr("Remove Virtual Background"));
+        setLastMessage(tr("Cenário virtual removido."), QStringLiteral("info"));
         return true;
     }
     return false;

@@ -701,6 +701,8 @@ add_library(driftengine STATIC
     src/engine/SfxCatalog.cpp
     src/engine/TtsSynthesizer.h
     src/engine/TtsSynthesizer.cpp
+    src/engine/VirtualBackgrounds.h
+    src/engine/VirtualBackgrounds.cpp
 )
 target_include_directories(driftengine PUBLIC src)
 # cgltf is PRIVATE: ModelAsset.h exposes no cgltf type, so nothing outside ModelAsset.cpp includes it.
@@ -1020,6 +1022,7 @@ qt_add_qml_module(drift
         src/qml/components/assets/StickersTab.qml
         src/qml/components/assets/ShapesTab.qml
         src/qml/components/assets/MasksTab.qml
+        src/qml/components/assets/BackgroundsTab.qml
         src/qml/components/assets/SoundsTab.qml
         src/qml/components/assets/ShortcutsTab.qml
         src/qml/components/assets/MediaAssetsTab.qml

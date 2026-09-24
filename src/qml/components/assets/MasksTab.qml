@@ -131,6 +131,18 @@ Item {
             ThemedButton {
                 visible: segmentSection.segmentReady && segmentSection.runtimeReady
                 width: parent.width
+                text: qsTr("🌄 Substituir Cenário (Virtual Sets)")
+                variant: "secondary"
+                enabled: !EditorState.segmenting && root.clipKind === "video"
+                tooltip: qsTr("Aplica cenários virtuais de estúdio, podcast e neon atrás do apresentador em 1 clique")
+                onClicked: {
+                    EditorState.applyVirtualBackground(EditorState.selectedTrack, EditorState.selectedClip, "podcast-warm", 0.15)
+                }
+            }
+
+            ThemedButton {
+                visible: segmentSection.segmentReady && segmentSection.runtimeReady
+                width: parent.width
                 text: qsTr("Recorte Interativo (SAM2)…")
                 enabled: !EditorState.segmenting && root.clipKind === "video"
                 tooltip: root.clipKind === "video"

@@ -263,13 +263,285 @@ QList<SubtitleCue> TtsSynthesizer::generateCuesForText(const QString &text, doub
     return cues;
 }
 
+namespace {
+
+QString convertHundreds(qint64 n)
+{
+    static const QStringList units = {
+        QStringLiteral(""), QStringLiteral("um"), QStringLiteral("dois"), QStringLiteral("três"),
+        QStringLiteral("quatro"), QStringLiteral("cinco"), QStringLiteral("seis"), QStringLiteral("sete"),
+        QStringLiteral("oito"), QStringLiteral("nove"), QStringLiteral("dez"), QStringLiteral("onze"),
+        QStringLiteral("doze"), QStringLiteral("treze"), QStringLiteral("quatorze"), QStringLiteral("quinze"),
+        QStringLiteral("dezesseis"), QStringLiteral("dezessete"), QStringLiteral("dezoito"), QStringLiteral("dezenove")
+    };
+    static const QStringList tens = {
+        QStringLiteral(""), QStringLiteral(""), QStringLiteral("vinte"), QStringLiteral("trinta"),
+        QStringLiteral("quarenta"), QStringLiteral("cinquenta"), QStringLiteral("sessenta"),
+        QStringLiteral("setenta"), QStringLiteral("oitenta"), QStringLiteral("noventa")
+    };
+    static const QStringList hundreds = {
+        QStringLiteral(""), QStringLiteral("cento"), QStringLiteral("duzentos"), QStringLiteral("trezentos"),
+        QStringLiteral("quatrocentos"), QStringLiteral("quinhentos"), QStringLiteral("seiscentos"),
+        QStringLiteral("setecentos"), QStringLiteral("oitocentos"), QStringLiteral("novecentos")
+    };
+
+    if (n == 0)
+        return QString();
+    if (n == 100)
+        return QStringLiteral("cem");
+
+    QStringList parts;
+    const int c = static_cast<int>(n / 100);
+    const int remainder = static_cast<int>(n % 100);
+
+    if (c > 0 && c < hundreds.size())
+        parts.append(hundreds.at(c));
+
+    if (remainder > 0) {
+        if (remainder < 20) {
+            parts.append(units.at(remainder));
+        } else {
+            const int d = remainder / 10;
+            const int u = remainder % 10;
+            if (d < tens.size())
+                parts.append(tens.at(d));
+            if (u > 0 && u < units.size())
+                parts.append(units.at(u));
+        }
+    }
+
+    return parts.join(QStringLiteral(" e "));
+}
+
+QString numberToPortugueseWords(qint64 n)
+{
+    if (n == 0)
+        return QStringLiteral("zero");
+    if (n < 0)
+        return QStringLiteral("menos ") + numberToPortugueseWords(-n);
+
+    if (n < 1000)
+        return convertHundreds(n);
+
+    QStringList parts;
+
+    const qint64 billions = n / 1000000000;
+    n %= 1000000000;
+    if (billions > 0) {
+        if (billions == 1)
+            parts.append(QStringLiteral("um bilhão"));
+        else
+            parts.append(convertHundreds(billions) + QStringLiteral(" bilhões"));
+    }
+
+    const qint64 millions = n / 1000000;
+    n %= 1000000;
+    if (millions > 0) {
+        if (millions == 1)
+            parts.append(QStringLiteral("um milhão"));
+        else
+            parts.append(convertHundreds(millions) + QStringLiteral(" milhões"));
+    }
+
+    const qint64 thousands = n / 1000;
+    n %= 1000;
+    if (thousands > 0) {
+        if (thousands == 1)
+            parts.append(QStringLiteral("mil"));
+        else
+            parts.append(convertHundreds(thousands) + QStringLiteral(" mil"));
+    }
+
+    if (n > 0) {
+        parts.append(convertHundreds(n));
+    }
+
+    return parts.join(QStringLiteral(" e "));
+}
+
+QString ordinalToPortuguese(int n, bool feminine)
+{
+    static const QStringList ordM = {
+        QStringLiteral(""), QStringLiteral("primeiro"), QStringLiteral("segundo"), QStringLiteral("terceiro"),
+        QStringLiteral("quarto"), QStringLiteral("quinto"), QStringLiteral("sexto"), QStringLiteral("sétimo"),
+        QStringLiteral("oitavo"), QStringLiteral("nono"), QStringLiteral("décimo")
+    };
+    static const QStringList ordF = {
+        QStringLiteral(""), QStringLiteral("primeira"), QStringLiteral("segunda"), QStringLiteral("terceira"),
+        QStringLiteral("quarta"), QStringLiteral("quinta"), QStringLiteral("sexta"), QStringLiteral("sétima"),
+        QStringLiteral("oitava"), QStringLiteral("nona"), QStringLiteral("décima")
+    };
+
+    if (n >= 1 && n <= 10)
+        return feminine ? ordF.at(n) : ordM.at(n);
+    return numberToPortugueseWords(n);
+}
+
+static const QStringList kMonthsPt = {
+    QStringLiteral(""), QStringLiteral("janeiro"), QStringLiteral("fevereiro"), QStringLiteral("março"),
+    QStringLiteral("abril"), QStringLiteral("maio"), QStringLiteral("junho"), QStringLiteral("julho"),
+    QStringLiteral("agosto"), QStringLiteral("setembro"), QStringLiteral("outubro"), QStringLiteral("novembro"),
+    QStringLiteral("dezembro")
+};
+
+} // namespace
+
+QString TtsSynthesizer::normalizeTextForTts(const QString &text, const QString &lang)
+{
+    Q_UNUSED(lang);
+    if (text.trimmed().isEmpty())
+        return text;
+
+    QString s = text;
+
+    // 1. Currencies (e.g. R$ 150,50 -> cento e cinquenta reais e cinquenta centavos)
+    static const QRegularExpression realRe(QStringLiteral(R"(R\$\s*(\d+)(?:[.,](\d{1,2}))?)"));
+    s.replace(realRe, [](const QRegularExpressionMatch &m) {
+        const qint64 intPart = m.captured(1).toLongLong();
+        const QString centsStr = m.captured(2);
+        QString res;
+        if (intPart == 1)
+            res = QStringLiteral("um real");
+        else if (intPart > 0)
+            res = numberToPortugueseWords(intPart) + QStringLiteral(" reais");
+
+        if (!centsStr.isEmpty()) {
+            int cents = centsStr.toInt();
+            if (centsStr.length() == 1)
+                cents *= 10;
+            if (cents > 0) {
+                const QString centsWords = cents == 1
+                    ? QStringLiteral("um centavo")
+                    : numberToPortugueseWords(cents) + QStringLiteral(" centavos");
+                if (res.isEmpty())
+                    res = centsWords;
+                else
+                    res += QStringLiteral(" e ") + centsWords;
+            }
+        }
+        return res.isEmpty() ? QStringLiteral("zero reais") : res;
+    });
+
+    // Dollars & Euros ($ 100, € 50)
+    static const QRegularExpression dollarRe(QStringLiteral(R"((?:US\$|\$)\s*(\d+))"));
+    s.replace(dollarRe, [](const QRegularExpressionMatch &m) {
+        const qint64 v = m.captured(1).toLongLong();
+        return v == 1 ? QStringLiteral("um dólar") : numberToPortugueseWords(v) + QStringLiteral(" dólares");
+    });
+    static const QRegularExpression euroRe(QStringLiteral(R"(€\s*(\d+))"));
+    s.replace(euroRe, [](const QRegularExpressionMatch &m) {
+        const qint64 v = m.captured(1).toLongLong();
+        return v == 1 ? QStringLiteral("um euro") : numberToPortugueseWords(v) + QStringLiteral(" euros");
+    });
+
+    // 2. Percentages (50%, 10,5%)
+    static const QRegularExpression pctRe(QStringLiteral(R"((\d+)(?:[.,](\d+))?\s*%)"));
+    s.replace(pctRe, [](const QRegularExpressionMatch &m) {
+        const qint64 intPart = m.captured(1).toLongLong();
+        const QString decPart = m.captured(2);
+        if (!decPart.isEmpty()) {
+            return numberToPortugueseWords(intPart) + QStringLiteral(" vírgula ") + numberToPortugueseWords(decPart.toLongLong()) + QStringLiteral(" por cento");
+        }
+        return numberToPortugueseWords(intPart) + QStringLiteral(" por cento");
+    });
+
+    // 3. Time / Hours (14h, 14h30, 14:30)
+    static const QRegularExpression timeColonRe(QStringLiteral(R"(\b(\d{1,2}):(\d{2})\b)"));
+    s.replace(timeColonRe, [](const QRegularExpressionMatch &m) {
+        const int h = m.captured(1).toInt();
+        const int min = m.captured(2).toInt();
+        const QString hStr = h == 1 ? QStringLiteral("uma hora") : numberToPortugueseWords(h) + QStringLiteral(" horas");
+        if (min == 0)
+            return hStr;
+        if (min == 30)
+            return hStr + QStringLiteral(" e meia");
+        return hStr + QStringLiteral(" e ") + (min == 1 ? QStringLiteral("um minuto") : numberToPortugueseWords(min) + QStringLiteral(" minutos"));
+    });
+
+    static const QRegularExpression timeHRe(QStringLiteral(R"(\b(\d{1,2})h(\d{1,2})?\b)"));
+    s.replace(timeHRe, [](const QRegularExpressionMatch &m) {
+        const int h = m.captured(1).toInt();
+        const QString minStr = m.captured(2);
+        const QString hStr = h == 1 ? QStringLiteral("uma hora") : numberToPortugueseWords(h) + QStringLiteral(" horas");
+        if (minStr.isEmpty() || minStr.toInt() == 0)
+            return hStr;
+        const int min = minStr.toInt();
+        if (min == 30)
+            return hStr + QStringLiteral(" e meia");
+        return hStr + QStringLiteral(" e ") + (min == 1 ? QStringLiteral("um minuto") : numberToPortugueseWords(min) + QStringLiteral(" minutos"));
+    });
+
+    // 4. Dates (25/12 or 25/12/2026)
+    static const QRegularExpression dateRe(QStringLiteral(R"(\b(\d{1,2})/(\d{1,2})(?:/(\d{2,4}))?\b)"));
+    s.replace(dateRe, [](const QRegularExpressionMatch &m) {
+        const int d = m.captured(1).toInt();
+        const int mon = m.captured(2).toInt();
+        const QString yStr = m.captured(3);
+        if (mon >= 1 && mon <= 12 && d >= 1 && d <= 31) {
+            QString out = (d == 1 ? QStringLiteral("primeiro") : numberToPortugueseWords(d))
+                          + QStringLiteral(" de ") + kMonthsPt.at(mon);
+            if (!yStr.isEmpty()) {
+                qint64 y = yStr.toLongLong();
+                if (y < 100) y += 2000;
+                out += QStringLiteral(" de ") + numberToPortugueseWords(y);
+            }
+            return out;
+        }
+        return m.captured(0);
+    });
+
+    // 5. Ordinals (1º, 2ª, 10º)
+    static const QRegularExpression ordMRe(QStringLiteral(R"(\b(\d+)[º°]\b)"));
+    s.replace(ordMRe, [](const QRegularExpressionMatch &m) {
+        return ordinalToPortuguese(m.captured(1).toInt(), false);
+    });
+    static const QRegularExpression ordFRe(QStringLiteral(R"(\b(\d+)ª\b)"));
+    s.replace(ordFRe, [](const QRegularExpressionMatch &m) {
+        return ordinalToPortuguese(m.captured(1).toInt(), true);
+    });
+
+    // 6. Common units (km, kg, m, cm, min, s)
+    static const QRegularExpression kmRe(QStringLiteral(R"(\b(\d+)\s*km\b)"));
+    s.replace(kmRe, [](const QRegularExpressionMatch &m) {
+        const qint64 v = m.captured(1).toLongLong();
+        return numberToPortugueseWords(v) + (v == 1 ? QStringLiteral(" quilômetro") : QStringLiteral(" quilômetros"));
+    });
+    static const QRegularExpression kgRe(QStringLiteral(R"(\b(\d+)\s*kg\b)"));
+    s.replace(kgRe, [](const QRegularExpressionMatch &m) {
+        const qint64 v = m.captured(1).toLongLong();
+        return numberToPortugueseWords(v) + (v == 1 ? QStringLiteral(" quilo") : QStringLiteral(" quilos"));
+    });
+    static const QRegularExpression minRe(QStringLiteral(R"(\b(\d+)\s*min\b)"));
+    s.replace(minRe, [](const QRegularExpressionMatch &m) {
+        const qint64 v = m.captured(1).toLongLong();
+        return numberToPortugueseWords(v) + (v == 1 ? QStringLiteral(" minuto") : QStringLiteral(" minutos"));
+    });
+
+    // 7. Decimal numbers with comma (e.g. 3,5)
+    static const QRegularExpression decRe(QStringLiteral(R"(\b(\d+),(\d+)\b)"));
+    s.replace(decRe, [](const QRegularExpressionMatch &m) {
+        return numberToPortugueseWords(m.captured(1).toLongLong())
+               + QStringLiteral(" vírgula ")
+               + numberToPortugueseWords(m.captured(2).toLongLong());
+    });
+
+    // 8. Standalone integers
+    static const QRegularExpression intRe(QStringLiteral(R"(\b\d+\b)"));
+    s.replace(intRe, [](const QRegularExpressionMatch &m) {
+        return numberToPortugueseWords(m.captured(0).toLongLong());
+    });
+
+    return s;
+}
+
 TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
                                               const QString &voiceId,
                                               double rate,
                                               double pitch)
 {
     TtsSynthesizeResult res;
-    const QString cleanText = text.trimmed();
+    // Apply automatic Text Normalization (spelling out numbers, currencies, dates, ordinals in Portuguese)
+    const QString cleanText = normalizeTextForTts(text).trimmed();
     if (cleanText.isEmpty()) {
         res.error = QStringLiteral("Texto vazio para síntese de voz.");
         return res;

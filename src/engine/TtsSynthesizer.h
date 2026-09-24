@@ -50,11 +50,15 @@ public:
     // Returns all detected system voices + local neural voices
     QList<TtsVoiceInfo> availableVoices();
 
-    // Synthesizes speech to a standard PCM WAV file in the local cache
+    // Synthesizes speech to a standard PCM WAV / MP3 file in the local cache
     TtsSynthesizeResult synthesize(const QString &text,
                                   const QString &voiceId = QString(),
                                   double rate = 1.0,
                                   double pitch = 1.0);
+
+    // Normalizes text for text-to-speech by spelling out numbers, currencies, percentages,
+    // dates, units and ordinals in Portuguese to ensure 100% natural, human pronunciation.
+    static QString normalizeTextForTts(const QString &text, const QString &lang = QStringLiteral("pt-BR"));
 
 private:
     TtsSynthesizer();

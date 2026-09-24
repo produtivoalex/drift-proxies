@@ -1893,6 +1893,28 @@ QJsonObject McpDispatcher::applyOneExtended(const QString &tool, const QJsonObje
         return ok({{QStringLiteral("cancelled"), true}});
     }
 
+    if (tool == QLatin1String("list_virtual_backgrounds")) {
+        return ok({{QStringLiteral("presets"), QJsonArray::fromVariantList(m_controller->virtualBackgroundPresets())}});
+    }
+
+    if (tool == QLatin1String("apply_virtual_background")) {
+        const ClipRef ref = resolveClip(args);
+        if (!ref.valid())
+            return clipRefError(args);
+        const QString presetId = argString(args, QStringLiteral("preset"));
+        const double blur = jsonNumber(args.value(QStringLiteral("blur")), 0.0);
+        const bool applied = m_controller->applyVirtualBackground(ref.track, ref.clip, presetId, blur);
+        return ok(clipFeedback(ref, {{QStringLiteral("applied"), applied}, {QStringLiteral("preset"), presetId}}));
+    }
+
+    if (tool == QLatin1String("remove_virtual_background")) {
+        const ClipRef ref = resolveClip(args);
+        if (!ref.valid())
+            return clipRefError(args);
+        const bool removed = m_controller->removeVirtualBackground(ref.track, ref.clip);
+        return ok(clipFeedback(ref, {{QStringLiteral("removed"), removed}}));
+    }
+
     // --- ai ---
     if (tool == QLatin1String("denoise_status"))
         return ok({{QStringLiteral("available"), m_controller->denoiseAvailable()}});
