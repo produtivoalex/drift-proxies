@@ -1047,6 +1047,7 @@ ApplicationWindow {
                             }
                         }
                         rootSplit.insertItem(rootSplit.count, propertiesPanel)
+                        propertiesPanel.SplitView.fillHeight = true
                     } else {
                         for (let i = 0; i < rootSplit.count; ++i) {
                             if (rootSplit.itemAt(i) === propertiesPanel) {
@@ -1055,6 +1056,7 @@ ApplicationWindow {
                             }
                         }
                         innerSplit.insertItem(innerSplit.count, propertiesPanel)
+                        propertiesPanel.SplitView.fillHeight = true
                     }
                     window.schedulePanelCapture()
                 }
@@ -1174,8 +1176,9 @@ ApplicationWindow {
                         PropertiesPanel {
                             id: propertiesPanel
                             visible: !window.previewFullscreen
+                            SplitView.fillHeight: true
                             SplitView.preferredWidth: EditorState.subtitleStudioMode
-                                                      ? Math.max(320, rootSplit.width * 0.32)
+                                                      ? Math.max(380, rootSplit.width * 0.35)
                                                       : Math.max(0, innerSplit.width * 0.25)
                             SplitView.minimumWidth: Math.min(240, Math.max(0, (EditorState.subtitleStudioMode ? rootSplit.width : innerSplit.width) * 0.2))
                             // Empty-state browse CTAs jump the assets panel to the

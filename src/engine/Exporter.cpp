@@ -262,7 +262,7 @@ const VideoCodecDef kVideoCodecs[] = {
     {"av1_svt_10", "AV1 10-bit (SVT)", kLibSvtAv1, AV_PIX_FMT_YUV420P10LE, RateMode::Crf, true, kSvtPresets, "6", 35,
      "mkv"},
     {"ffv1", "FFV1", kFfv1, AV_PIX_FMT_YUV444P, RateMode::Lossless, false, nullptr, nullptr, 0, "mkv"},
-    {"h264", "H.264 (x264)", kLibx264, AV_PIX_FMT_YUV420P, RateMode::Crf, true, kX264Presets, "medium", 18, "mp4"},
+    {"h264", "H.264 (x264)", kLibx264, AV_PIX_FMT_YUV420P, RateMode::Crf, true, kX264Presets, "veryfast", 22, "mp4"},
     {"h264_nvenc", "H.264 (NVIDIA)", kH264Nvenc, AV_PIX_FMT_NV12, RateMode::Crf, true, kNvencPresets, "p4", 23, "mp4",
      HwBackend::Nvenc},
     {"h264_qsv", "H.264 (Intel)", kH264Qsv, AV_PIX_FMT_NV12, RateMode::Crf, true, kQsvPresets, "medium", 23, "mp4",
@@ -278,9 +278,9 @@ const VideoCodecDef kVideoCodecs[] = {
     // because the encoder is whatever block the SoC ships and MediaCodec never says which.
     {"h264_mediacodec", "H.264 (Hardware)", kH264MediaCodec, AV_PIX_FMT_NV12, RateMode::Bitrate, false, nullptr,
      nullptr, 0, "mp4", HwBackend::MediaCodec},
-    {"h264_10", "H.264 10-bit (x264)", kLibx264, AV_PIX_FMT_YUV420P10LE, RateMode::Crf, true, kX264Presets, "medium",
-     18, "mkv"},
-    {"h265", "H.265 (x265)", kLibx265, AV_PIX_FMT_YUV420P, RateMode::Crf, true, kX264Presets, "medium", 28, "mp4"},
+    {"h264_10", "H.264 10-bit (x264)", kLibx264, AV_PIX_FMT_YUV420P10LE, RateMode::Crf, true, kX264Presets, "veryfast",
+     22, "mkv"},
+    {"h265", "H.265 (x265)", kLibx265, AV_PIX_FMT_YUV420P, RateMode::Crf, true, kX264Presets, "fast", 28, "mp4"},
     {"h265_nvenc", "H.265 (NVIDIA)", kHevcNvenc, AV_PIX_FMT_NV12, RateMode::Crf, true, kNvencPresets, "p4", 28, "mp4",
      HwBackend::Nvenc},
     {"h265_qsv", "H.265 (Intel)", kHevcQsv, AV_PIX_FMT_NV12, RateMode::Crf, true, kQsvPresets, "medium", 28, "mp4",
@@ -1862,17 +1862,22 @@ bool Exporter::gifAvailable()
 ExportSettings Exporter::defaultSettings()
 {
     ExportSettings s;
-    // Prefer first available CRF codec starting at h264.
-    const QStringList prefer = {QStringLiteral("h264"), QStringLiteral("h265"), QStringLiteral("vp9"),
-                                QStringLiteral("av1_svt")};
+    // Prefer first available hardware-accelerated or fast CRF codec.
+    const QStringList prefer = {
+        QStringLiteral("h264_nvenc"), QStringLiteral("h264_qsv"), QStringLiteral("h264_amf"),
+        QStringLiteral("h264_videotoolbox"), QStringLiteral("h264"),
+        QStringLiteral("h265_nvenc"), QStringLiteral("h265_qsv"), QStringLiteral("h265_amf"),
+        QStringLiteral("h265_videotoolbox"), QStringLiteral("h265"),
+        QStringLiteral("vp9"), QStringLiteral("av1_svt")
+    };
     for (const QString &id : prefer) {
         const QVariantMap m = videoCodecById(id);
         if (m.value(QStringLiteral("available")).toBool()) {
             s.videoCodecId = id;
-            s.crf = m.value(QStringLiteral("defaultCrf"), 18).toInt();
+            s.crf = m.value(QStringLiteral("defaultCrf"), 22).toInt();
             s.videoPreset = m.value(QStringLiteral("defaultPreset")).toString();
             if (s.videoPreset.isEmpty())
-                s.videoPreset = QStringLiteral("medium");
+                s.videoPreset = QStringLiteral("veryfast");
             break;
         }
     }

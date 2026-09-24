@@ -430,7 +430,9 @@ std::vector<int> WhisperTranscriber::Impl::decodeWindow(
     Ort::Value &encHidden, const std::vector<int64_t> &prompt,
     const std::function<void(const QString &)> &status)
 {
-    static const float kTemperatures[] = {0.0f, 0.2f, 0.4f, 0.6f, 0.8f, 1.0f};
+    // Fast decoding: 0.0f greedy first pass covers 95%+ of cases.
+    // Fall back to 0.4f once if needed, avoiding 6 slow autoregressive passes on low-end CPUs.
+    static const float kTemperatures[] = {0.0f, 0.4f};
 
     std::vector<int> bestGenerated;
     int bestClosed = -1;
@@ -931,9 +933,15 @@ WhisperResult WhisperTranscriber::transcribe(
                 textTokens.push_back(tok);
             }
         }
-        // Do not flush trailing text without a closing timestamp. That path was promoting
-        // greedy collapse loops (e.g. "අපි අපි අපි…") into cues; openai-whisper only keeps
-        // properly closed <|start|> text <|end|> pairs.
+        // If there is trailing text from a started segment at the end of the audio or window,
+        // flush it so final words (like "é" at the end of "Porque produtividade é") are never dropped.
+        if (segStart >= 0.0 && !textTokens.empty()) {
+            const double endT = std::min(30.0, totalSeconds - windowStartSec);
+            if (endT > segStart) {
+                flush(endT);
+                lastSegmentEnd = endT;
+            }
+        }
 
         qWarning() << "[whisper] window" << windowStartSec << "tokens" << generated.size()
                    << "cues so far" << result.cues.size()

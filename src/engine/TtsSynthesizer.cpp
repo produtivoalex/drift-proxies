@@ -46,7 +46,7 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
     // --- AS 5 VOZES GRATUITAS MAIS REALISTAS E HUMANIZADAS DO BRASIL ---
     // 1. Thalita - Viral, jovem, descontraída (TikTok / Reels)
     TtsVoiceInfo vThalita;
-    vThalita.id = QStringLiteral("pt-BR-ThalitaNeural");
+    vThalita.id = QStringLiteral("pt-BR-ThalitaMultilingualNeural");
     vThalita.name = QStringLiteral("Thalita (🔥 Viral & Espontânea)");
     vThalita.lang = QStringLiteral("pt-BR");
     vThalita.gender = QStringLiteral("Feminino");
@@ -54,7 +54,7 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
     vThalita.description = QStringLiteral("Jovem, enérgica e descontraída. A voz nº 1 para TikTok, Reels e vídeos curtos no Brasil. Zero robótica.");
     vThalita.isFeatured = true;
     vThalita.isNeural = true;
-    vThalita.defaultRate = 1.1;
+    vThalita.defaultRate = 1.05;
     vThalita.defaultPitch = 1.0;
     voices.append(vThalita);
 
@@ -69,7 +69,7 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
     vAntonio.isFeatured = true;
     vAntonio.isNeural = true;
     vAntonio.defaultRate = 1.0;
-    vAntonio.defaultPitch = 0.95;
+    vAntonio.defaultPitch = 1.0;
     voices.append(vAntonio);
 
     // 3. Francisca - Storyteller, elegante, humana e expressiva
@@ -88,12 +88,12 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
 
     // 4. Fabio - Dinâmico, jovem e ritmo rápido para Tech & Curiosidades
     TtsVoiceInfo vFabio;
-    vFabio.id = QStringLiteral("pt-BR-FabioNeural");
+    vFabio.id = QStringLiteral("en-US-AndrewMultilingualNeural");
     vFabio.name = QStringLiteral("Fabio (⚡ Tech & Dinâmico)");
     vFabio.lang = QStringLiteral("pt-BR");
     vFabio.gender = QStringLiteral("Masculino");
     vFabio.vibeTag = QStringLiteral("⚡ Tech & Dinâmico");
-    vFabio.description = QStringLiteral("Voz jovem, ágil e vibrante. Ideal para vídeos de tecnologia, esportes, novidades e alta retenção.");
+    vFabio.description = QStringLiteral("Voz jovem, ágil e vibrante. Ideal para vídeos de tecnologia, curiosidades e alta retenção.");
     vFabio.isFeatured = true;
     vFabio.isNeural = true;
     vFabio.defaultRate = 1.05;
@@ -102,7 +102,7 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
 
     // 5. Yara - Descolada, podcaster, lifestyle e tom conversacional
     TtsVoiceInfo vYara;
-    vYara.id = QStringLiteral("pt-BR-YaraNeural");
+    vYara.id = QStringLiteral("en-US-AvaMultilingualNeural");
     vYara.name = QStringLiteral("Yara (💬 Autêntica & Lifestyle)");
     vYara.lang = QStringLiteral("pt-BR");
     vYara.gender = QStringLiteral("Feminino");
@@ -111,52 +111,11 @@ QList<TtsVoiceInfo> TtsSynthesizer::availableVoices()
     vYara.isFeatured = true;
     vYara.isNeural = true;
     vYara.defaultRate = 1.0;
-    vYara.defaultPitch = 1.02;
+    vYara.defaultPitch = 1.0;
     voices.append(vYara);
 
-#if defined(Q_OS_WIN)
-    // Also discover installed system voices as fallback
-    QProcess proc;
-    QStringList args;
-    args << QStringLiteral("-NoProfile")
-         << QStringLiteral("-NonInteractive")
-         << QStringLiteral("-Command")
-         << QStringLiteral(
-             "Add-Type -AssemblyName System.Speech; "
-             "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-             "foreach ($v in $s.GetInstalledVoices()) { "
-             "  Write-Output ($v.VoiceInfo.Name + '|' + $v.VoiceInfo.Culture.Name + '|' + $v.VoiceInfo.Gender); "
-             "}"
-         );
-
-    proc.start(QStringLiteral("powershell.exe"), args);
-    if (proc.waitForFinished(3000)) {
-        const QString out = QString::fromUtf8(proc.readAllStandardOutput()).trimmed();
-        const QStringList lines = out.split(QRegularExpression(QStringLiteral("[\r\n]+")), Qt::SkipEmptyParts);
-        for (const QString &line : lines) {
-            const QStringList parts = line.split(QLatin1Char('|'));
-            if (parts.size() >= 2) {
-                const QString vId = parts[0].trimmed();
-                // Avoid duplicating the featured ones
-                bool alreadyInList = false;
-                for (const auto &v : voices) {
-                    if (v.id == vId) { alreadyInList = true; break; }
-                }
-                if (!alreadyInList) {
-                    TtsVoiceInfo info;
-                    info.id = vId;
-                    info.name = vId;
-                    info.lang = parts[1].trimmed();
-                    if (parts.size() >= 3) {
-                        info.gender = parts[2].trimmed();
-                    }
-                    info.vibeTag = QStringLiteral("Voz do Sistema");
-                    info.description = QStringLiteral("Sintetizador local do Windows");
-                    voices.append(info);
-                }
-            }
-        }
-    }
+    return voices;
+}
 #elif defined(Q_OS_MACOS)
     QProcess proc;
     proc.start(QStringLiteral("say"), {QStringLiteral("-v"), QStringLiteral("?")});
@@ -320,27 +279,30 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
     if (!outDir.exists())
         outDir.mkpath(QStringLiteral("."));
 
-    const QString uniqueId = QUuid::createUuid().toString(QUuid::WithoutBraces).left(8);
-    const QString outFilePath = outDir.filePath(QStringLiteral("tts_%1.wav").arg(uniqueId));
+    // Map friendly / legacy IDs to Edge neural short names
+    QString targetVoice = voiceId;
+    if (targetVoice.isEmpty() || targetVoice.contains(QStringLiteral("Thalita"), Qt::CaseInsensitive)) {
+        targetVoice = QStringLiteral("pt-BR-ThalitaMultilingualNeural");
+    } else if (targetVoice.contains(QStringLiteral("Antonio"), Qt::CaseInsensitive)) {
+        targetVoice = QStringLiteral("pt-BR-AntonioNeural");
+    } else if (targetVoice.contains(QStringLiteral("Francisca"), Qt::CaseInsensitive)) {
+        targetVoice = QStringLiteral("pt-BR-FranciscaNeural");
+    } else if (targetVoice.contains(QStringLiteral("Fabio"), Qt::CaseInsensitive) || targetVoice.contains(QStringLiteral("Andrew"), Qt::CaseInsensitive)) {
+        targetVoice = QStringLiteral("en-US-AndrewMultilingualNeural");
+    } else if (targetVoice.contains(QStringLiteral("Yara"), Qt::CaseInsensitive) || targetVoice.contains(QStringLiteral("Ava"), Qt::CaseInsensitive)) {
+        targetVoice = QStringLiteral("en-US-AvaMultilingualNeural");
+    }
+
+    const QString outFilePath = outDir.filePath(QStringLiteral("tts_%1.mp3").arg(uniqueId));
 
 #if defined(Q_OS_WIN)
-    // Convert rate (0.5 to 2.0) to PowerShell SpeechSynthesizer Rate (-10 to 10)
-    int psRate = 0;
-    if (rate < 1.0) {
-        psRate = static_cast<int>(std::round((rate - 1.0) * 10.0));
-    } else {
-        psRate = static_cast<int>(std::round((rate - 1.0) * 5.0));
-    }
-    psRate = qBound(-10, psRate, 10);
+    const int rateInt = static_cast<int>(std::round((rate - 1.0) * 100.0));
+    const QString rateStr = rateInt >= 0 ? QStringLiteral("+%1%").arg(rateInt) : QStringLiteral("%1%").arg(rateInt);
 
-    // Escape text for PowerShell single quotes
-    QString escapedText = cleanText;
-    escapedText.replace(QLatin1Char('\''), QStringLiteral("''"));
-    escapedText.replace(QLatin1Char('\n'), QStringLiteral(" "));
-    escapedText.replace(QLatin1Char('\r'), QStringLiteral(" "));
+    const int pitchInt = static_cast<int>(std::round((pitch - 1.0) * 100.0));
+    const QString pitchStr = pitchInt >= 0 ? QStringLiteral("+%1%").arg(pitchInt) : QStringLiteral("%1%").arg(pitchInt);
 
-    // Humanize text by inserting natural micro-pauses at punctuation for dynamic, non-robotic flow
-    // SSML breath pauses: comma -> 120ms, period/question/exclamation -> 260ms
+    // Escape text for XML SSML
     QString ssmlText = cleanText;
     ssmlText.replace(QLatin1Char('&'), QStringLiteral("&amp;"));
     ssmlText.replace(QLatin1Char('<'), QStringLiteral("&lt;"));
@@ -348,46 +310,84 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
     ssmlText.replace(QLatin1Char('\''), QStringLiteral("&apos;"));
     ssmlText.replace(QLatin1Char('"'), QStringLiteral("&quot;"));
 
-    // Micro-pauses for punctuation
+    // Micro-pauses for punctuation to ensure dynamic human flow
     ssmlText.replace(QRegularExpression(QStringLiteral(R"(,\s*)")), QStringLiteral(", <break time='120ms'/> "));
-    ssmlText.replace(QRegularExpression(QStringLiteral(R"(([.!?])\s*)")), QStringLiteral(R"(\1 <break time='260ms'/> )"));
+    ssmlText.replace(QRegularExpression(QStringLiteral(R"(([.!?])\s*)")), QStringLiteral(R"(\1 <break time='240ms'/> )"));
 
-    // Pitch percentage string for SSML (e.g. pitch=1.05 -> "+5%", pitch=0.95 -> "-5%")
-    const int pitchPercent = static_cast<int>(std::round((pitch - 1.0) * 100.0));
-    QString pitchStr = pitchPercent >= 0 ? QStringLiteral("+%1%").arg(pitchPercent) : QStringLiteral("%1%").arg(pitchPercent);
-
-    // Determine voice gender preference
-    const bool isFemaleVoice = voiceId.contains(QStringLiteral("Thalita"), Qt::CaseInsensitive)
-                            || voiceId.contains(QStringLiteral("Francisca"), Qt::CaseInsensitive)
-                            || voiceId.contains(QStringLiteral("Yara"), Qt::CaseInsensitive)
-                            || voiceId.contains(QStringLiteral("Maria"), Qt::CaseInsensitive)
-                            || voiceId.contains(QStringLiteral("Zira"), Qt::CaseInsensitive);
-
-    // PowerShell synthesis script supporting OneCore & SAPI with SSML humanization
     QString psScript = QStringLiteral(
         "$ErrorActionPreference = 'SilentlyContinue'; "
-        "Add-Type -AssemblyName System.Speech; "
-        "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
-        "$voiceId = '%1'; "
-        "$targetGender = if (%2) { [System.Speech.Synthesis.VoiceGender]::Female } else { [System.Speech.Synthesis.VoiceGender]::Male }; "
-        "try { "
-        "  if ($voiceId -ne '' -and -not $voiceId.Contains('Neural')) { $s.SelectVoice($voiceId); } "
-        "  else { $s.SelectVoiceByHints([System.Speech.Synthesis.VoiceAge]::Adult, $targetGender, 0, [System.Globalization.CultureInfo]::GetCultureInfo('pt-BR')); } "
-        "} catch { "
-        "  try { $s.SelectVoiceByHints([System.Speech.Synthesis.VoiceAge]::Adult, $targetGender); } catch {} "
+        "Add-Type -AssemblyName System.Net.Http; "
+        "Add-Type -AssemblyName System.Security; "
+        "$flags = [System.Reflection.BindingFlags]::NonPublic -bor [System.Reflection.BindingFlags]::Static; "
+        "$hInfoField = [System.Net.WebHeaderCollection].GetField('HInfo', $flags); "
+        "if ($hInfoField) { "
+        "    $hInfo = $hInfoField.GetValue($null); "
+        "    $itemProp = $hInfo.GetType().GetProperty('Item', [System.Reflection.BindingFlags]::NonPublic -bor [System.Reflection.BindingFlags]::Instance -bor [System.Reflection.BindingFlags]::Public); "
+        "    if ($itemProp) { "
+        "        $entry = $itemProp.GetValue($hInfo, @('User-Agent')); "
+        "        if ($entry) { "
+        "            $isReqField = $entry.GetType().GetField('IsRequestRestricted', [System.Reflection.BindingFlags]::NonPublic -bor [System.Reflection.BindingFlags]::Instance); "
+        "            if ($isReqField) { $isReqField.SetValue($entry, $false); } "
+        "        } "
+        "    } "
         "} "
-        "$s.Rate = %3; "
-        "$s.SetOutputToWaveFile('%4'); "
-        "$ssml = \"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='pt-BR'><prosody pitch='%5'>%6</prosody></speak>\"; "
-        "try { $s.SpeakSsml($ssml); } catch { $s.Speak('%7'); } "
-        "$s.Dispose();"
-    ).arg(voiceId)
-     .arg(isFemaleVoice ? QStringLiteral("$true") : QStringLiteral("$false"))
-     .arg(psRate)
-     .arg(QDir::toNativeSeparators(outFilePath))
+        "$trustedToken = '6A5AA1D4EAFF4E9FB37E23D68491D6F4'; "
+        "$unixSec = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds(); "
+        "$winSec = $unixSec + 11644473600; "
+        "$roundedSec = $winSec - ($winSec % 300); "
+        "$ticks = [double]$roundedSec * 1e7; "
+        "$strToHash = ('{0:0}' -f $ticks) + $trustedToken; "
+        "$sha256 = [System.Security.Cryptography.SHA256]::Create(); "
+        "$hashBytes = $sha256.ComputeHash([System.Text.Encoding]::ASCII.GetBytes($strToHash)); "
+        "$secMsGec = -join ($hashBytes | ForEach-Object { '{0:X2}' -f $_ }); "
+        "$connId = [Guid]::NewGuid().ToString('N'); "
+        "$wsUrl = 'wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=' + $trustedToken + '&ConnectionId=' + $connId + '&Sec-MS-GEC=' + $secMsGec + '&Sec-MS-GEC-Version=1-143.0.3650.75'; "
+        "$ws = New-Object System.Net.WebSockets.ClientWebSocket; "
+        "$ws.Options.SetRequestHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0'); "
+        "$ws.Options.SetRequestHeader('Origin', 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold'); "
+        "$ws.Options.SetRequestHeader('Pragma', 'no-cache'); "
+        "$ws.Options.SetRequestHeader('Cache-Control', 'no-cache'); "
+        "$muid = [Guid]::NewGuid().ToString('N').ToUpper(); "
+        "$ws.Options.SetRequestHeader('Cookie', 'muid=' + $muid + ';'); "
+        "$cts = New-Object System.Threading.CancellationTokenSource(15000); "
+        "try { $ws.ConnectAsync([Uri]$wsUrl, $cts.Token).Wait(); } catch { exit 1; } "
+        "$timestamp = [DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ'); "
+        "$configMsg = 'X-Timestamp:' + $timestamp + \"`r`nContent-Type:application/json; charset=utf-8`r`nPath:speech.config`r`n`r`n{\\\"context\\\":{\\\"synthesis\\\":{\\\"audio\\\":{\\\"metadataoptions\\\":{\\\"sentenceBoundaryEnabled\\\":\\\"false\\\",\\\"wordBoundaryEnabled\\\":\\\"true\\\"},\\\"outputFormat\\\":\\\"audio-24khz-48kbitrate-mono-mp3\\\"}}}}\"; "
+        "$configBytes = [System.Text.Encoding]::UTF8.GetBytes($configMsg); "
+        "$ws.SendAsync((New-Object ArraySegment[byte] -ArgumentList @(,$configBytes)), [System.Net.WebSockets.WebSocketMessageType]::Text, $true, $cts.Token).Wait(); "
+        "$reqId = [Guid]::NewGuid().ToString('N'); "
+        "$ssml = \"<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='pt-BR'><voice name='%1'><prosody pitch='%2' rate='%3' volume='+0%'>%4</prosody></voice></speak>\"; "
+        "$ssmlMsg = 'X-RequestId:' + $reqId + \"`r`nContent-Type:application/ssml+xml`r`nX-Timestamp:\" + $timestamp + \"`r`nPath:ssml`r`n`r`n\" + $ssml; "
+        "$ssmlBytes = [System.Text.Encoding]::UTF8.GetBytes($ssmlMsg); "
+        "$ws.SendAsync((New-Object ArraySegment[byte] -ArgumentList @(,$ssmlBytes)), [System.Net.WebSockets.WebSocketMessageType]::Text, $true, $cts.Token).Wait(); "
+        "$outFile = '%5'; "
+        "$fs = [System.IO.File]::Create($outFile); "
+        "$recvBuffer = New-Object byte[] 65536; "
+        "while ($ws.State -eq [System.Net.WebSockets.WebSocketState]::Open) { "
+        "    $seg = New-Object ArraySegment[byte] -ArgumentList @(,$recvBuffer); "
+        "    $res = $ws.ReceiveAsync($seg, $cts.Token).Result; "
+        "    if ($res.MessageType -eq [System.Net.WebSockets.WebSocketMessageType]::Close) { break; } "
+        "    $cnt = $res.Count; "
+        "    if ($cnt -gt 2) { "
+        "        if ($res.MessageType -eq [System.Net.WebSockets.WebSocketMessageType]::Binary) { "
+        "            $hdrLen = ($recvBuffer[0] -shl 8) -bor $recvBuffer[1]; "
+        "            if ($cnt -gt (2 + $hdrLen)) { "
+        "                $audioLen = $cnt - (2 + $hdrLen); "
+        "                $fs.Write($recvBuffer, 2 + $hdrLen, $audioLen); "
+        "            } "
+        "        } else { "
+        "            $txtMsg = [System.Text.Encoding]::UTF8.GetString($recvBuffer, 0, $cnt); "
+        "            if ($txtMsg.Contains('Path:turn.end')) { break; } "
+        "        } "
+        "    } "
+        "} "
+        "$fs.Close(); "
+        "try { $ws.Dispose(); } catch {}"
+    ).arg(targetVoice)
      .arg(pitchStr)
+     .arg(rateStr)
      .arg(ssmlText.replace(QLatin1Char('"'), QStringLiteral("`\"")))
-     .arg(escapedText);
+     .arg(QDir::toNativeSeparators(outFilePath));
 
     QProcess proc;
     QStringList args;
@@ -399,8 +399,39 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
     proc.start(QStringLiteral("powershell.exe"), args);
     const bool finished = proc.waitForFinished(20000);
 
-    if (!finished || proc.exitCode() != 0 || !QFile::exists(outFilePath)) {
-        res.error = QStringLiteral("Falha na síntese de voz nativa: ") + QString::fromUtf8(proc.readAllStandardError());
+    QFileInfo outFi(outFilePath);
+    if (!finished || !outFi.exists() || outFi.size() < 512) {
+        // Fallback: Local Windows SAPI synthesiser if network request failed
+        const QString fallbackWav = outDir.filePath(QStringLiteral("tts_fallback_%1.wav").arg(uniqueId));
+        const bool isFemale = targetVoice.contains(QStringLiteral("Thalita"), Qt::CaseInsensitive)
+                           || targetVoice.contains(QStringLiteral("Francisca"), Qt::CaseInsensitive)
+                           || targetVoice.contains(QStringLiteral("Ava"), Qt::CaseInsensitive);
+        QString fallbackPs = QStringLiteral(
+            "$ErrorActionPreference = 'SilentlyContinue'; "
+            "Add-Type -AssemblyName System.Speech; "
+            "$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+            "$g = if (%1) { [System.Speech.Synthesis.VoiceGender]::Female } else { [System.Speech.Synthesis.VoiceGender]::Male }; "
+            "try { $s.SelectVoiceByHints([System.Speech.Synthesis.VoiceAge]::Adult, $g, 0, [System.Globalization.CultureInfo]::GetCultureInfo('pt-BR')); } catch {} "
+            "$s.SetOutputToWaveFile('%2'); "
+            "$s.Speak('%3'); "
+            "$s.Dispose();"
+        ).arg(isFemale ? QStringLiteral("$true") : QStringLiteral("$false"))
+         .arg(QDir::toNativeSeparators(fallbackWav))
+         .arg(cleanText.replace(QLatin1Char('\''), QStringLiteral("''")));
+
+        QProcess fallbackProc;
+        fallbackProc.start(QStringLiteral("powershell.exe"), {QStringLiteral("-NoProfile"), QStringLiteral("-NonInteractive"), QStringLiteral("-Command"), fallbackPs});
+        if (fallbackProc.waitForFinished(10000) && QFile::exists(fallbackWav)) {
+            res.ok = true;
+            res.filePath = fallbackWav;
+            res.durationSeconds = measureWavDuration(fallbackWav);
+            if (res.durationSeconds <= 0.05)
+                res.durationSeconds = std::max<double>(1.0, cleanText.length() * 0.06 / rate);
+            res.cues = generateCuesForText(cleanText, res.durationSeconds);
+            return res;
+        }
+
+        res.error = QStringLiteral("Falha na síntese de voz neural e offline indisponível.");
         return res;
     }
 #elif defined(Q_OS_MACOS)
@@ -430,14 +461,17 @@ TtsSynthesizeResult TtsSynthesizer::synthesize(const QString &text,
     }
 #endif
 
-    const double dur = measureWavDuration(outFilePath);
+    double dur = measureWavDuration(outFilePath);
     if (dur <= 0.05) {
-        // Fallback estimate if WAV header parsing missed
-        const double estimatedSec = std::max<double>(1.0, cleanText.length() * 0.06 / rate);
-        res.durationSeconds = estimatedSec;
-    } else {
-        res.durationSeconds = dur;
+        QFileInfo fi(outFilePath);
+        if (fi.suffix().compare(QStringLiteral("mp3"), Qt::CaseInsensitive) == 0 && fi.size() > 0) {
+            // CBR 48kbps mono MP3 stream (6000 bytes/sec)
+            dur = static_cast<double>(fi.size()) / 6000.0;
+        } else {
+            dur = std::max<double>(1.0, cleanText.length() * 0.06 / rate);
+        }
     }
+    res.durationSeconds = dur;
 
     res.ok = true;
     res.filePath = outFilePath;

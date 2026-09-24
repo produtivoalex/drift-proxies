@@ -44,35 +44,37 @@ QList<TimedWord> wordsFromCue(const SubtitleCue &cue)
     if (tokens.isEmpty())
         return words;
 
+    // Give each word a minimum base weight (3) plus character length so single-letter words
+    // like "é", "o", "a" receive natural human pronunciation duration (~200ms+) rather than
+    // a vanishingly small fraction that collapses to zero.
     int totalWeight = 0;
     QList<int> weights;
     weights.reserve(tokens.size());
     for (const QString &tok : tokens) {
-        const int w = std::max(1, static_cast<int>(tok.trimmed().size()));
+        const int w = 3 + std::max(1, static_cast<int>(tok.trimmed().size()));
         weights.append(w);
         totalWeight += w;
     }
 
     const TimeUs span = std::max<TimeUs>(1, cue.endUs - cue.startUs);
-    TimeUs cursor = cue.startUs;
+    int accWeight = 0;
     for (int i = 0; i < tokens.size(); ++i) {
         TimedWord tw;
         tw.word = tokens.at(i);
-        tw.startUs = cursor;
+        tw.startUs = cue.startUs + static_cast<TimeUs>((static_cast<double>(accWeight) / totalWeight) * span);
+        accWeight += weights.at(i);
         if (i + 1 == tokens.size()) {
             tw.endUs = cue.endUs;
         } else {
-            const TimeUs dur =
-                static_cast<TimeUs>((static_cast<double>(weights.at(i)) / totalWeight) * span);
-            tw.endUs = std::min(cue.endUs, cursor + std::max<TimeUs>(1, dur));
+            tw.endUs = cue.startUs + static_cast<TimeUs>((static_cast<double>(accWeight) / totalWeight) * span);
         }
         if (tw.endUs <= tw.startUs)
-            tw.endUs = tw.startUs + 1;
-        cursor = tw.endUs;
+            tw.endUs = tw.startUs + 100000; // minimum 100ms
         words.append(tw);
     }
-    if (!words.isEmpty())
-        words.last().endUs = cue.endUs;
+    if (!words.isEmpty()) {
+        words.last().endUs = std::max(words.last().endUs, words.last().startUs + 100000);
+    }
     return words;
 }
 
@@ -181,8 +183,11 @@ QList<SubtitleCue> packSubtitleCues(const QList<SubtitleCue> &cues, int maxLineW
             text += item;
         }
         cue.text = text.trimmed().replace(QLatin1Char('\n'), QLatin1Char(' '));
-        if (!cue.text.isEmpty() && cue.endUs > cue.startUs)
+        if (!cue.text.isEmpty()) {
+            if (cue.endUs <= cue.startUs)
+                cue.endUs = cue.startUs + 150000; // minimum 150ms so short words never vanish
             packed.append(cue);
+        }
         subtitle.clear();
         lineLen = 0;
         lineCount = 1;

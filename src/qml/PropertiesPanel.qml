@@ -6,6 +6,8 @@ import "components/properties"
 
 PanelFrame {
     id: root
+    implicitHeight: parent ? parent.height : 600
+    implicitWidth: 360
 
     // Android bottom sheet: keep the inspector tab rail but drop the panel border
     // chrome that fights the sheet frame.

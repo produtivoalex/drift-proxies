@@ -9,6 +9,8 @@ import "."
 // Owns the full panel content area (the list manages its own scrolling).
 Item {
     id: root
+    implicitHeight: parent ? parent.height : 600
+    implicitWidth: parent ? parent.width : 360
 
     property var clip: null
     property var formatSeconds: (function (v) { return Number(v || 0).toFixed(2) })

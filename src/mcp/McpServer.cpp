@@ -146,7 +146,7 @@ bool McpServer::start()
             m_error = error;
             loop.quit();
         });
-    QTimer::singleShot(3000, &loop, &QEventLoop::quit);
+    QTimer::singleShot(6000, &loop, &QEventLoop::quit);
     QMetaObject::invokeMethod(
         m_http, [this]() { m_http->listen(m_requestedPort); }, Qt::QueuedConnection);
     loop.exec();
@@ -194,6 +194,10 @@ void McpServer::stop()
     m_running = false;
     m_port = 0;
     m_token.clear();
+    if (!m_error.isEmpty()) {
+        m_error.clear();
+        emit errorChanged();
+    }
     if (wasRunning)
         emit runningChanged();
 }
