@@ -518,14 +518,21 @@ Item {
             }
         }
 
-        // Quick Viral Actions Row
-        Row {
+        // Quick Viral & Correction Actions
+        Flow {
             width: parent.width
             spacing: 6
 
             ThemedButton {
-                text: qsTr("✨ Emojis Automáticos")
+                text: qsTr("🪄 Corrigir Ortografia")
                 variant: "secondary"
+                tooltip: qsTr("Corrige distorções acústicas e palavras inexistentes da transcrição em português com 1 clique (ex: 'esferos' ➔ 'esferas', 'conjuto' ➔ 'conjunto')")
+                onClicked: EditorState.autoCorrectSubtitleSpelling(root.trackIndex, root.clipIndex)
+            }
+
+            ThemedButton {
+                text: qsTr("✨ Emojis Automáticos")
+                variant: "ghost"
                 tooltip: qsTr("Detecta palavras-chave de impacto no texto e insere emojis contextuais (💸, 🔥, 💡, ⚡, 🎯)")
                 onClicked: EditorState.autoEnrichSubtitlesWithEmojis(root.trackIndex, root.clipIndex)
             }

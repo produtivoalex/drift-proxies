@@ -449,4 +449,167 @@ QList<SubtitleCue> enrichSubtitleCuesWithEmojis(const QList<SubtitleCue> &cues)
     return enriched;
 }
 
+QString correctPortugueseSpelling(const QString &text)
+{
+    if (text.trimmed().isEmpty())
+        return text;
+
+    static const QHash<QString, QString> kCorrections = {
+        // Acoustic misinterpretations and non-existent words (reported by user & common Whisper artifacts)
+        {QStringLiteral("esfero"), QStringLiteral("esfera")},
+        {QStringLiteral("esferos"), QStringLiteral("esferas")},
+        {QStringLiteral("conjuto"), QStringLiteral("conjunto")},
+        {QStringLiteral("conjutos"), QStringLiteral("conjuntos")},
+        {QStringLiteral("produtivida"), QStringLiteral("produtividade")},
+        {QStringLiteral("producao"), QStringLiteral("produção")},
+        {QStringLiteral("producão"), QStringLiteral("produção")},
+        {QStringLiteral("atencao"), QStringLiteral("atenção")},
+        {QStringLiteral("atencão"), QStringLiteral("atenção")},
+        {QStringLiteral("voce"), QStringLiteral("você")},
+        {QStringLiteral("voces"), QStringLiteral("vocês")},
+        {QStringLiteral("tambem"), QStringLiteral("também")},
+        {QStringLiteral("nao"), QStringLiteral("não")},
+        {QStringLiteral("sao"), QStringLiteral("são")},
+        {QStringLiteral("estao"), QStringLiteral("estão")},
+        {QStringLiteral("entao"), QStringLiteral("então")},
+        {QStringLiteral("irmao"), QStringLiteral("irmão")},
+        {QStringLiteral("irmaos"), QStringLiteral("irmãos")},
+        {QStringLiteral("facil"), QStringLiteral("fácil")},
+        {QStringLiteral("dificil"), QStringLiteral("difícil")},
+        {QStringLiteral("rapido"), QStringLiteral("rápido")},
+        {QStringLiteral("rapida"), QStringLiteral("rápida")},
+        {QStringLiteral("rapidos"), QStringLiteral("rápidos")},
+        {QStringLiteral("rapidas"), QStringLiteral("rápidas")},
+        {QStringLiteral("otimo"), QStringLiteral("ótimo")},
+        {QStringLiteral("otima"), QStringLiteral("ótima")},
+        {QStringLiteral("otimos"), QStringLiteral("ótimos")},
+        {QStringLiteral("otimas"), QStringLiteral("ótimas")},
+        {QStringLiteral("basico"), QStringLiteral("básico")},
+        {QStringLiteral("basica"), QStringLiteral("básica")},
+        {QStringLiteral("basicos"), QStringLiteral("básicos")},
+        {QStringLiteral("basicas"), QStringLiteral("básicas")},
+        {QStringLiteral("video"), QStringLiteral("vídeo")},
+        {QStringLiteral("videos"), QStringLiteral("vídeos")},
+        {QStringLiteral("audio"), QStringLiteral("áudio")},
+        {QStringLiteral("audios"), QStringLiteral("áudios")},
+        {QStringLiteral("camera"), QStringLiteral("câmera")},
+        {QStringLiteral("cameras"), QStringLiteral("câmeras")},
+        {QStringLiteral("conteudo"), QStringLiteral("conteúdo")},
+        {QStringLiteral("conteudos"), QStringLiteral("conteúdos")},
+        {QStringLiteral("musica"), QStringLiteral("música")},
+        {QStringLiteral("musicas"), QStringLiteral("músicas")},
+        {QStringLiteral("numero"), QStringLiteral("número")},
+        {QStringLiteral("numeros"), QStringLiteral("números")},
+        {QStringLiteral("unico"), QStringLiteral("único")},
+        {QStringLiteral("unica"), QStringLiteral("única")},
+        {QStringLiteral("unicos"), QStringLiteral("únicos")},
+        {QStringLiteral("unicas"), QStringLiteral("únicas")},
+        {QStringLiteral("tecnico"), QStringLiteral("técnico")},
+        {QStringLiteral("tecnica"), QStringLiteral("técnica")},
+        {QStringLiteral("tecnicos"), QStringLiteral("técnicos")},
+        {QStringLiteral("tecnicas"), QStringLiteral("técnicas")},
+        {QStringLiteral("logico"), QStringLiteral("lógico")},
+        {QStringLiteral("logica"), QStringLiteral("lógica")},
+        {QStringLiteral("diferenca"), QStringLiteral("diferença")},
+        {QStringLiteral("diferencas"), QStringLiteral("diferenças")},
+        {QStringLiteral("mudanca"), QStringLiteral("mudança")},
+        {QStringLiteral("mudancas"), QStringLiteral("mudanças")},
+        {QStringLiteral("presenca"), QStringLiteral("presença")},
+        {QStringLiteral("experiencia"), QStringLiteral("experiência")},
+        {QStringLiteral("experiencias"), QStringLiteral("experiências")},
+        {QStringLiteral("referencia"), QStringLiteral("referência")},
+        {QStringLiteral("referencias"), QStringLiteral("referências")},
+        {QStringLiteral("consequencia"), QStringLiteral("consequência")},
+        {QStringLiteral("consequencias"), QStringLiteral("consequências")},
+        {QStringLiteral("informacao"), QStringLiteral("informação")},
+        {QStringLiteral("informacoes"), QStringLiteral("informações")},
+        {QStringLiteral("situacao"), QStringLiteral("situação")},
+        {QStringLiteral("situacoes"), QStringLiteral("situações")},
+        {QStringLiteral("comunicacao"), QStringLiteral("comunicação")},
+        {QStringLiteral("apresentacao"), QStringLiteral("apresentação")},
+        {QStringLiteral("edicao"), QStringLiteral("edição")},
+        {QStringLiteral("edicoes"), QStringLiteral("edições")},
+        {QStringLiteral("computacao"), QStringLiteral("computação")},
+        {QStringLiteral("otimizacao"), QStringLiteral("otimização")},
+        {QStringLiteral("padrao"), QStringLiteral("padrão")},
+        {QStringLiteral("padroes"), QStringLiteral("padrões")},
+        {QStringLiteral("visao"), QStringLiteral("visão")},
+        {QStringLiteral("funcao"), QStringLiteral("função")},
+        {QStringLiteral("funcoes"), QStringLiteral("funções")},
+        {QStringLiteral("acao"), QStringLiteral("ação")},
+        {QStringLiteral("acoes"), QStringLiteral("ações")},
+        {QStringLiteral("reacao"), QStringLiteral("reação")},
+        {QStringLiteral("reacoes"), QStringLiteral("reações")},
+        {QStringLiteral("solucao"), QStringLiteral("solução")},
+        {QStringLiteral("solucoes"), QStringLiteral("soluções")},
+        {QStringLiteral("evolucao"), QStringLiteral("evolução")},
+        {QStringLiteral("criacao"), QStringLiteral("criação")},
+        {QStringLiteral("geracao"), QStringLiteral("geração")},
+        {QStringLiteral("relacao"), QStringLiteral("relação")},
+        {QStringLiteral("relacoes"), QStringLiteral("relações")},
+        {QStringLiteral("condicao"), QStringLiteral("condição")},
+        {QStringLiteral("condicoes"), QStringLiteral("condições")},
+        {QStringLiteral("percepcao"), QStringLiteral("percepção")},
+        {QStringLiteral("proximo"), QStringLiteral("próximo")},
+        {QStringLiteral("proxima"), QStringLiteral("próxima")},
+        {QStringLiteral("proximos"), QStringLiteral("próximos")},
+        {QStringLiteral("proximas"), QStringLiteral("próximas")},
+        {QStringLiteral("ate"), QStringLiteral("até")},
+        {QStringLiteral("ja"), QStringLiteral("já")},
+        {QStringLiteral("so"), QStringLiteral("só")},
+        {QStringLiteral("possivel"), QStringLiteral("possível")},
+        {QStringLiteral("impossivel"), QStringLiteral("impossível")}
+    };
+
+    static const QRegularExpression tokenRe(QStringLiteral(R"((\S+))"));
+    QString result = text;
+    QRegularExpressionMatchIterator it = tokenRe.globalMatch(text);
+    QList<QPair<int, int>> matches;
+    QStringList replacements;
+
+    while (it.hasNext()) {
+        QRegularExpressionMatch match = it.next();
+        const QString rawToken = match.captured(1);
+        int leading = 0;
+        while (leading < rawToken.size() && !rawToken.at(leading).isLetterOrNumber())
+            ++leading;
+        int trailing = 0;
+        while (trailing < (rawToken.size() - leading) && !rawToken.at(rawToken.size() - 1 - trailing).isLetterOrNumber())
+            ++trailing;
+
+        if (leading + trailing >= rawToken.size())
+            continue;
+
+        const QString prefix = rawToken.left(leading);
+        const QString suffix = rawToken.right(trailing);
+        const QString core = rawToken.mid(leading, rawToken.size() - leading - trailing);
+        const QString coreLower = core.toLower();
+
+        if (kCorrections.contains(coreLower)) {
+            QString corrected = kCorrections.value(coreLower);
+            if (core.isUpper() && core.size() > 1) {
+                corrected = corrected.toUpper();
+            } else if (core.at(0).isUpper()) {
+                corrected = corrected.left(1).toUpper() + corrected.mid(1);
+            }
+            matches.append({match.capturedStart(1), match.capturedLength(1)});
+            replacements.append(prefix + corrected + suffix);
+        }
+    }
+
+    for (int i = matches.size() - 1; i >= 0; --i) {
+        result.replace(matches.at(i).first, matches.at(i).second, replacements.at(i));
+    }
+    return result;
+}
+
+QList<SubtitleCue> correctPortugueseSpelling(const QList<SubtitleCue> &cues)
+{
+    QList<SubtitleCue> corrected = cues;
+    for (SubtitleCue &cue : corrected) {
+        cue.text = correctPortugueseSpelling(cue.text);
+    }
+    return corrected;
+}
+
 } // namespace drift

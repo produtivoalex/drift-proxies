@@ -863,6 +863,8 @@ public:
                                              int capitalizationMode = 3);
     // Enrich existing subtitle clip with contextual emojis based on spoken keywords
     Q_INVOKABLE int autoEnrichSubtitlesWithEmojis(int trackIndex, int clipIndex);
+    // Automatically correct acoustic misinterpretations and non-existent words in Portuguese subtitles
+    Q_INVOKABLE int autoCorrectSubtitleSpelling(int trackIndex, int clipIndex);
     // Re-pack existing subtitle clip cues into smaller or larger word chunks (e.g. 1 word for Hormozi, 2-3 words for Shorts)
     Q_INVOKABLE bool repackSubtitleCues(int trackIndex, int clipIndex, int maxWordsPerCue, int maxLineWidth = 42);
     // Split cue at playhead position

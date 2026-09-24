@@ -675,6 +675,9 @@
           "Cancel in-flight subtitle generation. Returns ok even when nothing was running; confirm "
           "with inspect({detail:true}).jobs.subtitleGen.active.",
           objectSchema({}) },
+        { "correct_subtitle_spelling", "subtitles", "Fix misheard phonetic distortions and Portuguese spelling",
+          "Scans subtitle cues on a clip and corrects acoustic distortions, non-existent words (e.g. esferos -> esferas, conjuto -> conjunto) and missing diacritics in Portuguese while strictly preserving timings and casing.",
+          objectSchema(clipRefProps()) },
 
         { "set_effect_enabled", "effects", "Bypass a video effect without losing its settings",
           "Bypass or re-enable a video effect without removing it. The effect keeps its stack position "

@@ -960,6 +960,10 @@ WhisperResult WhisperTranscriber::transcribe(
     if (progress)
         progress(1.0, QStringLiteral("Finishing up…"));
     sortSubtitleCues(result.cues);
+    // Correct acoustic distortions and non-existent words in Portuguese
+    if (forcedLang.isEmpty() || forcedLang.startsWith(QLatin1String("pt"))) {
+        result.cues = correctPortugueseSpelling(result.cues);
+    }
     // Pack into short display lines like openai-whisper's VTT writer
     // (word_timestamps + max_line_width=42, max_line_count=1), optionally capped shorter still.
     result.cues = packSubtitleCues(result.cues, maxLineWidth > 0 ? maxLineWidth : 42, 1, maxWordsPerCue);

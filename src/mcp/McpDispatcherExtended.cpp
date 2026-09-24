@@ -1643,6 +1643,14 @@ QJsonObject McpDispatcher::applyOneExtended(const QString &tool, const QJsonObje
         return ok({{QStringLiteral("cancelled"), true}});
     }
 
+    if (tool == QLatin1String("correct_subtitle_spelling")) {
+        const ClipRef ref = resolveClip(args);
+        if (!ref.valid())
+            return clipRefError(args);
+        const int modified = m_controller->autoCorrectSubtitleSpelling(ref.track, ref.clip);
+        return ok(clipFeedback(ref, {{QStringLiteral("modified"), modified}}));
+    }
+
     // --- effects ---
     if (tool == QLatin1String("set_effect_enabled")) {
         const ClipRef ref = resolveClip(args);

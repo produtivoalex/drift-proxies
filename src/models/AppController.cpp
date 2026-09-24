@@ -13666,6 +13666,37 @@ int AppController::autoEnrichSubtitlesWithEmojis(int trackIndex, int clipIndex)
     return modified;
 }
 
+int AppController::autoCorrectSubtitleSpelling(int trackIndex, int clipIndex)
+{
+    if (trackIndex < 0 || trackIndex >= m_project.tracks().size())
+        return 0;
+    drift::Track &track = m_project.tracks()[trackIndex];
+    if (clipIndex < 0 || clipIndex >= track.clips.size())
+        return 0;
+    drift::Clip &clip = track.clips[clipIndex];
+    if (clip.type != drift::ClipType::Subtitle || clip.subtitleCues.isEmpty())
+        return 0;
+
+    const drift::Project before = m_project;
+    int modified = 0;
+    for (drift::SubtitleCue &cue : clip.subtitleCues) {
+        const QString orig = cue.text;
+        cue.text = drift::correctPortugueseSpelling(cue.text);
+        if (cue.text != orig)
+            ++modified;
+    }
+
+    if (modified > 0) {
+        clip.name = drift::subtitleClipName(clip.subtitleCues);
+        pushProjectEdit(before, tr("Corrigir ortografia (%1 legendas)").arg(modified));
+        finishEdit(tr("Corrigir ortografia"));
+        setLastMessage(tr("%1 legendas corrigidas com ortografia e concordância perfeitas!").arg(modified), QStringLiteral("success"));
+    } else {
+        setLastMessage(tr("Nenhum erro de ortografia encontrado nas legendas."), QStringLiteral("info"));
+    }
+    return modified;
+}
+
 bool AppController::repackSubtitleCues(int trackIndex, int clipIndex, int maxWordsPerCue, int maxLineWidth)
 {
     if (trackIndex < 0 || trackIndex >= m_project.tracks().size())

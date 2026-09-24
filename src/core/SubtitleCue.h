@@ -54,6 +54,12 @@ QString enrichSubtitleTextWithEmojis(const QString &text);
 // Batch enrich all cues in a list
 QList<SubtitleCue> enrichSubtitleCuesWithEmojis(const QList<SubtitleCue> &cues);
 
+// Corrects acoustic mis-transcriptions and non-existent phonetic distortions in Portuguese
+// (e.g. "esferos" -> "esferas", "conjuto" -> "conjunto", "produtivida" -> "produtividade", missing diacritics)
+// while strictly preserving casing, surrounding punctuation, and cue timings.
+QString correctPortugueseSpelling(const QString &text);
+QList<SubtitleCue> correctPortugueseSpelling(const QList<SubtitleCue> &cues);
+
 QList<SubtitleCue> packSubtitleCues(const QList<SubtitleCue> &cues, int maxLineWidth = 42,
                                     int maxLineCount = 1, int maxWordsPerCue = 0);
 
