@@ -276,6 +276,33 @@ Item {
                 }
             }
 
+            // ── Thumbnail Selector (Fase 6B)
+            Rectangle {
+                Layout.fillWidth: true; height: 42; radius: 6
+                color: thumbBtn.containsMouse ? "#1c1424" : "#12111d"
+                border.color: "#f59e0b"
+                border.width: 1
+
+                RowLayout {
+                    anchors { fill: parent; margins: 10 }
+                    spacing: 8
+                    Text { text: "🎨"; font.pixelSize: 15 }
+                    Text {
+                        text: "Gerar / Escolher Miniatura com IA (3 Variantes)"
+                        font { pixelSize: 11; weight: Font.DemiBold; family: "Inter" }
+                        color: "#f59e0b"
+                        Layout.fillWidth: true
+                    }
+                    Text { text: "→"; font.pixelSize: 13; color: "#f59e0b" }
+                }
+
+                MouseArea {
+                    id: thumbBtn; anchors.fill: parent; hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: thumbPopup.open()
+                }
+            }
+
             // ── Scheduling Options
             Rectangle {
                 Layout.fillWidth: true
@@ -475,5 +502,25 @@ Item {
     SequentialAnimation {
         id: publishSuccessAnim
         PropertyAnimation { target: root; property: "opacity"; from: 0.6; to: 1.0; duration: 400 }
+    }
+
+    // Thumbnail Preview Modal Dialog (Fase 6B)
+    Popup {
+        id: thumbPopup
+        anchors.centerIn: parent
+        width: 440
+        height: 680
+        modal: true
+        focus: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        background: Rectangle {
+            color: "#0a0a14"
+            radius: 12
+            border.color: "#334155"
+            border.width: 1
+        }
+        ThumbnailPreview {
+            anchors.fill: parent
+        }
     }
 }

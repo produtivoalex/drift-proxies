@@ -712,6 +712,9 @@ add_library(driftengine STATIC
     # Fase 5C: Dublagem Multiidioma
     src/engine/ai/ProjectLocalizer.h
     src/engine/ai/ProjectLocalizer.cpp
+    # Fase 6B: Gerador de Thumbnails com IA
+    src/engine/thumbnail/ThumbnailGenerator.h
+    src/engine/thumbnail/ThumbnailGenerator.cpp
     # WizardEngine: Dark Studio Wizard
     src/engine/wizard/WizardEngine.h
     src/engine/wizard/WizardEngine.cpp
@@ -1002,6 +1005,7 @@ qt_add_qml_module(drift
         src/qml/views/BRollsPanel.qml
         src/qml/views/LocalizationPanel.qml
         src/qml/views/PublishingPanel.qml
+        src/qml/views/ThumbnailPreview.qml
         src/qml/components/preview/TransformOverlay.qml
         src/qml/components/preview/CropOverlay.qml
         src/qml/components/preview/MaskOverlay.qml
