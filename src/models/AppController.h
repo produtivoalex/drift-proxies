@@ -20,6 +20,7 @@
 #include "models/BinFolderListModel.h"
 #include "models/kanban/ProjectPipelineManager.h"
 #include "engine/wizard/WizardEngine.h"
+#include "engine/ai/ScriptGenerator.h"
 
 #include <QAtomicInt>
 #include <QCursor>
@@ -390,6 +391,19 @@ class AppController : public QObject
 
     Q_PROPERTY(QObject* pipelineManager READ pipelineManager CONSTANT)
 
+    // ── AI Script Generation (Fase 5A: Roteirista Dark Studio) ──────────────
+    Q_PROPERTY(bool scriptGenerating READ scriptGenerating NOTIFY scriptGeneratingChanged)
+    Q_PROPERTY(double scriptGenProgress READ scriptGenProgress NOTIFY scriptGenProgressChanged)
+    Q_PROPERTY(QString scriptGenStatus READ scriptGenStatus NOTIFY scriptGenStatusChanged)
+    Q_PROPERTY(bool hasScriptApiKey READ hasScriptApiKey NOTIFY scriptApiKeyChanged)
+    Q_PROPERTY(QString scriptApiProvider READ scriptApiProvider NOTIFY scriptApiKeyChanged)
+    // Last generated script fields (populated after scriptReady signal)
+    Q_PROPERTY(QString lastScriptHook READ lastScriptHook NOTIFY scriptReady)
+    Q_PROPERTY(QString lastScriptBody READ lastScriptBody NOTIFY scriptReady)
+    Q_PROPERTY(QString lastScriptCta READ lastScriptCta NOTIFY scriptReady)
+    Q_PROPERTY(QStringList lastScriptBrollHints READ lastScriptBrollHints NOTIFY scriptReady)
+    Q_PROPERTY(QStringList lastScriptSfxHints READ lastScriptSfxHints NOTIFY scriptReady)
+
 public:
     explicit AppController(AssetLibrary *assetLibrary, QObject *parent = nullptr);
     ~AppController() override;
@@ -614,6 +628,30 @@ public:
     bool wizardRunning() const { return m_wizardRunning; }
     double wizardProgress() const { return m_wizardProgress; }
     QString wizardStatus() const { return m_wizardStatus; }
+
+    // ── AI Script Generation — Fase 5A: Roteirista Dark Studio ───────────────
+    // Configure which LLM provider to use: "openai" | "anthropic" | "gemini" | "local"
+    Q_INVOKABLE void configureScriptApiKey(const QString &key, const QString &provider);
+    // Generate a script from the given topic/niche/format.
+    // On success: scriptReady() fires and all lastScript* properties are updated.
+    // On failure: scriptError(message) fires.
+    Q_INVOKABLE void generateScript(const QString &topic, const QString &niche,
+                                     const QString &format, const QString &language,
+                                     const QString &tone, int targetDurationSec);
+    Q_INVOKABLE void cancelScriptGeneration();
+    // Immediately feed the current lastScriptBody into the WizardEngine for timeline creation.
+    Q_INVOKABLE void generateTimelineFromLastScript(const QString &vibe, const QString &voiceId);
+
+    bool scriptGenerating() const { return m_scriptGenerating; }
+    double scriptGenProgress() const { return m_scriptGenProgress; }
+    QString scriptGenStatus() const { return m_scriptGenStatus; }
+    bool hasScriptApiKey() const { return m_scriptGenerator.hasApiKey(); }
+    QString scriptApiProvider() const { return m_scriptGenerator.provider(); }
+    QString lastScriptHook() const { return m_lastScriptHook; }
+    QString lastScriptBody() const { return m_lastScriptBody; }
+    QString lastScriptCta() const { return m_lastScriptCta; }
+    QStringList lastScriptBrollHints() const { return m_lastScriptBrollHints; }
+    QStringList lastScriptSfxHints() const { return m_lastScriptSfxHints; }
 
     // Playback diagnostics. The environment and counter half is cheap enough to call whenever
     // the dialog opens; the benchmark decodes for a couple of seconds and so runs off the GUI
@@ -2051,6 +2089,14 @@ signals:
     void wizardProgressChanged();
     void wizardStatusChanged();
 
+    // ── AI Script Generation signals (Fase 5A) ──────────────────────────────
+    void scriptGeneratingChanged();
+    void scriptGenProgressChanged();
+    void scriptGenStatusChanged();
+    void scriptApiKeyChanged();
+    void scriptReady(); // Fires when all lastScript* properties are populated
+    void scriptError(const QString &message);
+
 protected:
     // Every path that changes the timeline model goes through this instead of a bare
     // `emit tracksChanged()`. The cache has to be dropped *before* the signal goes out: whether
@@ -2371,6 +2417,7 @@ protected:
     TimelineModel m_timelineModel;
     ClipListModel m_clipListModel;
     drift::ProjectPipelineManager m_pipelineManager;
+    drift::ScriptGenerator m_scriptGenerator;
     // These trees must outlive m_playback: the compositor thread holds a bare
     // pointer into whichever one is live and may still be mid-composite at
     // teardown. During a multicam session that is m_multicamStaged, otherwise
@@ -2704,7 +2751,24 @@ protected:
 
     void setProjectLayoutChosen(bool chosen);
 
+    // Wizard engine state (lazily created pointer, see runWizard())
+    drift::WizardEngine *m_wizardEngine = nullptr;
+    bool m_wizardRunning = false;
+    double m_wizardProgress = 0.0;
+    QString m_wizardStatus;
+
+    // AI Script Generator state (Fase 5A)
+    bool m_scriptGenerating = false;
+    double m_scriptGenProgress = 0.0;
+    QString m_scriptGenStatus;
+    QString m_lastScriptHook;
+    QString m_lastScriptBody;
+    QString m_lastScriptCta;
+    QStringList m_lastScriptBrollHints;
+    QStringList m_lastScriptSfxHints;
+
     static constexpr int kMaxUndoSteps = 50;
     static constexpr int kAutosaveIntervalMs = 15000;
     static constexpr int kMaxRecentProjects = 10;
 };
+

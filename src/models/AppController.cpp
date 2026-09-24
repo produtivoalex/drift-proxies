@@ -27657,3 +27657,100 @@ void AppController::cancelWizard()
         m_wizardEngine->cancel();
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Fase 5A: Roteirista LLM (ScriptGenerator)
+// ─────────────────────────────────────────────────────────────────────────────
+
+void AppController::configureScriptApiKey(const QString &key, const QString &provider)
+{
+    m_scriptGenerator.setApiKey(key, provider);
+    emit scriptApiKeyChanged();
+    setLastMessage(tr("Provedor de IA configurado: %1").arg(provider), QStringLiteral("success"));
+}
+
+void AppController::generateScript(const QString &topic, const QString &niche,
+                                    const QString &format, const QString &language,
+                                    const QString &tone, int targetDurationSec)
+{
+    if (m_scriptGenerating) return;
+    if (!m_scriptGenerator.hasApiKey()) {
+        const QString msg = tr("Configure sua chave de API em Configurações → IA para usar o Roteirista.");
+        setLastMessage(msg, QStringLiteral("warning"));
+        emit scriptError(msg);
+        return;
+    }
+
+    m_scriptGenerating = true;
+    m_scriptGenProgress = 0.0;
+    m_scriptGenStatus = tr("Conectando ao roteirista...");
+    emit scriptGeneratingChanged();
+    emit scriptGenProgressChanged();
+    emit scriptGenStatusChanged();
+
+    disconnect(&m_scriptGenerator, nullptr, this, nullptr);
+
+    connect(&m_scriptGenerator, &drift::ScriptGenerator::progressChanged,
+            this, [this](double fraction, const QString &status) {
+        m_scriptGenProgress = fraction;
+        m_scriptGenStatus   = status;
+        emit scriptGenProgressChanged();
+        emit scriptGenStatusChanged();
+    });
+
+    connect(&m_scriptGenerator, &drift::ScriptGenerator::scriptGenerated,
+            this, [this](const drift::GeneratedScript &result) {
+        m_scriptGenerating = false;
+        emit scriptGeneratingChanged();
+
+        if (!result.success) {
+            m_scriptGenStatus = result.error;
+            emit scriptGenStatusChanged();
+            setLastMessage(result.error, QStringLiteral("error"));
+            emit scriptError(result.error);
+            return;
+        }
+
+        m_lastScriptHook       = result.hook;
+        m_lastScriptBody       = result.fullText;
+        m_lastScriptCta        = result.callToAction;
+        m_lastScriptBrollHints = result.allBrollHints;
+        m_lastScriptSfxHints   = result.allSfxHints;
+
+        m_scriptGenProgress = 1.0;
+        m_scriptGenStatus   = tr("Roteiro gerado com sucesso!");
+        emit scriptGenProgressChanged();
+        emit scriptGenStatusChanged();
+        emit scriptReady();
+        setLastMessage(tr("Roteiro gerado! Revise e clique em Gerar Vídeo."),
+                       QStringLiteral("success"));
+    });
+
+    drift::ScriptRequest req;
+    req.topic             = topic;
+    req.niche             = niche;
+    req.format            = format;
+    req.language          = language;
+    req.tone              = tone;
+    req.targetDurationSec = targetDurationSec;
+    m_scriptGenerator.generateScript(req);
+}
+
+void AppController::cancelScriptGeneration()
+{
+    m_scriptGenerator.cancel();
+    m_scriptGenerating = false;
+    m_scriptGenStatus  = tr("Geração cancelada.");
+    emit scriptGeneratingChanged();
+    emit scriptGenStatusChanged();
+}
+
+void AppController::generateTimelineFromLastScript(const QString &vibe, const QString &voiceId)
+{
+    if (m_lastScriptBody.isEmpty()) {
+        setLastMessage(tr("Gere um roteiro primeiro antes de criar o vídeo."),
+                       QStringLiteral("warning"));
+        return;
+    }
+    runWizard(m_lastScriptBody, vibe, voiceId);
+}

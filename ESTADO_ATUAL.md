@@ -277,3 +277,37 @@ O documento [`PROXIMOS_PASSOS.md`](file:///C:/Users/Alex/Documents/Antigravity/d
 * `src/models/AppController.h` / `AppController.cpp`: MÃ©todos de suporte a TTS, face tracking e efeitos.
 * `PROXIMOS_PASSOS.md`: Roteiro estratÃ©gico detalhado.
 
+
+---
+
+### 15. SUPER PLANO — Fase 5A: Roteirista Dark Studio com IA (LLM) (100% Implementada)
+
+> **Objetivo:** Gerar roteiros virais automaticamente com IA, conectando ao WizardEngine para criar vídeos completos em 1 clique — superando o DarkPlanner e o CapCut Pro.
+
+#### Engine C++ — ScriptGenerator.h / .cpp (src/engine/ai/)
+- 4 provedores LLM: OpenAI GPT-4o-mini, Anthropic Claude Haiku, Google Gemini 1.5 Flash, llama.cpp local offline
+- Prompt Engineering para 7 nichos, 3 formatos, 5 idiomas
+- Resposta JSON estruturada: hook, blocks[] c/ broll_hints + sfx_hint, cta
+- Estimativa de duracao por bloco (~130 palavras/min)
+
+#### Integracao AppController.h / .cpp
+- 13 novas Q_PROPERTYs para estado de geracao (scriptGenerating, scriptGenProgress, lastScriptHook, etc)
+- 4 Q_INVOKABLEs: configureScriptApiKey, generateScript, cancelScriptGeneration, generateTimelineFromLastScript
+- 6 novos sinais: scriptGeneratingChanged, scriptReady, scriptError, etc
+
+#### UI QML — DarkStudioPanel.qml (src/qml/views/)
+- 3 telas fluidas: Configurar ? Revisar Roteiro ? Gerar Vídeo
+- Design System dark glassmorphic completo com DarkLabel, DarkCombo, DarkButton, DarkTextArea
+- Orb animado pulsante no step 2, step pills animados no header
+
+#### Build
+- CMakeLists.txt: ScriptGenerator e WizardEngine adicionados ao driftengine, Qt6::Network linkado, DarkStudioPanel.qml registrado
+
+---
+
+## Proximo a Implementar
+- 5B: Auto-Fetch B-Rolls (Pexels/Pixabay)
+- 5C: Dublagem 5 idiomas (DeepL + TTS)
+- 6A: Publicacao Direta (YouTube/TikTok/Instagram)
+- 6B: Thumbnails IA (FaceLandmarker + SAM2)
+

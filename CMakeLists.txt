@@ -703,11 +703,17 @@ add_library(driftengine STATIC
     src/engine/TtsSynthesizer.cpp
     src/engine/VirtualBackgrounds.h
     src/engine/VirtualBackgrounds.cpp
+    # Fase 5A: Roteirista LLM
+    src/engine/ai/ScriptGenerator.h
+    src/engine/ai/ScriptGenerator.cpp
+    # WizardEngine: Dark Studio Wizard
+    src/engine/wizard/WizardEngine.h
+    src/engine/wizard/WizardEngine.cpp
 )
 target_include_directories(driftengine PUBLIC src)
 # cgltf is PRIVATE: ModelAsset.h exposes no cgltf type, so nothing outside ModelAsset.cpp includes it.
 target_include_directories(driftengine SYSTEM PRIVATE ${CMAKE_SOURCE_DIR}/third_party/cgltf)
-target_link_libraries(driftengine PUBLIC Qt6::Core Qt6::Gui Qt6::OpenGL Qt6::Concurrent FFmpeg::FFmpeg driftcore
+target_link_libraries(driftengine PUBLIC Qt6::Core Qt6::Gui Qt6::OpenGL Qt6::Concurrent Qt6::Network FFmpeg::FFmpeg driftcore
     driftaudiodsp onnxruntime::headers)
 target_link_libraries(driftengine PRIVATE ${DRIFT_ZSTD_TARGET} OpenSSL::Crypto ${CMAKE_DL_LIBS})
 if(WIN32)
@@ -983,6 +989,7 @@ qt_add_qml_module(drift
         src/qml/AssetsPanel.qml
         src/qml/PreviewPanel.qml
         src/qml/views/PipelineView.qml
+        src/qml/views/DarkStudioPanel.qml
         src/qml/components/preview/TransformOverlay.qml
         src/qml/components/preview/CropOverlay.qml
         src/qml/components/preview/MaskOverlay.qml
