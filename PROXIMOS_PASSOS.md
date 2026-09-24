@@ -44,16 +44,15 @@ O caos visual foi dominado, criando muito mais espaço para a inteligência arti
 
 ---
 
-### 📊 FASE 4: Pipeline Multicanal (Kanban de Produção)
+### 📊 FASE 4: Pipeline Multicanal (Kanban de Produção) - **< 100% CONCLUÍDA >**
 *Deixando de ser apenas o software de edição para ser o estúdio de gerenciamento dos canais Dark e criadores.*
 
 * **4.1. Dashboard Kanban C++ (`ProjectPipelineManager`)**:
   - Salvar progresso de vídeos (Ideia -> Roteiro -> Edição -> Exportando -> Publicado).
 * **4.2. UI de Arrastar e Soltar (`PipelineView.qml`)**:
   - Nova visualização QML que permite ao usuário ver todos os vídeos em fila, arrastá-los entre colunas e abrir o editor exatamente onde parou ao clicar no cartão.
-* **Dificuldade:** Média.
 
 ---
 
 ## 📌 Próxima Etapa Imediata
-O usuário concluiu a **Fase 3 (Automação Cinematográfica - B-Rolls e SFX)**. O próximo passo é iniciar a **Fase 4: Pipeline Multicanal (Kanban de Produção)**, começando pelo `ProjectPipelineManager.cpp` e o dashboard visual para orquestrar os vídeos.
+O usuário concluiu a **Fase 4 (Pipeline Multicanal / Kanban de Produção)**. O Master Plan está agora totalmente concluído e a plataforma foi elevada de um simples editor de vídeo para um Estúdio e Motor de Criação Assistida completo. Aguardar instruções adicionais do usuário.

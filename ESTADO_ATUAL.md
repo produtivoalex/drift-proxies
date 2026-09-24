@@ -248,6 +248,18 @@
 * **Auto-Ducking Nativo na Música de Fundo**:
   - Geração automatizada da "Bed Track" musical, com o efeito `auto_ducking` nativamente instanciado e aplicado a toda extensão do projeto.
 
+### 14. PLANO MESTRE - Fase 4: Pipeline Multicanal (Kanban de Produção) (100% Concluída)
+* **Gerenciador de Estado C++ (`ProjectPipelineManager.h` / `.cpp`)**:
+  - Implementação de um Kanban board global focado no ciclo de vida de dezenas de vídeos.
+  - Colunas padronizadas de produção: *Ideia*, *Roteirização*, *Pronto para Gravar*, *Edição*, *Renderização*, *Publicado*.
+  - Arquitetura reativa baseada em `QObject` para serialização de metadados em `%AppData%/kanban_state.json`.
+* **Interface QML Drag-and-Drop (`PipelineView.qml`)**:
+  - Visualização interativa com cards representando projetos e colunas temáticas.
+  - Ocupa o painel principal quando ativada, proporcionando uma transição mental de "Editor de Linha do Tempo" para "Estúdio / Produtora de Conteúdo".
+* **Acesso Simplificado 1-Clique (`EditorHeader.qml`)**:
+  - Inserção de botão destacado **🗂️ Estúdio Dark** no menu principal de espaços de trabalho para acesso instantâneo ao pipeline.
+  - Auto-ocultamento do painel quando o usuário seleciona outros layouts clássicos (Shorts, Podcast, WebDoc).
+
 ---
 
 ## 🗺️ O Roteiro Completo dos Próximos Passos (`PROXIMOS_PASSOS.md`)

@@ -18,6 +18,7 @@
 #include "TimelineModel.h"
 #include "models/AssetLibrary.h"
 #include "models/BinFolderListModel.h"
+#include "models/kanban/ProjectPipelineManager.h"
 #include "engine/wizard/WizardEngine.h"
 
 #include <QAtomicInt>
@@ -387,6 +388,8 @@ class AppController : public QObject
     Q_PROPERTY(double wizardProgress READ wizardProgress NOTIFY wizardProgressChanged)
     Q_PROPERTY(QString wizardStatus READ wizardStatus NOTIFY wizardStatusChanged)
 
+    Q_PROPERTY(QObject* pipelineManager READ pipelineManager CONSTANT)
+
 public:
     explicit AppController(AssetLibrary *assetLibrary, QObject *parent = nullptr);
     ~AppController() override;
@@ -397,6 +400,7 @@ public:
     void setCurrentBinFolderId(const QString &folderId);
     TimelineModel *timelineModel() { return &m_timelineModel; }
     ClipListModel *clipListModel() { return &m_clipListModel; }
+    QObject *pipelineManager() { return &m_pipelineManager; }
     PlaybackEngine *playback() { return &m_playback; }
     QVariantList audioOutputDevices() const;
     QString audioOutputDeviceId() const { return m_audioOutputDeviceId; }
@@ -2366,6 +2370,7 @@ protected:
     bool m_importingFolder = false;
     TimelineModel m_timelineModel;
     ClipListModel m_clipListModel;
+    drift::ProjectPipelineManager m_pipelineManager;
     // These trees must outlive m_playback: the compositor thread holds a bare
     // pointer into whichever one is live and may still be mid-composite at
     // teardown. During a multicam session that is m_multicamStaged, otherwise

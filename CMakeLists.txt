@@ -796,6 +796,8 @@ qt_add_executable(drift
     src/models/UpdateChecker.cpp
     src/models/AppController.h
     src/models/AppController.cpp
+    src/models/kanban/ProjectPipelineManager.h
+    src/models/kanban/ProjectPipelineManager.cpp
     src/models/EditorState.h
     src/models/LayoutStore.h
     src/models/LayoutStore.cpp
@@ -980,6 +982,7 @@ qt_add_qml_module(drift
         src/qml/EditorHeader.qml
         src/qml/AssetsPanel.qml
         src/qml/PreviewPanel.qml
+        src/qml/views/PipelineView.qml
         src/qml/components/preview/TransformOverlay.qml
         src/qml/components/preview/CropOverlay.qml
         src/qml/components/preview/MaskOverlay.qml

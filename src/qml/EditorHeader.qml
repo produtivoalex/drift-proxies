@@ -436,38 +436,60 @@ Rectangle {
             spacing: Theme.spacingXs
 
             ThemedButton {
+                variant: root.Window.window.showKanban ? "primary" : "ghost"
+                text: qsTr("🗂️ Estúdio Dark")
+                tooltip: qsTr("Painel Kanban para gerenciar a produção de todos os seus vídeos")
+                onClicked: root.Window.window.showKanban = !root.Window.window.showKanban
+            }
+
+            ThemedButton {
                 variant: EditorState.currentWorkspace === "shorts" ? "primary" : "ghost"
                 text: qsTr("📱 Shorts (9:16)")
                 tooltip: qsTr("Layout vertical 9:16 para Shorts, Reels e TikTok com cortes rápidos e legendas virais")
-                onClicked: EditorState.applyWorkspace("shorts")
+                onClicked: {
+                    EditorState.applyWorkspace("shorts")
+                    root.Window.window.showKanban = false
+                }
             }
 
             ThemedButton {
                 variant: EditorState.currentWorkspace === "subtitles" ? "primary" : "ghost"
                 text: qsTr("💬 Legendas")
                 tooltip: qsTr("Foco em legendas e karaokê: estúdio de texto expandido em 100% de altura")
-                onClicked: EditorState.applyWorkspace("subtitles")
+                onClicked: {
+                    EditorState.applyWorkspace("subtitles")
+                    root.Window.window.showKanban = false
+                }
             }
 
             ThemedButton {
                 variant: EditorState.currentWorkspace === "webdoc" ? "primary" : "ghost"
                 text: qsTr("🎬 WebDoc (16:9)")
                 tooltip: qsTr("Layout horizontal 16:9 para vídeos longos, B-Rolls e documentários")
-                onClicked: EditorState.applyWorkspace("webdoc")
+                onClicked: {
+                    EditorState.applyWorkspace("webdoc")
+                    root.Window.window.showKanban = false
+                }
             }
 
             ThemedButton {
                 variant: EditorState.currentWorkspace === "podcast" ? "primary" : "ghost"
                 text: qsTr("🎙️ Podcast")
                 tooltip: qsTr("Foco em áudio, locução neural, ducking e remoção de ruído")
-                onClicked: EditorState.applyWorkspace("podcast")
+                onClicked: {
+                    EditorState.applyWorkspace("podcast")
+                    root.Window.window.showKanban = false
+                }
             }
 
             ThemedButton {
                 variant: EditorState.currentWorkspace === "classic" ? "primary" : "ghost"
                 text: qsTr("⚡ Clássico")
                 tooltip: qsTr("Layout balanceado para cortes gerais")
-                onClicked: EditorState.applyWorkspace("classic")
+                onClicked: {
+                    EditorState.applyWorkspace("classic")
+                    root.Window.window.showKanban = false
+                }
             }
         }
 

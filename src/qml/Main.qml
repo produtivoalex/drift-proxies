@@ -3,6 +3,7 @@ import QtQuick.Controls.Basic
 import QtQuick.Window
 import Drift
 import "components"
+import "views"
 
 ApplicationWindow {
     id: window
@@ -58,6 +59,8 @@ ApplicationWindow {
 
     // Set true after the unsaved prompt resolves so onClosing can finish quit.
     property bool forceClose: false
+
+    property bool showKanban: false
 
     onClosing: function (close) {
         // Before any of the branches below, so a quit that is cancelled at the
@@ -1220,6 +1223,12 @@ ApplicationWindow {
         onNewProjectRequested: window.requestNewProject()
         onOpenProjectRequested: window.requestOpenProjectDialog()
         onOpenRecentRequested: (path) => window.requestOpenRecentProject(path)
+    }
+
+    PipelineView {
+        id: pipelineView
+        anchors.fill: parent
+        visible: window.showKanban
     }
 
     // Notification host — above all panels, so any message lands in one place.
