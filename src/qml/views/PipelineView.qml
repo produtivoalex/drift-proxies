@@ -12,7 +12,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: Theme.colorBackground
+        color: Theme.appBackground
 
         ColumnLayout {
             anchors.fill: parent
@@ -23,7 +23,7 @@ Item {
                 text: "Estúdio Dark - Pipeline de Produção"
                 font.pixelSize: 24
                 font.bold: true
-                color: Theme.colorForeground
+                color: Theme.foreground
             }
 
             ListView {
@@ -37,7 +37,7 @@ Item {
                 delegate: Rectangle {
                     width: 300
                     height: columnsView.height
-                    color: Theme.colorPanelBackground
+                    color: Theme.panelBackground
                     radius: 8
 
                     ColumnLayout {
@@ -49,7 +49,7 @@ Item {
                             text: modelData.name
                             font.pixelSize: 18
                             font.bold: true
-                            color: Theme.colorForeground
+                            color: Theme.foreground
                         }
 
                         ListView {
@@ -63,9 +63,9 @@ Item {
                             delegate: Rectangle {
                                 width: cardsView.width
                                 height: 80
-                                color: Theme.colorButton
+                                color: Theme.panelAccent
                                 radius: 6
-                                border.color: dropArea.containsDrag ? Theme.colorAccent : "transparent"
+                                border.color: dropArea.containsDrag ? Theme.accent : "transparent"
                                 border.width: 2
 
                                 ColumnLayout {
@@ -76,7 +76,7 @@ Item {
                                         text: modelData.title
                                         font.pixelSize: 14
                                         font.bold: true
-                                        color: Theme.colorForeground
+                                        color: Theme.foreground
                                         elide: Text.ElideRight
                                         Layout.fillWidth: true
                                     }

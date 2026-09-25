@@ -710,15 +710,16 @@ Item {
                 width: parent.width
                 implicitHeight: autoReframeCol.implicitHeight + 16
                 radius: Theme.radiusMd
-                color: Theme.colorPanelBackground
-                border.color: Theme.colorBorder
+                color: Theme.panelBackground
+                border.color: Theme.panelBorder
                 border.width: 1
 
                 property string selectedAspect: "9:16"
 
                 Column {
                     id: autoReframeCol
-                    anchors { fill: parent; margins: 10 }
+                    anchors.fill: parent
+                    anchors.margins: 10
                     spacing: 8
 
                     Text {

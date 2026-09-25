@@ -47,7 +47,6 @@ Item {
             id: search
             width: parent.width
             placeholderText: qsTr("Buscar cenários de estúdio, podcast, neon…")
-            glyph: Theme.icons.zoomIn
         }
 
         // Category Pills
